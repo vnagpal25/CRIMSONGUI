@@ -17,8 +17,10 @@ if (WIN32)
         set(_WM5_VS_VERSION_POSTFIX "110")
     elseif (MSVC_VERSION EQUAL 1800)
         set(_WM5_VS_VERSION_POSTFIX "120")
+    elseif (MSVC_VERSION GREATER_EQUAL 1930)
+        set(_WM5_VS_VERSION_POSTFIX "143")
     else()
-        message(ERROR "Unsupported version of MSVS detected: ${MSVC_VERSION}")
+        message(FATAL_ERROR "Unsupported version of MSVS detected: ${MSVC_VERSION}")
     endif()
 
     # Test 32/64 bits
