@@ -13,14 +13,16 @@ set(WM5_DEPENDS ${proj})
 
 set(_WM5_BUILD_COMMAND "")
 if (WIN32)
+    # WM5 ships only VC110/VC120 solution files; VS2015+ can upgrade them.
     if (MSVC_VERSION EQUAL 1700)
         set(_WM5_VS_VERSION_POSTFIX "110")
     elseif (MSVC_VERSION EQUAL 1800)
         set(_WM5_VS_VERSION_POSTFIX "120")
-    elseif (MSVC_VERSION GREATER_EQUAL 1930)
-        set(_WM5_VS_VERSION_POSTFIX "143")
+    elseif (MSVC_VERSION GREATER_EQUAL 1900)
+        # Default to VC120 solution for modern MSVC (VS2015 and newer, incl. VS2022)
+        set(_WM5_VS_VERSION_POSTFIX "120")
     else()
-        message(FATAL_ERROR "Unsupported version of MSVS detected: ${MSVC_VERSION}")
+        message(ERROR "Unsupported version of MSVS detected: ${MSVC_VERSION}")
     endif()
 
     # Test 32/64 bits
@@ -30,26 +32,25 @@ if (WIN32)
         set(_WM5_VS_BUILD_PLATFORM "Win32")
     endif()
     
+    # Force toolset upgrade so VS2022 can build the old VC120 solution
     set (WM5_BUILD_COMMAND "${CMAKE_MAKE_PROGRAM}" 
         "<SOURCE_DIR>/WildMagic5Wgl_VC${_WM5_VS_VERSION_POSTFIX}.sln" 
         "/t:Libraries\\LibCore_VC${_WM5_VS_VERSION_POSTFIX}" 
         "/t:Libraries\\LibMathematics_VC${_WM5_VS_VERSION_POSTFIX}" 
-        "/p:Configuration=${CMAKE_CFG_INTDIR}" "/p:Platform=${_WM5_VS_BUILD_PLATFORM}")
+        "/p:Configuration=${CMAKE_CFG_INTDIR}" "/p:Platform=${_WM5_VS_BUILD_PLATFORM}" "/p:PlatformToolset=v143")
         
 else()
     set(WM5_BUILD_COMMAND "${CMAKE_MAKE_PROGRAM}" "CFG=${CMAKE_BUILD_TYPE}Dynamic" "--file=makefile.wm5" "--directory=<SOURCE_DIR>/LibCore" 
                   COMMAND "${CMAKE_MAKE_PROGRAM}" "CFG=${CMAKE_BUILD_TYPE}Dynamic" "--file=makefile.wm5" "--directory=<SOURCE_DIR>/LibMathematics")
-    #set(WM5_BUILD_COMMAND "pwd")
 endif()
 
 if(NOT DEFINED WM5_DIR)
     set(additional_args )
 
-    ExternalProject_Add(${proj}
+    ExternalProject_Add(${proj} # where proj is WM5
       LIST_SEPARATOR ${sep}
       URL https://github.com/CRIMSONCardiovascularModelling/WildMagic5/archive/refs/tags/p13.tar.gz
       DOWNLOAD_NAME WildMagic5-p13.tar.gz
-      #URL_MD5 ba87fe9f5ca47e3dfd62aad7223f0e7f
       
       CONFIGURE_COMMAND ""
       BUILD_COMMAND ${WM5_BUILD_COMMAND} 
@@ -59,9 +60,7 @@ if(NOT DEFINED WM5_DIR)
 
     ExternalProject_Get_Property(${proj} install_dir)
     set(WM5_DIR "${install_dir}/SDK")
-    #set(WM5_DIR ${ep_prefix})
-    #mitkFunctionInstallExternalCMakeProject(${proj})
 
 else()
-    #mitkMacroEmptyExternalProject(${proj} "${proj_DEPENDENCIES}")
+
 endif()
