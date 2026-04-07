@@ -25,7 +25,7 @@ if(NOT DEFINED QtPropertyBrowser_DIR)
          "-DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS} ${QtPropertyBrowser_C_FLAGS}"
 
          "-DBUILD_CONFIGURATION:STRING=${CMAKE_BUILD_TYPE}"
-         "-DQt5_DIR:PATH=${Qt5_DIR}"
+         "-DQt6_DIR:PATH=${Qt6_DIR}"
          
          CMAKE_CACHE_ARGS
         ${ep_common_cache_args}

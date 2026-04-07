@@ -22,11 +22,15 @@
 #include <QDebug>
 #include <QEventLoop>
 #include <QIODevice>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QJSValue>
+#else
+#include <QScriptValueIterator>
+#endif
 #include <QSslSocket>
 #include <QStringList>
 #include <QTimer>
 #include <QUuid>
-#include <QScriptValueIterator>
 #if (QT_VERSION >= QT_VERSION_CHECK(5,0,0))
 #include <QUrlQuery>
 #endif
@@ -151,9 +155,15 @@ QNetworkReply* qRestAPI::sendRequest(QNetworkAccessManager::Operation operation,
 }
 
 // --------------------------------------------------------------------------
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+QVariantMap qRestAPI::scriptValueToMap(const QJSValue& value)
+#else
 QVariantMap qRestAPI::scriptValueToMap(const QScriptValue& value)
+#endif
 {
-#if QT_VERSION >= 0x040700
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  return value.toVariant().toMap();
+#elif QT_VERSION >= 0x040700
   return value.toVariant().toMap();
 #else
   QVariantMap result;
@@ -167,7 +177,11 @@ QVariantMap qRestAPI::scriptValueToMap(const QScriptValue& value)
 }
 
 // --------------------------------------------------------------------------
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+void qRestAPI::appendScriptValueToVariantMapList(QList<QVariantMap>& result, const QJSValue& data)
+#else
 void qRestAPI::appendScriptValueToVariantMapList(QList<QVariantMap>& result, const QScriptValue& data)
+#endif
 {
   QVariantMap map = scriptValueToMap(data);
   if (!map.isEmpty())

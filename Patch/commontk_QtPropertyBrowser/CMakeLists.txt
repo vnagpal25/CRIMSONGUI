@@ -23,7 +23,7 @@ set(CMAKE_AUTOMOC ON)
 #-----------------------------------------------------------------------------
 # Qt
 #
-FIND_PACKAGE(Qt5 COMPONENTS Widgets REQUIRED)
+FIND_PACKAGE(Qt6 COMPONENTS Widgets REQUIRED)
 
 #-----------------------------------------------------------------------------
 # Subdirectories
