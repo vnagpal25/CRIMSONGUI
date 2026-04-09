@@ -53,7 +53,7 @@ if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 endif()
   
 
-set(EXTERNAL_MITK_DIR "${MITK_DIR}" CACHE PATH "Path to MITK build directory")
+set(EXTERNAL_MITK_DIR "C:/Users/Crimson_gui_2/vansh_nagpal/MITK-superbuild" CACHE PATH "Path to MITK build directory")
 mark_as_advanced(EXTERNAL_MITK_DIR)
 if(EXTERNAL_MITK_DIR)
   set(MITK_DIR ${EXTERNAL_MITK_DIR})
@@ -227,8 +227,8 @@ ExternalProject_Add(${proj}
     -DCTEST_USE_LAUNCHERS:BOOL=${CTEST_USE_LAUNCHERS}
     # ----------------- Miscellaneous ---------------
     -D${MY_PROJECT_NAME}_SUPERBUILD_BINARY_DIR:PATH=${PROJECT_BINARY_DIR}
-    -DQt5_DIR:PATH=${Qt5_DIR}
-    -DCMAKE_PREFIX_PATH:PATH=${Qt5_DIR}
+    -DQt6_DIR:PATH=${Qt6_DIR}
+    -DCMAKE_PREFIX_PATH:PATH=C:/Vansh_Files/Qt/6.11.0/msvc2022_64/lib/cmake
     -DMITK_DIR:PATH=${MITK_DIR}
     -DITK_DIR:PATH=${ITK_DIR}
     -DVTK_DIR:PATH=${VTK_DIR}

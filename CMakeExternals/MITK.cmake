@@ -19,8 +19,8 @@ if(NOT MITK_DIR)
   option(MITK_BUILD_TESTING "Build the MITK unit tests" OFF)
   option(MITK_USE_CTK "Use CTK in MITK" ${MITK_USE_BLUEBERRY})
   option(MITK_USE_DCMTK "Use DCMTK in MITK" ON)
-  option(MITK_USE_Qt5 "Use Qt 5 library in MITK" ON)
-  option(MITK_USE_Qt5_WebEngine "Use Qt 5 WebEngine library" ON)
+  option(MITK_USE_Qt6 "Use Qt 6 library in MITK" ON)
+  option(MITK_USE_Qt6_WebEngine "Use Qt 6 WebEngine library" ON)
   option(MITK_USE_Boost "Use the Boost library in MITK" ON)
   option(MITK_USE_OpenCV "Use Intel's OpenCV library" OFF)
   option(MITK_USE_Python "Enable Python wrapping in MITK" ON)
@@ -30,9 +30,9 @@ if(NOT MITK_DIR)
     set(MITK_USE_CTK ON CACHE BOOL "Use CTK in MITK" FORCE)
   endif()
 
-  if(MITK_USE_CTK AND NOT MITK_USE_Qt5)
-    message("Forcing MITK_USE_Qt5 to ON because of MITK_USE_CTK")
-    set(MITK_USE_QT ON CACHE BOOL "Use Qt 5 library in MITK" FORCE)
+  if(MITK_USE_CTK AND NOT MITK_USE_Qt6)
+    message("Forcing MITK_USE_Qt6 to ON because of MITK_USE_CTK")
+    set(MITK_USE_Qt6 ON CACHE BOOL "Use Qt 6 library in MITK" FORCE)
   endif()
   
   set(MITK_USE_CableSwig ${MITK_USE_Python})
@@ -52,34 +52,34 @@ if(NOT MITK_DIR)
     MITK_BUILD_ALL_PLUGINS
     MITK_USE_CTK
     MITK_USE_DCMTK
-    MITK_USE_Qt5
-    MITK_USE_Qt5_WebEngine
+    MITK_USE_Qt6
+    MITK_USE_Qt6_WebEngine
     MITK_USE_Boost
     MITK_USE_OpenCV
     MITK_USE_Python
    )
    
-  set(DESIRED_QT_VERSION 5)
+  set(DESIRED_QT_VERSION 6)
 
-  if(MITK_USE_Qt5)
-    set(MITK_QT5_MINIMUM_VERSION 5.6.0)
-    set(MITK_QT5_COMPONENTS Concurrent OpenGL PrintSupport Script Sql Svg Widgets Xml XmlPatterns UiTools Help LinguistTools)
-    if(MITK_USE_Qt5_WebEngine)
-      set(MITK_QT5_COMPONENTS ${MITK_QT5_COMPONENTS} WebEngineWidgets)
+  if(MITK_USE_Qt6)
+    set(MITK_QT6_MINIMUM_VERSION 6.0.0)
+    set(MITK_QT6_COMPONENTS Concurrent OpenGL PrintSupport Sql Svg Widgets Xml UiTools Help LinguistTools)
+    if(MITK_USE_Qt6_WebEngine)
+      set(MITK_QT6_COMPONENTS ${MITK_QT6_COMPONENTS} WebEngineWidgets)
     endif()
     if(APPLE)
-      set(MITK_QT5_COMPONENTS ${MITK_QT5_COMPONENTS} DBus)
+      set(MITK_QT6_COMPONENTS ${MITK_QT6_COMPONENTS} DBus)
     endif()
-    find_package(Qt5 ${MITK_QT5_MINIMUM_VERSION} COMPONENTS ${MITK_QT5_COMPONENTS} REQUIRED)
-    if(Qt5_DIR)
-      get_filename_component(_Qt5_DIR "${Qt5_DIR}/../../../" ABSOLUTE)
-      list(FIND CMAKE_PREFIX_PATH "${_Qt5_DIR}" _result)
+    find_package(Qt6 ${MITK_QT6_MINIMUM_VERSION} COMPONENTS ${MITK_QT6_COMPONENTS} REQUIRED)
+    if(Qt6_DIR)
+      get_filename_component(_Qt6_DIR "${Qt6_DIR}/../../../" ABSOLUTE)
+      list(FIND CMAKE_PREFIX_PATH "${_Qt6_DIR}" _result)
       if(_result LESS 0)
-        set(CMAKE_PREFIX_PATH "${_Qt5_DIR};${CMAKE_PREFIX_PATH}" CACHE PATH "" FORCE)
+        set(CMAKE_PREFIX_PATH "${_Qt6_DIR};${CMAKE_PREFIX_PATH}" CACHE PATH "" FORCE)
       endif()
     endif()
-  elseif(MITK_USE_Qt5_WebEngine)
-    set(MITK_USE_Qt5_WebEngine OFF)
+  elseif(MITK_USE_Qt6_WebEngine)
+    set(MITK_USE_Qt6_WebEngine OFF)
   endif()
   
   set(additional_mitk_cmakevars
@@ -158,9 +158,9 @@ if(NOT MITK_DIR)
   # Additional MITK CMake variables
   #-----------------------------------------------------------------------------
 
-  if(MITK_USE_Qt5)
-    find_package(Qt5 REQUIRED COMPONENTS Core)
-    list(APPEND additional_mitk_cmakevars "-DQt5_DIR:PATH=${Qt5_DIR}" "-DCMAKE_PREFIX_PATH:PATH=${Qt5_DIR}")
+  if(MITK_USE_Qt6)
+    find_package(Qt6 REQUIRED COMPONENTS Core)
+    list(APPEND additional_mitk_cmakevars "-DQt6_DIR:PATH=${Qt6_DIR}" "-DCMAKE_PREFIX_PATH:PATH=${Qt6_DIR}")
   endif()
   
   if(MITK_USE_CTK)
