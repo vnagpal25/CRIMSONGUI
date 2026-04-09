@@ -122,6 +122,9 @@ set(ep_common_args
   -DCMAKE_MODULE_LINKER_FLAGS:STRING=${CMAKE_MODULE_LINKER_FLAGS}
 )
 
+set(Qt6_DIR "C:/Vansh_Files/Qt/6.11.0/msvc2022_64/lib/cmake/Qt6" CACHE PATH "Path to Qt6 CMake config directory")
+list(APPEND CMAKE_PREFIX_PATH "C:/Vansh_Files/Qt/6.11.0/msvc2022_64/lib/cmake")
+
 # Include external projects
 foreach(p MITK ${external_projects})
   include(CMakeExternals/${p}.cmake)
