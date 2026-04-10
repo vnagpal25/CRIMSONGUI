@@ -27,7 +27,7 @@ if(NOT DEFINED presolver_DIR)
         set(presolver_download_name presolver_lin.tar.gz)
     endif()
 
-    set(presolver_url "replace/me/with/path/to/presolver_win.zip-NOTFOUND" CACHE FILEPATH  
+    set(presolver_url "C:/Users/Crimson_gui_2/vansh_nagpal/presolver_20210317_1442.zip" CACHE FILEPATH  
         "Path (or URL) where the (MinGW built) presolver_win.zip or presolver_lin.tar.gz can be found. This zip file should contain the presolver executable.")
 
     message("presolver_url is " ${presolver_url})
