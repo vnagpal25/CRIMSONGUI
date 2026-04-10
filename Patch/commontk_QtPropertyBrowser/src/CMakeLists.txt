@@ -38,9 +38,9 @@ INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_BINARY_DIR}
   )
   
-QT5_WRAP_UI(KIT_UI_CPP ${KIT_UI_FORMS})
-#QT5_WRAP_CPP(KIT_MOC_CPP ${KIT_MOC_SRCS})
-QT5_ADD_RESOURCES(KIT_QRC_SRCS ${KIT_resources})
+QT6_WRAP_UI(KIT_UI_CPP ${KIT_UI_FORMS})
+#QT6_WRAP_CPP(KIT_MOC_CPP ${KIT_MOC_SRCS})
+QT6_ADD_RESOURCES(KIT_QRC_SRCS ${KIT_resources})
 
 SET(libname ${PROJECT_NAME})
 ADD_LIBRARY(${libname} SHARED
@@ -55,5 +55,5 @@ TARGET_LINK_LIBRARIES(
   ${${PROJECT_NAME}_LINK_LIBRARIES}
   )
 
-qt5_use_modules(${libname} Widgets Gui Core)
+target_link_libraries(${libname} Qt6::Widgets Qt6::Gui Qt6::Core)
   
