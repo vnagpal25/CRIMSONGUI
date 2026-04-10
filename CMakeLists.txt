@@ -323,7 +323,7 @@ endif()
 # Qt support
 #-----------------------------------------------------------------------------
 
-if(MITK_USE_Qt5)
+if(MITK_USE_Qt6)
   set(QT_QMAKE_EXECUTABLE ${MITK_QMAKE_EXECUTABLE})
     add_definitions(-DQWT_DLL)
 endif()

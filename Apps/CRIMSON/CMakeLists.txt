@@ -22,7 +22,7 @@ set(_exclude_plugins
 
 )
 
-QT5_ADD_RESOURCES(qrc_files splashscreen.qrc)
+qt6_add_resources(qrc_files splashscreen.qrc)
 
 crimsonFunctionCreateBlueBerryApplication(
   NAME ${MY_APP_NAME}
@@ -36,7 +36,7 @@ mitk_use_modules(TARGET ${MY_APP_NAME} MODULES MitkAppUtil)
 install(FILES "${CMAKE_CURRENT_LIST_DIR}/icons/icon.ico" DESTINATION bin)
 
 include(DeployQt5)
-install_qt5_executable("bin/${MY_APP_NAME}${CMAKE_EXECUTABLE_SUFFIX}" "${Qt5Gui_PLUGINS};${Qt5Sql_PLUGINS};${Qt5Svg_PLUGINS}" "" "" "plugins" TRUE)
+install_qt5_executable("bin/${MY_APP_NAME}${CMAKE_EXECUTABLE_SUFFIX}" "${Qt6Gui_PLUGINS};${Qt6Sql_PLUGINS};${Qt6Svg_PLUGINS}" "" "" "plugins" TRUE)
 
 
 

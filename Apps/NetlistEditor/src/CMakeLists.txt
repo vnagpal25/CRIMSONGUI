@@ -2,7 +2,12 @@ find_package( Boost 1.41.0 REQUIRED )
 
 set(QT_COMPONENTS Core Gui PrintSupport Svg OpenGL Concurrent)
 
-find_package( Qt5 COMPONENTS ${QT_COMPONENTS} REQUIRED )
+find_package( Qt6 COMPONENTS ${QT_COMPONENTS} REQUIRED )
+
+set(QT_COMPONENTS_TARGETS)
+foreach(_comp ${QT_COMPONENTS})
+  list(APPEND QT_COMPONENTS_TARGETS Qt6::${_comp})
+endforeach()
 find_package( Qwt REQUIRED )
 find_package(QtPropertyBrowser REQUIRED)
 
@@ -239,7 +244,7 @@ set(CMAKE_AUTOMOC ON)
 #   ${qtpropertyeditor_HEADERS_ONLY_MOC}
 # )
 
-qt5_add_resources(
+qt6_add_resources(
   qtpropertyeditor_RESOURCES
 #  qtpropertybrowser.qrc
 )
@@ -297,7 +302,7 @@ set(
 
 # qt4_wrap_cpp( qsapecng_MOC ${qsapecng_HEADERS_MOC} )
 
-qt5_add_resources(
+qt6_add_resources(
   CRIMSONBCT_RESOURCES
   gui/CRIMSONBCT.qrc
 )
@@ -319,7 +324,7 @@ add_executable(
   "${BUNDLE_ICON}"
 )
 
-qt5_use_modules(CRIMSONBCT ${QT_COMPONENTS})
+target_link_libraries(CRIMSONBCT ${QT_COMPONENTS_TARGETS})
 
 target_link_libraries( CRIMSONBCT ${LIBS} )
 
