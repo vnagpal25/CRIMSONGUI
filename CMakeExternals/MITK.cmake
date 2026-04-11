@@ -242,6 +242,10 @@ else()
   set(my_vtk_dir ${VTK_DIR})
   set(my_qmake_executable ${QT_QMAKE_EXECUTABLE})
 
+  # CMP0144: allow FindBoost to accept both Boost_ROOT and BOOST_ROOT
+  if(POLICY CMP0144)
+    cmake_policy(SET CMP0144 NEW)
+  endif()
   find_package(MITK REQUIRED)
   
   if(my_itk_dir AND ITK_DIR)
