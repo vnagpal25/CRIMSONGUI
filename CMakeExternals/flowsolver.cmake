@@ -37,5 +37,5 @@ if(NOT DEFINED flowsolver_DIR)
     #mitkFunctionInstallExternalCMakeProject(${proj})
 
 else()
-    #mitkMacroEmptyExternalProject(${proj} "${proj_DEPENDENCIES}")
+    MacroEmptyExternalProject(${proj} "${proj_DEPENDENCIES}")
 endif()

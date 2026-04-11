@@ -38,5 +38,5 @@ if(NOT DEFINED TBB_DIR)
     #mitkFunctionInstallExternalCMakeProject(${proj})
 
 else()
-    #mitkMacroEmptyExternalProject(${proj} "${proj_DEPENDENCIES}")
+    MacroEmptyExternalProject(${proj} "${proj_DEPENDENCIES}")
 endif()
