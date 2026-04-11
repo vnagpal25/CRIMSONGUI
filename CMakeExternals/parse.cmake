@@ -1,6 +1,9 @@
 #-----------------------------------------------------------------------------
 # parse
 #-----------------------------------------------------------------------------
+set(proj parse)
+set(proj_DEPENDENCIES)
+
 if( MITK_USE_Python AND NOT MITK_USE_SYSTEM_PYTHON )
   # Sanity checks
   if(DEFINED parse_DIR AND NOT EXISTS ${parse_DIR})
@@ -8,7 +11,6 @@ if( MITK_USE_Python AND NOT MITK_USE_SYSTEM_PYTHON )
   endif()
 
   if( NOT DEFINED parse_DIR )
-    set(proj parse)
     set(${proj}_DEPENDENCIES MITK)
     set(parse_DEPENDS ${proj})
 
@@ -48,7 +50,9 @@ if( MITK_USE_Python AND NOT MITK_USE_SYSTEM_PYTHON )
     install(SCRIPT ${_install_step})
 
   else()
-    mitkMacroEmptyExternalProject(${proj} "${proj_DEPENDENCIES}")
+    MacroEmptyExternalProject(${proj} "${proj_DEPENDENCIES}")
   endif()
+else()
+  MacroEmptyExternalProject(${proj} "${proj_DEPENDENCIES}")
 endif()
 

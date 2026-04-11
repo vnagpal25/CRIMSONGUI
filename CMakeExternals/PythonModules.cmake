@@ -6,6 +6,9 @@
 # then it generates some temporary files and does some other setup tasks for
 # the python code.
 #-----------------------------------------------------------------------------
+set(proj PythonModules)
+set(proj_DEPENDENCIES)
+
 if( MITK_USE_Python AND NOT MITK_USE_SYSTEM_PYTHON )
   message("Executing PythonModules setup.")
 
@@ -15,7 +18,6 @@ if( MITK_USE_Python AND NOT MITK_USE_SYSTEM_PYTHON )
   endif()
 
   if( NOT DEFINED PythonModules_DIR )
-    set(proj PythonModules)
 
 
     #[AJM] what's the value of these macro ${}_WHATEVER names? This is a local variable, there's no need to use ${} to make unique names...
@@ -154,7 +156,9 @@ message(\"End of build/CMakeExternals/tmp/PythonModules_configure_step.cmake\")
     set(PythonModules_DIR ${MITK_PYTHON_SITE_DIR}/PythonModules)
     install(SCRIPT ${_install_step})
   else()
-    mitkMacroEmptyExternalProject(${proj} "${proj_DEPENDENCIES}")
+    MacroEmptyExternalProject(${proj} "${proj_DEPENDENCIES}")
   endif()
+else()
+  MacroEmptyExternalProject(${proj} "${proj_DEPENDENCIES}")
 endif()
 
