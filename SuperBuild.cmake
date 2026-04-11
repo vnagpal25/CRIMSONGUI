@@ -53,10 +53,10 @@ if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 endif()
   
 
-set(EXTERNAL_MITK_DIR "C:/v/MITK-sb" CACHE PATH "Path to MITK build directory")
+set(EXTERNAL_MITK_DIR "C:/v/MITK-sb/MITK-build" CACHE PATH "MITK-build directory (contains MITKConfig.cmake); leave empty to build MITK here")
 mark_as_advanced(EXTERNAL_MITK_DIR)
 if(EXTERNAL_MITK_DIR)
-  set(MITK_DIR ${EXTERNAL_MITK_DIR})
+  set(MITK_DIR "${EXTERNAL_MITK_DIR}")
 endif()
 
 # Look for git early on, if needed
