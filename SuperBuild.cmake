@@ -53,7 +53,7 @@ if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 endif()
   
 
-set(EXTERNAL_MITK_DIR "C:/Users/Crimson_gui_2/vansh_nagpal/MITK-superbuild" CACHE PATH "Path to MITK build directory")
+set(EXTERNAL_MITK_DIR "C:/v/MITK-sb" CACHE PATH "Path to MITK build directory")
 mark_as_advanced(EXTERNAL_MITK_DIR)
 if(EXTERNAL_MITK_DIR)
   set(MITK_DIR ${EXTERNAL_MITK_DIR})
