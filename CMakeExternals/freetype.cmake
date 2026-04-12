@@ -23,7 +23,7 @@ if(NOT DEFINED freetype_DIR)
     
     ExternalProject_Add(${proj}
       LIST_SEPARATOR ${sep}
-      URL http://download.savannah.gnu.org/releases/freetype/freetype-2.5.5.tar.gz
+      URL https://download.savannah.gnu.org/releases/freetype/freetype-old/freetype-2.5.5.tar.gz
       # URL_HASH
       PATCH_COMMAND ${freetype_patch_step}
       CMAKE_GENERATOR ${gen}
