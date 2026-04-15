@@ -108,6 +108,10 @@ file(READ "${_file}" _content)
 string(REPLACE "QRegExp" "QRegularExpression" _content "${_content}")
 # QVariant::RegExp removed in Qt6 (not caught by blanket replace since "RegExp" != "QRegExp")
 string(REPLACE "QVariant::RegExp" "QVariant::RegularExpression" _content "${_content}")
+# qVariantSetValue() removed in Qt6 — use QVariant::setValue()
+string(REPLACE "qVariantSetValue(v, val)" "v.setValue(val)" _content "${_content}")
+string(REPLACE "qVariantSetValue(v, enumIcons)" "v.setValue(enumIcons)" _content "${_content}")
+string(REPLACE "qVariantSetValue(v, enumManager->enumIcons(internProp))" "v.setValue(enumManager->enumIcons(internProp))" _content "${_content}")
 # Add include
 string(REPLACE
   "#include \"qtvariantproperty.h\""
