@@ -247,7 +247,13 @@ else()
   # find_package(Boost) call since MITKConfig.cmake has no cmake_minimum_required().
   cmake_policy(SET CMP0074 NEW)
   find_package(MITK REQUIRED)
-  
+
+  # find_package(MITK) sets TBB_DIR to MITK's own TBB config location as a
+  # side effect.  Unset it so that CMakeExternals/TBB.cmake (included later)
+  # can download and set up TBB with the directory layout OCC expects.
+  unset(TBB_DIR)
+  unset(TBB_DIR CACHE)
+
   if(my_itk_dir AND ITK_DIR)
     if(NOT my_itk_dir STREQUAL ${ITK_DIR})
       message(FATAL_ERROR "ITK packages do not match:\n   ${MY_PROJECT_NAME}: ${my_itk_dir}\n  MITK: ${ITK_DIR}")

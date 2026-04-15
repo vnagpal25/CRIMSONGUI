@@ -17,7 +17,7 @@ if(NOT DEFINED QtPropertyBrowser_DIR)
     ExternalProject_Add(${proj}
       LIST_SEPARATOR ${sep}
       GIT_REPOSITORY https://github.com/rkhlebnikov/QtPropertyBrowser.git
-      PATCH_COMMAND ${PATCH_COMMAND} -N -p1 -i ${CMAKE_CURRENT_LIST_DIR}/QtPropertyBrowser_qt6.patch
+      PATCH_COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=<SOURCE_DIR> -P ${CMAKE_CURRENT_LIST_DIR}/QtPropertyBrowser_qt6_patch.cmake
       CMAKE_GENERATOR ${gen}
       CMAKE_ARGS
          ${ep_common_args}
