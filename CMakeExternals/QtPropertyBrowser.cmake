@@ -17,6 +17,7 @@ if(NOT DEFINED QtPropertyBrowser_DIR)
     ExternalProject_Add(${proj}
       LIST_SEPARATOR ${sep}
       GIT_REPOSITORY https://github.com/rkhlebnikov/QtPropertyBrowser.git
+      PATCH_COMMAND ${PATCH_COMMAND} -N -p1 -i ${CMAKE_CURRENT_LIST_DIR}/QtPropertyBrowser_qt6.patch
       CMAKE_GENERATOR ${gen}
       CMAKE_ARGS
          ${ep_common_args}
@@ -27,7 +28,7 @@ if(NOT DEFINED QtPropertyBrowser_DIR)
          "-DBUILD_CONFIGURATION:STRING=${CMAKE_BUILD_TYPE}"
          "-DQt6_DIR:PATH=${Qt6_DIR}"
          
-         CMAKE_CACHE_ARGS
+      CMAKE_CACHE_ARGS
         ${ep_common_cache_args}
       INSTALL_COMMAND ""
       CMAKE_CACHE_DEFAULT_ARGS

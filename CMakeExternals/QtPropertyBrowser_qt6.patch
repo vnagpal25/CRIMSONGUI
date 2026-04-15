@@ -1,0 +1,41 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1234567..abcdefg 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.2)
++CMAKE_MINIMUM_REQUIRED(VERSION 3.16)
+ 
+ PROJECT(QtPropertyBrowser)
+ 
+@@ -23,7 +23,7 @@ set(CMAKE_AUTOMOC ON)
+ #-----------------------------------------------------------------------------
+ # Qt
+ #
+-FIND_PACKAGE(Qt5 COMPONENTS Widgets REQUIRED)
++FIND_PACKAGE(Qt6 COMPONENTS Widgets REQUIRED)
+ 
+ #-----------------------------------------------------------------------------
+ # Subdirectories
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 1234567..abcdefg 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -37,9 +37,8 @@ INCLUDE_DIRECTORIES(
+  ${CMAKE_CURRENT_BINARY_DIR}
+  )
+  
+-QT5_WRAP_UI(KIT_UI_CPP ${KIT_UI_FORMS})
+-#QT5_WRAP_CPP(KIT_MOC_CPP ${KIT_MOC_SRCS})
+-QT5_ADD_RESOURCES(KIT_QRC_SRCS ${KIT_resources})
++QT6_WRAP_UI(KIT_UI_CPP ${KIT_UI_FORMS})
++QT6_ADD_RESOURCES(KIT_QRC_SRCS ${KIT_resources})
+ 
+ SET(libname ${PROJECT_NAME})
+ ADD_LIBRARY(${libname} SHARED
+@@ -53,4 +52,4 @@ TARGET_LINK_LIBRARIES(
+  ${${PROJECT_NAME}_LINK_LIBRARIES}
+  )
+ 
+-qt5_use_modules(${libname} Widgets Gui Core)
++target_link_libraries(${libname} Qt6::Widgets Qt6::Gui Qt6::Core)
