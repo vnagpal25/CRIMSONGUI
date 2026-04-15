@@ -122,6 +122,9 @@ file(READ "${_file}" _content)
 string(REPLACE "setMargin(0)" "setContentsMargins(0, 0, 0, 0)" _content "${_content}")
 # QTreeWidget::setItemExpanded removed — use QTreeWidgetItem::setExpanded
 string(REPLACE "m_treeWidget->setItemExpanded(newItem, true)" "newItem->setExpanded(true)" _content "${_content}")
+# QStyleOptionViewItemV2/V3 merged into QStyleOptionViewItem in Qt6
+string(REPLACE "QStyleOptionViewItemV3" "QStyleOptionViewItem" _content "${_content}")
+string(REPLACE "QStyleOptionViewItemV2" "QStyleOptionViewItem" _content "${_content}")
 file(WRITE "${_file}" "${_content}")
 
 # --- qtpropertybrowserutils.cpp ---
