@@ -54,6 +54,8 @@ string(REPLACE
   _content "${_content}")
 # exactMatch() does not exist in QRegularExpression
 string(REPLACE "exactMatch(val)" "match(val).hasMatch()" _content "${_content}")
+# QFont::resolve() (no-arg overload) removed in Qt6
+string(REPLACE ".resolve()" ".resolveMask()" _content "${_content}")
 # Add include
 string(REPLACE
   "#include \"qtpropertymanager.h\""
