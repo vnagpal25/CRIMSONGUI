@@ -66,6 +66,8 @@ set(project_policies
   CMP0020 # NEW: Automatically link Qt executables to qtmain target on Windows
   CMP0028 # NEW: Double colon in target name means ALIAS or IMPORTED target.
   CMP0043 # NEW: Ignore COMPILE_DEFINITIONS_<Config> properties.
+  CMP0074 # NEW: find_package() uses <PackageName>_ROOT variables.
+  CMP0144 # NEW: find_package(BOOST) uses uppercase BOOST_ROOT, not Boost_ROOT.
   )
 foreach(policy ${project_policies})
   if(POLICY ${policy})
