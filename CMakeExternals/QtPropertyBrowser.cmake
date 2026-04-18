@@ -17,6 +17,12 @@ if(NOT DEFINED QtPropertyBrowser_DIR)
     ExternalProject_Add(${proj}
       LIST_SEPARATOR ${sep}
       GIT_REPOSITORY https://github.com/rkhlebnikov/QtPropertyBrowser.git
+      # Local identity so git fetch/merge in the update step does not fail on machines
+      # with no global user.name / user.email (CI, fresh VMs).
+      GIT_CONFIG user.email=superbuild@crimson.local
+      GIT_CONFIG user.name=CRIMSON-Superbuild
+      # Skip periodic git pull; avoids update failures and keeps builds reproducible.
+      UPDATE_COMMAND ""
       PATCH_COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=<SOURCE_DIR> -P ${CMAKE_CURRENT_LIST_DIR}/QtPropertyBrowser_qt6_patch.cmake
       CMAKE_GENERATOR ${gen}
       CMAKE_ARGS
