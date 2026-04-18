@@ -130,6 +130,23 @@ foreach(p MITK ${external_projects})
   include(CMakeExternals/${p}.cmake)
 endforeach()
 
+# MITK superbuild installs VMTK, CGAL, and other packages under <MITK superbuild root>/ep.
+# CRIMSON-Configure must search that tree or find_package(VMTK) fails ("Missing package: VMTK").
+set(CRIMSON_EXTRA_CMAKE_PREFIX_PATH "" CACHE PATH "Optional extra prefix(es) for CRIMSON-Configure CMAKE_PREFIX_PATH if VMTK/CGAL are not under MITK_DIR/../ep")
+set(_crimson_cmake_prefix_path "")
+if(MITK_DIR)
+  get_filename_component(_mitk_superbuild_root "${MITK_DIR}/.." ABSOLUTE)
+  if(EXISTS "${_mitk_superbuild_root}/ep")
+    list(APPEND _crimson_cmake_prefix_path "${_mitk_superbuild_root}/ep")
+  endif()
+endif()
+if(CRIMSON_EXTRA_CMAKE_PREFIX_PATH)
+  list(APPEND _crimson_cmake_prefix_path "${CRIMSON_EXTRA_CMAKE_PREFIX_PATH}")
+endif()
+list(APPEND _crimson_cmake_prefix_path "C:/Vansh_Files/Qt/6.11.0/msvc2022_64/lib/cmake")
+list(REMOVE_DUPLICATES _crimson_cmake_prefix_path)
+list(JOIN _crimson_cmake_prefix_path ";" _crimson_cmake_prefix_path_joined)
+
 #-----------------------------------------------------------------------------
 # Set superbuild boolean args
 #-----------------------------------------------------------------------------
@@ -231,7 +248,7 @@ ExternalProject_Add(${proj}
     # ----------------- Miscellaneous ---------------
     -D${MY_PROJECT_NAME}_SUPERBUILD_BINARY_DIR:PATH=${PROJECT_BINARY_DIR}
     -DQt6_DIR:PATH=${Qt6_DIR}
-    -DCMAKE_PREFIX_PATH:PATH=C:/Vansh_Files/Qt/6.11.0/msvc2022_64/lib/cmake
+    "-DCMAKE_PREFIX_PATH:PATH=${_crimson_cmake_prefix_path_joined}"
     -DMITK_DIR:PATH=${MITK_DIR}
     -DITK_DIR:PATH=${ITK_DIR}
     -DVTK_DIR:PATH=${VTK_DIR}
