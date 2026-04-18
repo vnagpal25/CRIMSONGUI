@@ -54,6 +54,24 @@ else()
     else()
       SET(OS_WITH_BIT "lin${COMPILER_BITNESS}")
     endif()
+
+    # MSVC14+ (VS2015 and later) is not covered by the MSVC70..MSVC12 mapping above, which
+    # leaves COMPILER empty and breaks paths like ${OCC_DIR}/win64/${COMPILER}/libd.
+    # The superbuilt OCCT layout under OCC_DIR uses a vc* directory (often vc14); detect it.
+    if(MSVC AND OCC_DIR)
+      if(NOT COMPILER)
+        foreach(_occ_vc vc143 vc142 vc141 vc14 vc12 vc11 vc10)
+          if(EXISTS "${OCC_DIR}/${OS_WITH_BIT}/${_occ_vc}/libd/TKernel.lib")
+            set(COMPILER ${_occ_vc})
+            break()
+          endif()
+          if(EXISTS "${OCC_DIR}/${OS_WITH_BIT}/${_occ_vc}/lib/TKernel.lib")
+            set(COMPILER ${_occ_vc})
+            break()
+          endif()
+        endforeach()
+      endif()
+    endif()
     
     ### END FROM OpenCASCADE's CMakeLists.txt
     ########################################################
