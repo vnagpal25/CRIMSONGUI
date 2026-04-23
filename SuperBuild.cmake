@@ -132,6 +132,9 @@ endforeach()
 
 # MITK superbuild installs VMTK, CGAL, and other packages under <MITK superbuild root>/ep.
 # CRIMSON-Configure must search that tree or find_package(VMTK) fails ("Missing package: VMTK").
+# If your MITK tree has no ep/lib/cmake/VMTK, build the VMTK target in the MITK *superbuild*
+# solution, or build VMTK separately and set VMTK_DIR to the folder that contains VMTKConfig.cmake.
+set(VMTK_DIR "C:/v/vmtk-install/lib" CACHE PATH "Directory containing VMTKConfig.cmake (override in CMake GUI if needed)")
 set(CRIMSON_EXTRA_CMAKE_PREFIX_PATH "" CACHE PATH "Optional extra prefix(es) for CRIMSON-Configure CMAKE_PREFIX_PATH if VMTK/CGAL are not under MITK_DIR/../ep")
 set(_crimson_cmake_prefix_path "")
 if(MITK_DIR)
@@ -146,6 +149,11 @@ endif()
 list(APPEND _crimson_cmake_prefix_path "C:/Vansh_Files/Qt/6.11.0/msvc2022_64/lib/cmake")
 list(REMOVE_DUPLICATES _crimson_cmake_prefix_path)
 list(JOIN _crimson_cmake_prefix_path ";" _crimson_cmake_prefix_path_joined)
+
+set(CRIMSON_CONFIGURE_EXTRA_ARGS "")
+if(VMTK_DIR)
+  list(APPEND CRIMSON_CONFIGURE_EXTRA_ARGS "-DVMTK_DIR:PATH=${VMTK_DIR}")
+endif()
 
 #-----------------------------------------------------------------------------
 # Set superbuild boolean args
@@ -258,6 +266,7 @@ ExternalProject_Add(${proj}
     -DPRESOLVER_EXECUTABLE:FILEPATH=${presolver_executable}
     -DGSL_INCLUDE_DIR:PATH=${GSL_INCLUDE_DIR}
     -DCRIMSON_MESHING_KERNEL:STRING=${CRIMSON_MESHING_KERNEL}
+    ${CRIMSON_CONFIGURE_EXTRA_ARGS}
 
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} # Since we're running in ./, this will cause cmake to re-run ./CMakeLists.txt!
   BINARY_DIR ${CMAKE_BINARY_DIR}/${MY_PROJECT_NAME}-build
