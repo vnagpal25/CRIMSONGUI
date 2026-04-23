@@ -146,9 +146,15 @@ endif()
 if(CRIMSON_EXTRA_CMAKE_PREFIX_PATH)
   list(APPEND _crimson_cmake_prefix_path "${CRIMSON_EXTRA_CMAKE_PREFIX_PATH}")
 endif()
+if(VMTK_DIR AND EXISTS "${VMTK_DIR}")
+  get_filename_component(_vmtk_install_root "${VMTK_DIR}/.." ABSOLUTE)
+  list(APPEND _crimson_cmake_prefix_path "${_vmtk_install_root}")
+endif()
 list(APPEND _crimson_cmake_prefix_path "C:/Vansh_Files/Qt/6.11.0/msvc2022_64/lib/cmake")
 list(REMOVE_DUPLICATES _crimson_cmake_prefix_path)
-list(JOIN _crimson_cmake_prefix_path ";" _crimson_cmake_prefix_path_joined)
+# Use the same LIST_SEPARATOR as ExternalProject (^^); raw ';' breaks VS/MSBuild argument
+# splitting and CMake then warns: Ignoring extra path from command line: \"...\"
+list(JOIN _crimson_cmake_prefix_path "${sep}" _crimson_cmake_prefix_path_joined)
 
 set(CRIMSON_CONFIGURE_EXTRA_ARGS "")
 if(VMTK_DIR)
@@ -219,6 +225,7 @@ set(proj ${MY_PROJECT_NAME}-Configure)
 
 # NOTE: This project "Recycles" ./CMakeLists.txt...
 ExternalProject_Add(${proj}
+  LIST_SEPARATOR ${sep}
   DOWNLOAD_COMMAND ""
   CMAKE_GENERATOR ${gen}
   CMAKE_ARGS
