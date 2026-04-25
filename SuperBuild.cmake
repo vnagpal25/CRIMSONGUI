@@ -32,7 +32,6 @@ if(NOT PATCH_COMMAND)
       HINTS
         "$ENV{ProgramFiles}/Git/usr/bin"
         "$ENV{ProgramFiles}/Git/mingw64/bin"
-        "$ENV{ProgramFiles(x86)}/Git/usr/bin"
         "$ENV{LOCALAPPDATA}/Programs/Git/usr/bin"
         "$ENV{SystemDrive}/Program Files/Git/usr/bin"
         "$ENV{SystemDrive}/Program Files (x86)/Git/usr/bin"
