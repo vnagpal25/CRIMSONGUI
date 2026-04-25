@@ -1,3 +1,6 @@
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
 if(MITK_USE_Boost_LIBRARIES)
   find_package(Boost 1.60.0 REQUIRED COMPONENTS ${MITK_USE_Boost_LIBRARIES} QUIET)
 else()

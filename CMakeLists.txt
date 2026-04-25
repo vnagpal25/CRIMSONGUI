@@ -4,7 +4,11 @@
 # - Top level Superbuild configuration
 # - Crimson-Configure project for building the CRIMSON application itself.
 
-cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
+# Default for nested MITK dependency scripts that do not set CMP0167 (CMake 3.30+: FindBoost removed).
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.23 AND POLICY CMP0167)
+  set(CMAKE_POLICY_DEFAULT_CMP0167 NEW)
+endif()
 
 # Change project and application name to your own
 set(MY_PROJECT_NAME CRIMSON)
@@ -17,7 +21,7 @@ set(CMAKE_INSTALL_OPENMP_LIBRARIES TRUE)
 #-----------------------------------------------------------------------------
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  message(STATUS "Setting build type to 'Debug' as none was specified.")
+  message(STATUS "Setting build type to 'Release' as none was specified (single-configuration generator).")
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build (Release recommended)." FORCE)
 
   # Set the possible values of build type for cmake-gui
@@ -67,7 +71,9 @@ set(project_policies
   CMP0028 # NEW: Double colon in target name means ALIAS or IMPORTED target.
   CMP0043 # NEW: Ignore COMPILE_DEFINITIONS_<Config> properties.
   CMP0074 # NEW: find_package() uses <PackageName>_ROOT variables.
+  CMP0135 # NEW: ExternalProject URL extracts use extraction time for timestamps.
   CMP0144 # NEW: find_package(BOOST) uses uppercase BOOST_ROOT, not Boost_ROOT.
+  CMP0167 # NEW: find_package(Boost) uses Boost's CMake package, not FindBoost.
   )
 foreach(policy ${project_policies})
   if(POLICY ${policy})
@@ -326,8 +332,19 @@ endif()
 #-----------------------------------------------------------------------------
 
 if(MITK_USE_Qt6)
-  set(QT_QMAKE_EXECUTABLE ${MITK_QMAKE_EXECUTABLE})
-    add_definitions(-DQWT_DLL)
+  if(MITK_QMAKE_EXECUTABLE)
+    set(QT_QMAKE_EXECUTABLE "${MITK_QMAKE_EXECUTABLE}")
+  elseif(Qt6_DIR)
+    get_filename_component(_qt6_install_prefix "${Qt6_DIR}/../../.." ABSOLUTE)
+    find_program(QT_QMAKE_EXECUTABLE NAMES qmake qmake.exe HINTS "${_qt6_install_prefix}/bin" NO_DEFAULT_PATH)
+  endif()
+  if(NOT QT_QMAKE_EXECUTABLE)
+    find_program(QT_QMAKE_EXECUTABLE NAMES qmake qmake.exe)
+  endif()
+  if(QT_QMAKE_EXECUTABLE)
+    set(QT_QMAKE_EXECUTABLE "${QT_QMAKE_EXECUTABLE}" CACHE FILEPATH "Path to Qt qmake (for MITK helper scripts)" FORCE)
+  endif()
+  add_definitions(-DQWT_DLL)
 endif()
 
 

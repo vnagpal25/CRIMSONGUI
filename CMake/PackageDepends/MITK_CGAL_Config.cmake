@@ -1,3 +1,7 @@
+# Honor explicit install dir (seeded by SuperBuild initial cache) and MITK superbuild layout.
+if(NOT CGAL_DIR AND DEFINED ENV{CGAL_DIR})
+  set(CGAL_DIR "$ENV{CGAL_DIR}")
+endif()
 find_package(CGAL REQUIRED)
 
 if(TARGET CGAL::CGAL)

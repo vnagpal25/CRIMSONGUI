@@ -1,3 +1,12 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-cmake_minimum_required (VERSION 2.8.10 FATAL_ERROR)
++cmake_minimum_required (VERSION 3.16 FATAL_ERROR)
+ 
+ set (CMAKE_SUPPRESS_REGENERATION TRUE)
+ 
 diff --git a/src/BSplCLib/BSplCLib.cxx b/src/BSplCLib/BSplCLib.cxx
 index 54cfce7..6833970 100644
 --- a/src/BSplCLib/BSplCLib.cxx

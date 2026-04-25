@@ -242,10 +242,13 @@ else()
   set(my_vtk_dir ${VTK_DIR})
   set(my_qmake_executable ${QT_QMAKE_EXECUTABLE})
 
-  # FindBoost in CMake 3.31 rejects Boost_ROOT when CMP0074 != NEW.
-  # This policy scope propagates into find_package(MITK) and its nested
-  # find_package(Boost) call since MITKConfig.cmake has no cmake_minimum_required().
+  # Propagate into find_package(MITK) and nested find_package(Boost): MITKConfig.cmake
+  # does not set policies. CMP0074: honor <Package>_ROOT. CMP0167: use Boost's CMake
+  # package instead of removed FindBoost (CMake 3.30+).
   cmake_policy(SET CMP0074 NEW)
+  if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+  endif()
   find_package(MITK REQUIRED)
 
   # find_package(MITK) sets TBB_DIR to MITK's own TBB config location as a
