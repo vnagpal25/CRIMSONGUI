@@ -32,12 +32,18 @@ if (WIN32)
         set(_WM5_VS_BUILD_PLATFORM "Win32")
     endif()
     
-    # Force toolset upgrade so VS2022 can build the old VC120 solution
-    set (WM5_BUILD_COMMAND "${CMAKE_MAKE_PROGRAM}" 
-        "<SOURCE_DIR>/WildMagic5Wgl_VC${_WM5_VS_VERSION_POSTFIX}.sln" 
-        "/t:Libraries\\LibCore_VC${_WM5_VS_VERSION_POSTFIX}" 
-        "/t:Libraries\\LibMathematics_VC${_WM5_VS_VERSION_POSTFIX}" 
-        "/p:Configuration=${CMAKE_CFG_INTDIR}" "/p:Platform=${_WM5_VS_BUILD_PLATFORM}" "/p:PlatformToolset=v143")
+    # Force toolset upgrade so VS2022 can build the old VC120 solution.
+    # /maxcpucount:1 and ConformanceMode=false reduce MSVC internal compiler errors (C1001)
+    # on legacy WildMagic sources when using the v143 toolset.
+    set (WM5_BUILD_COMMAND "${CMAKE_MAKE_PROGRAM}"
+        "/maxcpucount:1"
+        "<SOURCE_DIR>/WildMagic5Wgl_VC${_WM5_VS_VERSION_POSTFIX}.sln"
+        "/t:Libraries\\LibCore_VC${_WM5_VS_VERSION_POSTFIX}"
+        "/t:Libraries\\LibMathematics_VC${_WM5_VS_VERSION_POSTFIX}"
+        "/p:Configuration=${CMAKE_CFG_INTDIR}"
+        "/p:Platform=${_WM5_VS_BUILD_PLATFORM}"
+        "/p:PlatformToolset=v143"
+        "/p:ConformanceMode=false")
         
 else()
     set(WM5_BUILD_COMMAND "${CMAKE_MAKE_PROGRAM}" "CFG=${CMAKE_BUILD_TYPE}Dynamic" "--file=makefile.wm5" "--directory=<SOURCE_DIR>/LibCore" 
