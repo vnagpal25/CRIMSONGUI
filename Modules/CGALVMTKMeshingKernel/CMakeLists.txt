@@ -3,7 +3,7 @@ message("Start of Modules/CGALVMTKMeshingKernel/CMakeLists.txt")
 MITK_CREATE_MODULE( CGALVMTKMeshingKernel 
   INCLUDE_DIRS DataManagement ExtensionPoint IO Rendering
   DEPENDS MitkSceneSerializationBase MitkMapperExt SolidKernel
-  PACKAGE_DEPENDS PUBLIC GSL OCC Boost VMTK VTK|vtkFiltersVerdict CGAL Qt6|Widgets+Core
+  PACKAGE_DEPENDS PUBLIC GSL OCC Boost VMTK VTK|FiltersVerdict CGAL Qt6|Widgets+Core
   PRIVATE Eigen3 WM5
 )
 
