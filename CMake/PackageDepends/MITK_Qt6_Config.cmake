@@ -1,0 +1,4 @@
+find_package(Qt6 COMPONENTS ${Qt6_REQUIRED_COMPONENTS_BY_MODULE} REQUIRED QUIET)
+foreach(_component ${Qt6_REQUIRED_COMPONENTS_BY_MODULE})
+  list(APPEND ALL_LIBRARIES Qt6::${_component})
+endforeach()
