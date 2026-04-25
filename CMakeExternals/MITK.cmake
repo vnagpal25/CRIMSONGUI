@@ -242,6 +242,21 @@ else()
   set(my_vtk_dir ${VTK_DIR})
   set(my_qmake_executable ${QT_QMAKE_EXECUTABLE})
 
+  # MITKConfig.cmake runs find_package(Boost) again; searches must match the MITK build.
+  # MITK superbuild installs dependencies under <MITK_DIR>/../ep — add it before find_package(MITK).
+  get_filename_component(_mitk_tree "${MITK_DIR}/.." ABSOLUTE)
+  if(EXISTS "${_mitk_tree}/ep")
+    list(PREPEND CMAKE_PREFIX_PATH "${_mitk_tree}/ep")
+  endif()
+  set(MITK_BOOST_ROOT "" CACHE PATH "Boost install prefix when using pre-built MITK (optional if Boost is under MITK ../ep)")
+  if(MITK_BOOST_ROOT)
+    set(BOOST_ROOT "${MITK_BOOST_ROOT}" CACHE PATH "" FORCE)
+    set(Boost_ROOT "${MITK_BOOST_ROOT}" CACHE PATH "" FORCE)
+    list(PREPEND CMAKE_PREFIX_PATH "${MITK_BOOST_ROOT}")
+  elseif(BOOST_ROOT)
+    list(PREPEND CMAKE_PREFIX_PATH "${BOOST_ROOT}")
+  endif()
+
   # Propagate into find_package(MITK) and nested find_package(Boost): MITKConfig.cmake
   # does not set policies. CMP0074: honor <Package>_ROOT. CMP0167: use Boost's CMake
   # package instead of removed FindBoost (CMake 3.30+).
