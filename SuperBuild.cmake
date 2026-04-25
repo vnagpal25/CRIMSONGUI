@@ -15,18 +15,20 @@ macro(downloadFile url dest)
   endif()
 endmacro()
 
-# We need GNU patch for ExternalProject PATCH_COMMAND (OCC, freetype, etc.).
-# Pre-built MITK does not skip this: the CRIMSON superbuild still patches other deps.
-# On Windows, prefer Git for Windows' patch.exe (usually not on PATH in VS prompts).
-set(CRIMSON_PATCH_EXECUTABLE "" CACHE FILEPATH
-  "Optional: full path to GNU patch (patch.exe). Set this if configure cannot find patch and mitk.org download fails.")
+# GNU patch for ExternalProject PATCH_COMMAND (OCC, freetype, etc.).
+# Optional override if nothing is on PATH and mitk.org download fails:
+set(CRIMSON_PATCH_EXECUTABLE "" CACHE FILEPATH "Full path to patch (patch.exe); optional")
 
-set(PATCH_COMMAND "")
-if(CRIMSON_PATCH_EXECUTABLE AND EXISTS "${CRIMSON_PATCH_EXECUTABLE}")
-  set(PATCH_COMMAND "${CRIMSON_PATCH_EXECUTABLE}")
+# Drop a stale CMake cache entry so find_program can search again (e.g. after installing Git).
+if("${PATCH_COMMAND}" MATCHES "NOTFOUND")
+  unset(PATCH_COMMAND CACHE)
+elseif(PATCH_COMMAND AND NOT EXISTS "${PATCH_COMMAND}")
+  unset(PATCH_COMMAND CACHE)
 endif()
 
-if(NOT PATCH_COMMAND)
+if(CRIMSON_PATCH_EXECUTABLE AND EXISTS "${CRIMSON_PATCH_EXECUTABLE}")
+  set(PATCH_COMMAND "${CRIMSON_PATCH_EXECUTABLE}" CACHE FILEPATH "GNU patch for ExternalProject" FORCE)
+else()
   if(WIN32)
     find_program(PATCH_COMMAND NAMES patch patch.exe
       HINTS
@@ -37,41 +39,22 @@ if(NOT PATCH_COMMAND)
         "$ENV{SystemDrive}/Program Files (x86)/Git/usr/bin"
     )
   endif()
-endif()
-if(NOT PATCH_COMMAND)
-  find_program(PATCH_COMMAND NAMES patch patch.exe)
-endif()
-
-if((NOT PATCH_COMMAND OR NOT EXISTS "${PATCH_COMMAND}") AND WIN32)
-  set(_crimson_patch_urls
-    "${MITK_THIRDPARTY_DOWNLOAD_PREFIX_URL}/patch.exe"
-    "https://www.mitk.org/download/thirdparty/patch.exe"
-    "http://www.mitk.org/download/thirdparty/patch.exe"
-  )
-  set(_crimson_patch_dest "${CMAKE_CURRENT_BINARY_DIR}/patch.exe")
-  set(_crimson_patch_ok FALSE)
-  foreach(_u IN LISTS _crimson_patch_urls)
-    file(DOWNLOAD "${_u}" "${_crimson_patch_dest}" STATUS _st TLS_VERIFY ON)
-    list(GET _st 0 _code)
-    if(NOT _code)
-      set(_crimson_patch_ok TRUE)
-      break()
-    endif()
-  endforeach()
-  if(_crimson_patch_ok)
-    find_program(PATCH_COMMAND NAMES patch patch.exe HINTS "${CMAKE_CURRENT_BINARY_DIR}" NO_DEFAULT_PATH)
-  else()
-    message(FATAL_ERROR
-      "No patch program found and download of patch.exe failed (mitk.org may be unreachable).\n"
-      "  Fix (pick one):\n"
-      "  - Install Git for Windows (includes usr/bin/patch.exe), then re-run CMake, or\n"
-      "  - Set CRIMSON_PATCH_EXECUTABLE to patch.exe from Git (e.g. .../Git/usr/bin/patch.exe), or\n"
-      "  - Add the directory containing GNU patch to PATH.\n"
-      "MITK_DIR / EXTERNAL_MITK_DIR only skips building MITK; OCC and other externals still need patch.")
+  if(NOT PATCH_COMMAND)
+    find_program(PATCH_COMMAND NAMES patch patch.exe)
+  endif()
+  # Original behavior: fetch patch.exe on Windows when not found (same URL as historic MITK superbuild).
+  if((NOT PATCH_COMMAND OR NOT EXISTS "${PATCH_COMMAND}") AND WIN32)
+    downloadFile(${MITK_THIRDPARTY_DOWNLOAD_PREFIX_URL}/patch.exe
+                 ${CMAKE_CURRENT_BINARY_DIR}/patch.exe)
+    unset(PATCH_COMMAND CACHE)
+    find_program(PATCH_COMMAND NAMES patch patch.exe PATHS "${CMAKE_CURRENT_BINARY_DIR}" NO_DEFAULT_PATH)
   endif()
 endif()
+
 if(NOT PATCH_COMMAND OR NOT EXISTS "${PATCH_COMMAND}")
-  message(FATAL_ERROR "No patch program found.")
+  message(FATAL_ERROR
+    "No patch program found. On Windows: install Git for Windows, or set CRIMSON_PATCH_EXECUTABLE to .../Git/usr/bin/patch.exe, "
+    "or ensure ${MITK_THIRDPARTY_DOWNLOAD_PREFIX_URL}/patch.exe is reachable.")
 endif()
 
 #-----------------------------------------------------------------------------
