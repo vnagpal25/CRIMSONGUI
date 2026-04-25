@@ -243,7 +243,6 @@ else()
   set(my_qmake_executable ${QT_QMAKE_EXECUTABLE})
 
   # MITKConfig.cmake runs find_package(Boost) again; searches must match the MITK build.
-  # MITK superbuild installs dependencies under <MITK_DIR>/../ep — add it before find_package(MITK).
   get_filename_component(_mitk_tree "${MITK_DIR}/.." ABSOLUTE)
   if(EXISTS "${_mitk_tree}/ep")
     list(PREPEND CMAKE_PREFIX_PATH "${_mitk_tree}/ep")
@@ -257,12 +256,36 @@ else()
     list(PREPEND CMAKE_PREFIX_PATH "${BOOST_ROOT}")
   endif()
 
-  # Propagate into find_package(MITK) and nested find_package(Boost): MITKConfig.cmake
-  # does not set policies. CMP0074: honor <Package>_ROOT. CMP0167: use Boost's CMake
-  # package instead of removed FindBoost (CMake 3.30+).
+  # CMP0167 NEW => Config mode (BoostConfig.cmake). MITK ep Boost is often b2-only (no BoostConfig).
+  set(_crimson_boost_configs)
+  if(EXISTS "${_mitk_tree}/ep")
+    file(GLOB _crimson_b1 "${_mitk_tree}/ep/lib/cmake/Boost-*/BoostConfig.cmake")
+    list(APPEND _crimson_boost_configs ${_crimson_b1})
+  endif()
+  foreach(_crimson_br IN ITEMS "${MITK_BOOST_ROOT}" "${BOOST_ROOT}")
+    if(_crimson_br AND EXISTS "${_crimson_br}")
+      file(GLOB _crimson_bx "${_crimson_br}/lib/cmake/Boost-*/BoostConfig.cmake")
+      list(APPEND _crimson_boost_configs ${_crimson_bx})
+    endif()
+  endforeach()
+  if(_crimson_boost_configs)
+    list(REMOVE_DUPLICATES _crimson_boost_configs)
+    list(SORT _crimson_boost_configs)
+    list(GET _crimson_boost_configs -1 _crimson_boost_config_file)
+    get_filename_component(_crimson_boost_dir "${_crimson_boost_config_file}" DIRECTORY)
+    set(Boost_DIR "${_crimson_boost_dir}" CACHE PATH "Boost CMake package (pre-built MITK)" FORCE)
+  endif()
+
   cmake_policy(SET CMP0074 NEW)
   if(POLICY CMP0167)
-    cmake_policy(SET CMP0167 NEW)
+    if(Boost_DIR AND EXISTS "${Boost_DIR}/BoostConfig.cmake")
+      cmake_policy(SET CMP0167 NEW)
+    else()
+      cmake_policy(SET CMP0167 OLD)
+      if(NOT BOOST_ROOT AND EXISTS "${_mitk_tree}/ep/include/boost/version.hpp")
+        set(BOOST_ROOT "${_mitk_tree}/ep" CACHE PATH "" FORCE)
+      endif()
+    endif()
   endif()
   find_package(MITK REQUIRED)
 
