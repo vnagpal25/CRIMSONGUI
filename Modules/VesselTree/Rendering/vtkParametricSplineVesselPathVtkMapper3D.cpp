@@ -306,7 +306,8 @@ double vtkParametricSplineVesselPathVtkMapper3D::_getInterSliceDistance(mitk::Ba
         return -1;
     }
 
-    mitk::Stepper* slice = renderer->GetSliceNavigationController()->GetSlice();
+    // SliceNavigationController: GetStepper() replaces removed GetSlice() (MITK slice stepper API).
+    mitk::Stepper* slice = renderer->GetSliceNavigationController()->GetStepper();
     mitk::PlaneGeometry* currentPlaneGeometry = slicedWorldGeometry->GetPlaneGeometry(slice->GetPos());
 
     int nextSliceId = std::min(slice->GetPos() + 1, slice->GetSteps() - 1);

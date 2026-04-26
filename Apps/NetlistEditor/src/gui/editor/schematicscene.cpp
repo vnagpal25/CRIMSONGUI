@@ -1567,6 +1567,7 @@ void SchematicScene::addSupportedItem(QGraphicsItem* gItem, bool initialise)
               QRegularExpression sn("[+\\-]?(?:0|[1-9]\\d*)(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?");
               stringManager_->setRegExp(pComponentParameterValue, sn);
 
+              setupComponentControlSpecification(prop, customDataFileName);
               name->addSubProperty(pComponentParameterValue);
 			        name->addSubProperty(prop);
 			        name->addSubProperty(customDataFileName);
@@ -1614,6 +1615,7 @@ void SchematicScene::addSupportedItem(QGraphicsItem* gItem, bool initialise)
 				QRegularExpression sn("[+\\-]?(?:0|[1-9]\\d*)(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?");
 				stringManager_->setRegExp(pComponentParameterValue, sn);
 
+				setupComponentControlSpecification(prop, customDataFileName);
 				name->addSubProperty(pComponentParameterValue);
 				name->addSubProperty(prop);
 				name->addSubProperty(customDataFileName);

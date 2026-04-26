@@ -36,13 +36,14 @@ public:
 
     itkFactorylessNewMacro(Self);
     itkCloneMacro(Self);
-    std::vector<std::string> SerializeAll() override
+    // MITK BaseDataSerializer API: override Serialize() (single primary filename), not legacy SerializeAll().
+    std::string Serialize() override
     {
         auto data = dynamic_cast<const BaseDataType*>(m_Data.GetPointer());
         if (data == NULL) {
             MITK_ERROR << " Object at " << static_cast<const void*>(this->m_Data) << " is not recognized. Cannot serialize as "
                        << BaseDataType::GetStaticNameOfClass() << ".";
-            return std::vector<std::string>();
+            return {};
         }
 
         std::string baseFileName(this->GetUniqueFilenameInWorkingDirectory());
@@ -57,12 +58,9 @@ public:
         } catch (std::exception& e) {
             MITK_ERROR << " Error serializing object at " << static_cast<const void*>(this->m_Data) << " to " << fullname
                        << ": " << e.what();
-            return std::vector<std::string>();
+            return {};
         }
-        std::vector<std::string> filenames;
-        std::transform(extensions.begin(), extensions.end(), std::back_inserter(filenames),
-                       [&baseFileName](const std::string& ext) { return baseFileName + ext; });
-        return filenames;
+        return baseFileName + extensions[0];
     }
 
     void SetParam(const std::vector<std::string>& param) { extensions = param; }

@@ -203,8 +203,8 @@ private:
 
         mitk::SliceNavigationController* snc = GetSliceNavigationController();
         if (snc) {
-            snc->GetSlice()->SetSteps(m_Slices);
-            snc->GetSlice()->SetPos(snc->GetSlice()->GetPos()); // Clamp the position in case the number of steps decreased
+            snc->GetStepper()->SetSteps(m_Slices);
+            snc->GetStepper()->SetPos(snc->GetStepper()->GetPos()); // Clamp the position in case the number of steps decreased
             snc->Update();
         }
 

@@ -134,10 +134,10 @@ elseif(WIN32)
   endif(NOT QWT5_DLL_DIR STREQUAL "QWT5_DLL_DIR-NOTFOUND")
 endif()
 
+# Link Qt via Qt6::* targets only; ${QT_LIBRARIES} is legacy and can expand to bare Qt6Core.lib (LNK1104 on MSVC).
 set(
   LIBS
-  ${LIBS} 
-  ${QT_LIBRARIES}
+  ${LIBS}
   ${Qwt_LIBRARIES}
   QtPropertyBrowser
 )

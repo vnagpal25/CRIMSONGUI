@@ -171,7 +171,7 @@ bool SchematicEditor::save()
 			return false;
 		}
 	}
-
+	return false;
 }
 
 

@@ -264,13 +264,13 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
     auto modifiedCommand = itk::MemberCommand<VesselDrivenResliceView>::New();
     modifiedCommand->SetCallbackFunction(this, &VesselDrivenResliceView::_syncSliderWithStepper);
     modifiedCommand->SetCallbackFunction(this, &VesselDrivenResliceView::_syncSliderWithStepperC);
-    d->_addObserver(ooSNC, d->renderWindow->GetRenderer()->GetSliceNavigationController()->GetSlice(), itk::ModifiedEvent(), modifiedCommand);
+    d->_addObserver(ooSNC, d->renderWindow->GetRenderer()->GetSliceNavigationController()->GetStepper(), itk::ModifiedEvent(), modifiedCommand);
 
 
     modifiedCommand = itk::MemberCommand<VesselDrivenResliceView>::New();
     modifiedCommand->SetCallbackFunction(this, &VesselDrivenResliceView::_syncSliderWithStepper);
     modifiedCommand->SetCallbackFunction(this, &VesselDrivenResliceView::_syncSliderWithStepperC);
-    d->_addObserver(ooSNC_GradMag, d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetSlice(), itk::ModifiedEvent(), modifiedCommand);
+    d->_addObserver(ooSNC_GradMag, d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetStepper(), itk::ModifiedEvent(), modifiedCommand);
 
 
     // Connect to the reinitialize command as Global Reinit replaces the renderer's geometries
@@ -307,8 +307,8 @@ void VesselDrivenResliceView::navigateTo(const mitk::Point3D& pos)
     }
     auto vesselDrivenGeometry = static_cast<const crimson::VesselDrivenSlicedGeometry*>(worldTimeGeometry->GetGeometryForTimeStep(0).GetPointer());
     int sliceNo = vesselDrivenGeometry->findSliceByPoint(pos);
-    snc->GetSlice()->SetPos(sliceNo);
-    //d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetSlice()->SetPos(sliceNo);
+    snc->GetStepper()->SetPos(sliceNo);
+    //d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetStepper()->SetPos(sliceNo);
 }
 
 void VesselDrivenResliceView::navigateTo(float parameterValue)
@@ -320,14 +320,14 @@ void VesselDrivenResliceView::navigateTo(float parameterValue)
     }
     auto vesselDrivenGeometry = static_cast<const crimson::VesselDrivenSlicedGeometry*>(worldTimeGeometry->GetGeometryForTimeStep(0).GetPointer());
     int sliceNo = vesselDrivenGeometry->getSliceNumberByParameterValue(parameterValue);
-    snc->GetSlice()->SetPos(sliceNo);
-    //d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetSlice()->SetPos(sliceNo);
+    snc->GetStepper()->SetPos(sliceNo);
+    //d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetStepper()->SetPos(sliceNo);
 }
 
 float VesselDrivenResliceView::getCurrentParameterValue() const
 {
 	auto geometry = dynamic_cast<const crimson::VesselDrivenSlicedGeometry*>(getResliceRenderer()->GetCurrentWorldGeometry());
-    return geometry == nullptr ? 0 : geometry->getParameterValueBySliceNumber(getResliceRenderer()->GetSliceNavigationController()->GetSlice()->GetPos());
+    return geometry == nullptr ? 0 : geometry->getParameterValueBySliceNumber(getResliceRenderer()->GetSliceNavigationController()->GetStepper()->GetPos());
 }
 
 mitk::PlaneGeometry* VesselDrivenResliceView::getPlaneGeometry(float t) const
