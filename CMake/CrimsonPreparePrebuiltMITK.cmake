@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
-# Prepare Boost / prefix paths before find_package(MITK) when using a
-# pre-built MITK (MITK_DIR points at MITK-build).
+# Prepare Boost, CGAL hints, and prefix paths before find_package(MITK) when
+# using a pre-built MITK (MITK_DIR points at MITK-build).
 #
 # The superbuild includes CMakeExternals/MITK.cmake, but CRIMSON-Configure
 # re-runs the top-level CMakeLists.txt with CRIMSON_USE_SUPERBUILD=OFF and
@@ -58,6 +58,27 @@ macro(crimson_prepare_prebuilt_mitk)
         if(NOT BOOST_ROOT AND EXISTS "${_crimson_mitk_tree}/ep/include/boost/version.hpp")
           set(BOOST_ROOT "${_crimson_mitk_tree}/ep" CACHE PATH "" FORCE)
         endif()
+      endif()
+    endif()
+
+    # CGAL: often installed to ep/lib/cmake/CGAL, but MITK superbuild may only expose a build tree
+    # (CGAL-build next to MITK-build, or ep/src/CGAL-build) until a full install step runs.
+    if(NOT CGAL_DIR OR NOT EXISTS "${CGAL_DIR}/CGALConfig.cmake")
+      if(DEFINED ENV{CGAL_DIR} AND EXISTS "$ENV{CGAL_DIR}/CGALConfig.cmake")
+        set(CGAL_DIR "$ENV{CGAL_DIR}" CACHE PATH "CGAL (from environment)" FORCE)
+      else()
+        foreach(_crimson_cgal_c IN ITEMS
+            "${_crimson_mitk_tree}/ep/lib/cmake/CGAL"
+            "${_crimson_mitk_tree}/ep/lib64/cmake/CGAL"
+            "${_crimson_mitk_tree}/ep/install/lib/cmake/CGAL"
+            "${_crimson_mitk_tree}/CGAL-build"
+            "${_crimson_mitk_tree}/ep/src/CGAL-build"
+          )
+          if(EXISTS "${_crimson_cgal_c}/CGALConfig.cmake")
+            set(CGAL_DIR "${_crimson_cgal_c}" CACHE PATH "Autodetected CGAL (MITK layout)" FORCE)
+            break()
+          endif()
+        endforeach()
       endif()
     endif()
   endif()
