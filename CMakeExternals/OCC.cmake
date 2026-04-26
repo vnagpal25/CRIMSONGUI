@@ -79,6 +79,10 @@ if(NOT DEFINED OCC_DIR)
     set(additional_args
             "-DCMAKE_CXX_FLAGS:STRING=${_occ_superbuild_cxx_flags} ${OCC_CXX_FLAGS}"
             "-DCMAKE_C_FLAGS:STRING=${_occ_superbuild_c_flags} ${OCC_C_FLAGS}"
+            # VS2022 UCRT headers use C++17 features; without /std:c++17, OCCT Debug builds can fail
+            # (e.g. C7525 on _NODISCARD*, garbled parses) when the superbuild CXX standard is older.
+            "-DCMAKE_CXX_STANDARD:STRING=17"
+            "-DCMAKE_CXX_STANDARD_REQUIRED:BOOL=ON"
 
             "-DBUILD_ApplicationFramework:BOOL=OFF"
             "-DBUILD_Draw:BOOL=OFF"
