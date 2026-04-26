@@ -35,9 +35,10 @@ add_definitions(
   -DPACKAGE_NAME="${PACKAGE_NAME}"
   -DPACKAGE_VERSION="${PACKAGE_VERSION}"
 )
-if(WIN32)
-  add_definitions( -static )
-endif(WIN32)
+# -static is for GCC-style Windows toolchains; MSVC passes it through to cl and emits D9002.
+if(WIN32 AND NOT MSVC)
+  add_definitions(-static)
+endif()
 
 if(UNIX)
   set( UNIX_SYS TRUE )
