@@ -1,9 +1,11 @@
 project( CRIMSONBCT )
 cmake_minimum_required( VERSION 2.6 )
 
+# Use this directory, not CMAKE_SOURCE_DIR: NetlistEditor is add_subdirectory'd from CRIMSON,
+# so CMAKE_SOURCE_DIR is the superproject root and would skip Apps/NetlistEditor/cmake/Modules (FindQwt, etc.).
 set(
   CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-  "${CMAKE_SOURCE_DIR}/cmake/Modules/"
+  "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules"
 )
 set( CMAKE_BUILD_TYPE "Release" )
 
