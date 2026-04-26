@@ -6,9 +6,8 @@
 #include <mitkBaseData.h>
 #include <mitkVector.h>
 
-// itk::AnyEvent + itkEventMacro (ITK 5 / modern MITK); mitkBaseData does not always pull these in for MSVC.
+// Custom ITK events: avoid itkEventMacro in headers (ITK 5 split / export / MSVC parsing varies across MITK builds).
 #include <itkEventObject.h>
-#include <itkMacro.h>
 
 #include <vtkSmartPointer.h>
 #include <vtkPolyData.h>
@@ -17,32 +16,105 @@
 
 namespace crimson {
 
-// itkEventMacro expands to full class definitions; nesting those inside VesselPathAbstractData breaks MSVC (parse errors on custom event types).
-itkEventMacro(VesselPathEvent, itk::AnyEvent);
-itkEventMacro(AllControlPointsSetEvent, VesselPathEvent);
-
-class ControlPointEvent : public VesselPathEvent
+class VesselTree_EXPORT VesselPathEvent : public itk::AnyEvent
 {
 public:
-  typedef ControlPointEvent Self;
-  typedef VesselPathEvent Superclass;
+  using Self = VesselPathEvent;
+  using Superclass = itk::AnyEvent;
+  VesselPathEvent() = default;
+  ~VesselPathEvent() override = default;
+  const char* GetEventName() const override { return "VesselPathEvent"; }
+  bool CheckEvent(const itk::EventObject* e) const override { return dynamic_cast<const Self*>(e) != nullptr; }
+  itk::EventObject* MakeObject() const override { return new Self; }
+  VesselPathEvent(const Self& s) : Superclass(s) {}
+
+private:
+  void operator=(const Self&) = delete;
+};
+
+class VesselTree_EXPORT AllControlPointsSetEvent : public VesselPathEvent
+{
+public:
+  using Self = AllControlPointsSetEvent;
+  using Superclass = VesselPathEvent;
+  AllControlPointsSetEvent() = default;
+  ~AllControlPointsSetEvent() override = default;
+  const char* GetEventName() const override { return "AllControlPointsSetEvent"; }
+  bool CheckEvent(const itk::EventObject* e) const override { return dynamic_cast<const Self*>(e) != nullptr; }
+  itk::EventObject* MakeObject() const override { return new Self; }
+  AllControlPointsSetEvent(const Self& s) : Superclass(s) {}
+
+private:
+  void operator=(const Self&) = delete;
+};
+
+class VesselTree_EXPORT ControlPointEvent : public VesselPathEvent
+{
+public:
+  using Self = ControlPointEvent;
+  using Superclass = VesselPathEvent;
 
   ControlPointEvent() : _id(0) {}
   ~ControlPointEvent() override = default;
   const char* GetEventName() const override { return "ControlPointEvent"; }
-  bool CheckEvent(const ::itk::EventObject* e) const override { return dynamic_cast<const Self*>(e) != nullptr; }
-  ::itk::EventObject* MakeObject() const override { return new Self; }
+  bool CheckEvent(const itk::EventObject* e) const override { return dynamic_cast<const Self*>(e) != nullptr; }
+  itk::EventObject* MakeObject() const override { return new Self; }
   void SetControlPointId(std::size_t id) { _id = id; }
   std::size_t GetControlPointId() const { return _id; }
+  ControlPointEvent(const Self& s) : Superclass(s), _id(s._id) {}
 
 private:
   std::size_t _id;
   void operator=(const Self&) = delete;
 };
 
-itkEventMacro(ControlPointInsertEvent, ControlPointEvent);
-itkEventMacro(ControlPointRemoveEvent, ControlPointEvent);
-itkEventMacro(ControlPointModifiedEvent, ControlPointEvent);
+class VesselTree_EXPORT ControlPointInsertEvent : public ControlPointEvent
+{
+public:
+  using Self = ControlPointInsertEvent;
+  using Superclass = ControlPointEvent;
+  ControlPointInsertEvent() = default;
+  ~ControlPointInsertEvent() override = default;
+  const char* GetEventName() const override { return "ControlPointInsertEvent"; }
+  bool CheckEvent(const itk::EventObject* e) const override { return dynamic_cast<const Self*>(e) != nullptr; }
+  itk::EventObject* MakeObject() const override { return new Self; }
+  ControlPointInsertEvent(const Self& s) : Superclass(s) {}
+
+private:
+  void operator=(const Self&) = delete;
+};
+
+class VesselTree_EXPORT ControlPointRemoveEvent : public ControlPointEvent
+{
+public:
+  using Self = ControlPointRemoveEvent;
+  using Superclass = ControlPointEvent;
+  ControlPointRemoveEvent() = default;
+  ~ControlPointRemoveEvent() override = default;
+  const char* GetEventName() const override { return "ControlPointRemoveEvent"; }
+  bool CheckEvent(const itk::EventObject* e) const override { return dynamic_cast<const Self*>(e) != nullptr; }
+  itk::EventObject* MakeObject() const override { return new Self; }
+  ControlPointRemoveEvent(const Self& s) : Superclass(s) {}
+
+private:
+  void operator=(const Self&) = delete;
+};
+
+class VesselTree_EXPORT ControlPointModifiedEvent : public ControlPointEvent
+{
+public:
+  using Self = ControlPointModifiedEvent;
+  using Superclass = ControlPointEvent;
+  ControlPointModifiedEvent() = default;
+  ~ControlPointModifiedEvent() override = default;
+  const char* GetEventName() const override { return "ControlPointModifiedEvent"; }
+  bool CheckEvent(const itk::EventObject* e) const override { return dynamic_cast<const Self*>(e) != nullptr; }
+  itk::EventObject* MakeObject() const override { return new Self; }
+  ControlPointModifiedEvent(const Self& s) : Superclass(s) {}
+
+private:
+  void operator=(const Self&) = delete;
+};
 
 /*! \brief   An interface class for vessel path data. */
 class VesselTree_EXPORT VesselPathAbstractData : public mitk::BaseData

@@ -11,7 +11,21 @@
 namespace crimson {
 class vtkParametricSplineVesselPathDataPrivate;
 
-itkEventMacro(TensionChangeEvent, VesselPathEvent);
+class VesselTree_EXPORT TensionChangeEvent : public VesselPathEvent
+{
+public:
+  using Self = TensionChangeEvent;
+  using Superclass = VesselPathEvent;
+  TensionChangeEvent() = default;
+  ~TensionChangeEvent() override = default;
+  const char* GetEventName() const override { return "TensionChangeEvent"; }
+  bool CheckEvent(const itk::EventObject* e) const override { return dynamic_cast<const Self*>(e) != nullptr; }
+  itk::EventObject* MakeObject() const override { return new Self; }
+  TensionChangeEvent(const Self& s) : Superclass(s) {}
+
+private:
+  void operator=(const Self&) = delete;
+};
 
 /*! \brief   Vessel path based on a vtkParametericSpline. */
 class VesselTree_EXPORT vtkParametricSplineVesselPathData : public VesselPathAbstractData

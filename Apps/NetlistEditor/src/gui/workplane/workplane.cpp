@@ -41,6 +41,7 @@
 #include <qwt_plot_canvas.h>
 #include <qwt_plot_picker.h>
 #include <qwt_plot_marker.h>
+#include <qwt_text.h>
 #include <qwt_scale_engine.h>
 #include <qwt_picker_machine.h>
 
@@ -95,7 +96,7 @@ void MarkableCurve::moved(const QPointF& pos)
     QString label = "( " + QString::number(sample(idx).x()) + ", "
       + QString::number(sample(idx).y()) + " ) ["
       + QString::number(idx) + "]";
-    marker_->setLabel(label);
+    marker_->setLabel(QwtText(label));
 
     Qt::Alignment H =
         (sample(idx).x() >= minXValue() + ((maxXValue() - minXValue()) / 2))
@@ -161,7 +162,7 @@ void MarkedCurve::replotMarker()
 
     QString label = "( " + QString::number(sample(i).x()) + ", "
       + QString::number(sample(i).y()) + " )";
-    marker->setLabel(label);
+    marker->setLabel(QwtText(label));
 
     markers_.push_back(marker);
   }

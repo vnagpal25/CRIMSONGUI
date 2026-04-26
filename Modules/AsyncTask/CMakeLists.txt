@@ -19,6 +19,13 @@ if(_crimson_async_task_tgt)
   elseif(Boost_INCLUDE_DIR)
     target_include_directories(${_crimson_async_task_tgt} SYSTEM PUBLIC ${Boost_INCLUDE_DIR})
   endif()
+  # Last resort: locate header-only signals2 when Boost CMake targets/variables are incomplete at module scope.
+  find_path(_crimson_boost_signals2 NAMES boost/signals2.hpp
+    HINTS ${CMAKE_PREFIX_PATH} $ENV{BOOST_ROOT} ${BOOST_ROOT} ${Boost_INCLUDE_DIRS} ${Boost_INCLUDE_DIR}
+    PATH_SUFFIXES include)
+  if(_crimson_boost_signals2)
+    target_include_directories(${_crimson_async_task_tgt} SYSTEM PUBLIC ${_crimson_boost_signals2})
+  endif()
 endif()
 
 IF( BUILD_TESTING )

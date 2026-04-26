@@ -1,7 +1,6 @@
 find_package( Boost 1.41.0 REQUIRED )
 
-# Core5Compat: QRegExp / QRegExpValidator still used by bundled QtPropertyBrowser (Qt6 removed QRegExp).
-set(QT_COMPONENTS Core Core5Compat Gui PrintSupport Svg OpenGL Concurrent)
+set(QT_COMPONENTS Core Gui PrintSupport Svg OpenGL Concurrent)
 
 find_package( Qt6 COMPONENTS ${QT_COMPONENTS} REQUIRED )
 

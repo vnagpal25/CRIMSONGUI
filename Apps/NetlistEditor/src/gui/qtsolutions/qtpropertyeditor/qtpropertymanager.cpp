@@ -99,6 +99,7 @@
 #include <QApplication>
 #include <QPainter>
 #include <QLabel>
+#include <QRegularExpression>
 
 #include <limits.h>
 #include <float.h>
@@ -110,6 +111,14 @@
 #if QT_VERSION >= 0x040400
 QT_BEGIN_NAMESPACE
 #endif
+
+static bool qtStringPropertyFullRegExpMatch(const QRegularExpression &re, const QString &val)
+{
+    if (!re.isValid())
+        return true;
+    const QRegularExpressionMatch m = re.match(val);
+    return m.hasMatch() && m.capturedStart() == 0 && m.capturedLength() == val.length();
+}
 
 template <class PrivateData, class Value>
 static void setSimpleMinimumData(PrivateData *data, const Value &minVal)
@@ -1275,11 +1284,12 @@ public:
 
     struct Data
     {
-        Data() : regExp(QString(QLatin1Char('*')),  Qt::CaseSensitive, QRegExp::Wildcard)
+        // Qt 6: accept-all pattern (replaces QRegExp wildcard "*").
+        Data() : regExp(QRegularExpression(QStringLiteral(".*")))
         {
         }
         QString val;
-        QRegExp regExp;
+        QRegularExpression regExp;
     };
 
     typedef QMap<const QtProperty *, Data> PropertyValueMap;
@@ -1317,7 +1327,7 @@ public:
 */
 
 /*!
-    \fn void QtStringPropertyManager::regExpChanged(QtProperty *property, const QRegExp &regExp)
+    \fn void QtStringPropertyManager::regExpChanged(QtProperty *property, const QRegularExpression &regExp)
 
     This signal is emitted whenever a property created by this manager
     changes its currenlty set regular expression, passing a pointer to
@@ -1366,9 +1376,10 @@ QString QtStringPropertyManager::value(const QtProperty *property) const
 
     \sa setRegExp()
 */
-QRegExp QtStringPropertyManager::regExp(const QtProperty *property) const
+QRegularExpression QtStringPropertyManager::regExp(const QtProperty *property) const
 {
-    return getData<QRegExp>(d_ptr->m_values, &QtStringPropertyManagerPrivate::Data::regExp, property, QRegExp());
+    return getData<QRegularExpression>(d_ptr->m_values, &QtStringPropertyManagerPrivate::Data::regExp, property,
+                                       QRegularExpression());
 }
 
 /*!
@@ -1403,7 +1414,7 @@ void QtStringPropertyManager::setValue(QtProperty *property, const QString &val)
     if (data.val == val)
         return;
 
-    if (data.regExp.isValid() && !data.regExp.exactMatch(val))
+    if (!qtStringPropertyFullRegExpMatch(data.regExp, val))
         return;
 
     data.val = val;
@@ -1419,7 +1430,7 @@ void QtStringPropertyManager::setValue(QtProperty *property, const QString &val)
 
     \sa regExp(), setValue(), regExpChanged()
 */
-void QtStringPropertyManager::setRegExp(QtProperty *property, const QRegExp &regExp)
+void QtStringPropertyManager::setRegExp(QtProperty *property, const QRegularExpression &regExp)
 {
     const QtStringPropertyManagerPrivate::PropertyValueMap::iterator it = d_ptr->m_values.find(property);
     if (it == d_ptr->m_values.end())

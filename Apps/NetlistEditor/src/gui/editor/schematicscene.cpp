@@ -42,7 +42,7 @@
 
 #include <QtCore/QEvent>
 #include <QtCore/QMetaType>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QtCore/QCryptographicHash>
 #include <QtCore/QPointer>
 
@@ -1442,7 +1442,7 @@ void SchematicScene::addSupportedItem(QGraphicsItem* gItem, bool initialise)
 			  doublePropertyManager_->setSingleStep(prescribedPressure, 0.01);
 			  doublePropertyManager_->setDecimals(prescribedPressure, 13);
 
-			  //QRegExp sn("[+]?(?:0|[1-9]\\d*)(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?");
+			  //QRegularExpression sn("[+]?(?:0|[1-9]\\d*)(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?");
 			  //stringManager_->setRegExp(prescribedPressure, sn);
 			  name->addSubProperty(prescribedPressure);
 
@@ -1564,7 +1564,7 @@ void SchematicScene::addSupportedItem(QGraphicsItem* gItem, bool initialise)
               QtProperty* pComponentParameterValue = stringManager_->addProperty(tr(predefinedStrings::genericComponentParameterName));
 
               stringManager_->setValue(pComponentParameterValue, "1.0");
-              QRegExp sn("[+\\-]?(?:0|[1-9]\\d*)(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?");
+              QRegularExpression sn("[+\\-]?(?:0|[1-9]\\d*)(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?");
               stringManager_->setRegExp(pComponentParameterValue, sn);
 
               name->addSubProperty(pComponentParameterValue);
@@ -1611,7 +1611,7 @@ void SchematicScene::addSupportedItem(QGraphicsItem* gItem, bool initialise)
 				QtProperty* pComponentParameterValue = stringManager_->addProperty(tr("M"));
 
 				stringManager_->setValue(pComponentParameterValue, "1.0");
-				QRegExp sn("[+\\-]?(?:0|[1-9]\\d*)(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?");
+				QRegularExpression sn("[+\\-]?(?:0|[1-9]\\d*)(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?");
 				stringManager_->setRegExp(pComponentParameterValue, sn);
 
 				name->addSubProperty(pComponentParameterValue);
@@ -1683,7 +1683,7 @@ QtProperty* SchematicScene::setupCrimsonBctComponentCommon(Item* const item, Sup
 
 		// Component parameter value box (resistance, compliance, etc..)
 		stringManager_->setValue(pComponentParameterValue, "1.0");
-		QRegExp sn("[+]?(?:0|[1-9]\\d*)(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?");
+		QRegularExpression sn("[+]?(?:0|[1-9]\\d*)(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?");
 		stringManager_->setRegExp(pComponentParameterValue, sn);
 
 		QtVariantProperty* prop;
@@ -1705,7 +1705,7 @@ void SchematicScene::addInitialVolumeParameterSetter(QtProperty* const name)
 
 	// Component parameter value box (resistance, compliance, etc..)
 	stringManager_->setValue(pInitialVolumeParameterValue, "1.0");
-	QRegExp sn("[+]?(?:0|[1-9]\\d*)(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?");
+	QRegularExpression sn("[+]?(?:0|[1-9]\\d*)(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?");
 	stringManager_->setRegExp(pInitialVolumeParameterValue, sn);
 
 
@@ -1797,7 +1797,7 @@ void SchematicScene::setupMutualInductanceProperties(QtProperty* const name)
 	stringManager_->setValue(lpn, name->valueText() + "_Lp");
 	stringManager_->setValue(lsn, name->valueText() + "_Ls");
 
-	QRegExp sn("[+\\-]?(?:0|[1-9]\\d*)(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?");
+	QRegularExpression sn("[+\\-]?(?:0|[1-9]\\d*)(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?");
 	stringManager_->setRegExp(lpv, sn);
 	stringManager_->setValue(lpv, "1.0");
 	stringManager_->setRegExp(lsv, sn);
