@@ -48,7 +48,7 @@ GraphicsNode::GraphicsNode(
   );
 
   setAcceptDrops(false);
-  setFlags(0);
+  setFlags(QGraphicsItem::GraphicsItemFlags());
 }
 
 

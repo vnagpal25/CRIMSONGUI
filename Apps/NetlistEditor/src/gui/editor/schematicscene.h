@@ -310,8 +310,4 @@ private:
 
 }
 
-Q_DECLARE_METATYPE(QPointer<qsapecng::SchematicScene>);
-Q_DECLARE_METATYPE(QtProperty*);
-
-
 #endif // SCHEMATICSCENE_H

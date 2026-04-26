@@ -5,9 +5,12 @@ namespace crimson
 
 bool NodePredicateDerivation::CheckNode(const mitk::DataNode* node) const
 {
-    if (m_DataStorage && m_ParentNode) {
+    // mitk::WeakPointer has no operator->; Lock() yields itk::SmartPointer<T> (or nullptr).
+    const auto storage = m_DataStorage.Lock();
+    const auto parent = m_ParentNode.Lock();
+    if (storage && parent) {
         const mitk::DataStorage::SetOfObjects::STLContainerType children =
-            m_DataStorage->GetDerivations(m_ParentNode, nullptr, !m_SearchAllDerivations)->CastToSTLConstContainer();
+            storage->GetDerivations(parent, nullptr, !m_SearchAllDerivations)->CastToSTLConstContainer();
 
         return std::find(children.begin(), children.end(), node) != children.end();
     }

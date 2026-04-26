@@ -585,7 +585,9 @@ bool MoveItems::mergeWith(const QUndoCommand* command)
   if(command->id() != id())
     return false;
 
-  if(static_cast<const MoveItems*>(command)->items_.toSet() == items_.toSet()) {
+  if(QSet<QGraphicsItem*>{static_cast<const MoveItems*>(command)->items_.begin(),
+                          static_cast<const MoveItems*>(command)->items_.end()} ==
+     QSet<QGraphicsItem*>{items_.begin(), items_.end()}) {
     offset_ += static_cast<const MoveItems*>(command)->offset_;
     return true;
   }

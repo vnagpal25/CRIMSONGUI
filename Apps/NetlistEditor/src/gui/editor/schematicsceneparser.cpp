@@ -35,7 +35,6 @@
 #include <QMessageBox>
 #include <QFileInfo>
 
-#include <boost/assign.hpp>
 #include <memory>
 #include <cctype>
 

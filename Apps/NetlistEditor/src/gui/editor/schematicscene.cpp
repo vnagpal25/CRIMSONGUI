@@ -41,6 +41,7 @@
 #include <QMessageBox>
 
 #include <QtCore/QEvent>
+#include <QtCore/QMetaType>
 #include <QtCore/QRegExp>
 #include <QtCore/QCryptographicHash>
 #include <QtCore/QPointer>
@@ -65,6 +66,21 @@
 #include "utility/qsapecngUtility.h"
 #include "utility/strings.h"
 
+#include "QtProperty"
+
+namespace
+{
+// Qt 6: avoid duplicate QMetaType specializations from Q_DECLARE_METATYPE in headers.
+struct SchematicSceneMetaTypeRegistration
+{
+  SchematicSceneMetaTypeRegistration()
+  {
+    qRegisterMetaType<QPointer<qsapecng::SchematicScene>>();
+    qRegisterMetaType<QtProperty*>();
+  }
+};
+static const SchematicSceneMetaTypeRegistration s_schematicSceneMetaTypes;
+}
 
 namespace qsapecng
 {

@@ -155,6 +155,12 @@ include(CrimsonPreparePrebuiltMITK)
 crimson_prepare_prebuilt_mitk()
 find_package(MITK 2016.11.0 REQUIRED)
 
+# Prebuilt MITK CMake exports reference these targets on their link interface; creating them here
+# avoids configure failures when the consumer project has not yet run the corresponding finds.
+find_package(Boost 1.60.0 REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(OpenMP REQUIRED COMPONENTS CXX)
+
 if(COMMAND mitkFunctionCheckMitkCompatibility)
   mitkFunctionCheckMitkCompatibility(VERSIONS MITK_VERSION_PLUGIN_SYSTEM 1 REQUIRED)
 else()

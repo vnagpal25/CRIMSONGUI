@@ -10,7 +10,7 @@ class ExpandablePerspectiveButtonFrame : public QFrame
     Q_OBJECT
 public:
     ExpandablePerspectiveButtonFrame(const std::string& perspectiveName, const std::vector<std::string>& viewNames,
-                                     QWidget* parent = nullptr, Qt::WindowFlags flags = 0);
+                                     QWidget* parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags());
 
     QAbstractButton* getPerspectiveButton() { return _perspectiveButton; }
     const std::string& getPerspectiveName() const { return _perspectiveName; }
