@@ -63,14 +63,27 @@ set(proj_DEPENDENCIES freetype TBB)
 set(OCC_DEPENDS ${proj})
 
 if(NOT DEFINED OCC_DIR)
-    set(additional_args             
-            "-DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS} ${OCC_CXX_FLAGS}"
-            "-DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS} ${OCC_C_FLAGS}"
+    # -DWNT must be set before additional_args captures OCC_CXX_FLAGS (Windows OCCT).
+    if(WIN32)
+      set(OCC_CXX_FLAGS "${OCC_CXX_FLAGS} -DWNT")
+    endif()
+    # SuperBuild adds /MP; parallel CL on huge OCCT targets (e.g. TKGeomAlgo) can ICE or fail with
+    # D8040 ("error creating or communicating with child process"). Drop /MP for OCC only.
+    if(MSVC)
+      string(REGEX REPLACE " ?/MP[0-9]*" "" _occ_superbuild_cxx_flags "${CMAKE_CXX_FLAGS}")
+      string(REGEX REPLACE " ?/MP[0-9]*" "" _occ_superbuild_c_flags "${CMAKE_C_FLAGS}")
+    else()
+      set(_occ_superbuild_cxx_flags "${CMAKE_CXX_FLAGS}")
+      set(_occ_superbuild_c_flags "${CMAKE_C_FLAGS}")
+    endif()
+    set(additional_args
+            "-DCMAKE_CXX_FLAGS:STRING=${_occ_superbuild_cxx_flags} ${OCC_CXX_FLAGS}"
+            "-DCMAKE_C_FLAGS:STRING=${_occ_superbuild_c_flags} ${OCC_C_FLAGS}"
 
             "-DBUILD_ApplicationFramework:BOOL=OFF"
             "-DBUILD_Draw:BOOL=OFF"
             "-DINSTALL_FREETYPE:BOOL=ON"
-            
+
             "-DUSE_TBB:BOOL=ON"
             "-DINSTALL_TBB:BOOL=ON"
             "-D3RDPARTY_TBB_DIR:PATH=${TBB_DIR}"
@@ -82,9 +95,6 @@ if(NOT DEFINED OCC_DIR)
     set(OCC_PATCH_COMMAND  ${PATCH_COMMAND} -N -p1 -i ${CMAKE_CURRENT_LIST_DIR}/OCC_6.9.1.patch)
     
     if (WIN32)
-        set(OCC_CXX_FLAGS "${OCC_CXX_FLAGS} -DWNT")
-        
-                
         ExternalProject_Add(OCC_src
             LIST_SEPARATOR ${sep}
             URL ${OCC_URL} 

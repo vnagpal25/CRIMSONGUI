@@ -71,6 +71,19 @@ else()
           endif()
         endforeach()
       endif()
+      # Install layouts vary (toolset folder name); accept any win64/* dir that contains TKernel.lib.
+      if(NOT COMPILER AND EXISTS "${OCC_DIR}/${OS_WITH_BIT}")
+        file(GLOB _occ_toolset_dirs RELATIVE "${OCC_DIR}/${OS_WITH_BIT}" "${OCC_DIR}/${OS_WITH_BIT}/*")
+        foreach(_t ${_occ_toolset_dirs})
+          if(IS_DIRECTORY "${OCC_DIR}/${OS_WITH_BIT}/${_t}" AND
+              (EXISTS "${OCC_DIR}/${OS_WITH_BIT}/${_t}/lib/TKernel.lib" OR
+               EXISTS "${OCC_DIR}/${OS_WITH_BIT}/${_t}/libd/TKernel.lib" OR
+               EXISTS "${OCC_DIR}/${OS_WITH_BIT}/${_t}/libd/Debug/TKernel.lib"))
+            set(COMPILER "${_t}")
+            break()
+          endif()
+        endforeach()
+      endif()
     endif()
     
     ### END FROM OpenCASCADE's CMakeLists.txt
@@ -79,13 +92,31 @@ else()
     SET(BUILD_SUFFIX_debug "d")
     SET(BUILD_SUFFIX_release "")
 
-    #find the include dir by looking for Standard_Real.hxx 
-    FIND_PATH( OCC_INCLUDE_DIR Standard_Real.hxx PATHS ${OCC_DIR}/inc DOC "Path to OCC includes" NO_DEFAULT_PATH) 
+    # find the include dir by looking for Standard_Real.hxx (OCCT install vs some package layouts)
+    FIND_PATH( OCC_INCLUDE_DIR Standard_Real.hxx
+      PATHS ${OCC_DIR}/inc ${OCC_DIR}/include ${OCC_DIR}/include/opencascade
+      DOC "Path to OCC includes" NO_DEFAULT_PATH)
 
-    FIND_PATH( OCC_LINK_DIRECTORY_debug NAMES TKernel.lib libTKernel.so PATHS "${OCC_DIR}/${OS_WITH_BIT}/${COMPILER}/lib${BUILD_SUFFIX_debug}" DOC "Path to OCC debug libs" NO_DEFAULT_PATH) 
-    FIND_PATH( OCC_LINK_DIRECTORY_release NAMES TKernel.lib libTKernel.so PATHS "${OCC_DIR}/${OS_WITH_BIT}/${COMPILER}/lib${BUILD_SUFFIX_release}"  DOC "Path to OCC release libs" NO_DEFAULT_PATH) 
-    FIND_PATH( OCC_BINARY_DIRECTORY_debug NAMES TKernel.dll libTKernel.so PATHS "${OCC_DIR}/${OS_WITH_BIT}/${COMPILER}/bin${BUILD_SUFFIX_debug}" DOC "Path to OCC debug shared object files" NO_DEFAULT_PATH) 
-    FIND_PATH( OCC_BINARY_DIRECTORY_release NAMES TKernel.dll libTKernel.so PATHS "${OCC_DIR}/${OS_WITH_BIT}/${COMPILER}/bin${BUILD_SUFFIX_release}" DOC "Path to OCC release shared object files" NO_DEFAULT_PATH) 
+    FIND_PATH( OCC_LINK_DIRECTORY_debug NAMES TKernel.lib libTKernel.so
+      PATHS
+        "${OCC_DIR}/${OS_WITH_BIT}/${COMPILER}/lib${BUILD_SUFFIX_debug}/Debug"
+        "${OCC_DIR}/${OS_WITH_BIT}/${COMPILER}/lib${BUILD_SUFFIX_debug}"
+      DOC "Path to OCC debug libs" NO_DEFAULT_PATH)
+    FIND_PATH( OCC_LINK_DIRECTORY_release NAMES TKernel.lib libTKernel.so
+      PATHS
+        "${OCC_DIR}/${OS_WITH_BIT}/${COMPILER}/lib${BUILD_SUFFIX_release}/Release"
+        "${OCC_DIR}/${OS_WITH_BIT}/${COMPILER}/lib${BUILD_SUFFIX_release}"
+      DOC "Path to OCC release libs" NO_DEFAULT_PATH)
+    FIND_PATH( OCC_BINARY_DIRECTORY_debug NAMES TKernel.dll libTKernel.so
+      PATHS
+        "${OCC_DIR}/${OS_WITH_BIT}/${COMPILER}/bin${BUILD_SUFFIX_debug}/Debug"
+        "${OCC_DIR}/${OS_WITH_BIT}/${COMPILER}/bin${BUILD_SUFFIX_debug}"
+      DOC "Path to OCC debug DLLs" NO_DEFAULT_PATH)
+    FIND_PATH( OCC_BINARY_DIRECTORY_release NAMES TKernel.dll libTKernel.so
+      PATHS
+        "${OCC_DIR}/${OS_WITH_BIT}/${COMPILER}/bin${BUILD_SUFFIX_release}/Release"
+        "${OCC_DIR}/${OS_WITH_BIT}/${COMPILER}/bin${BUILD_SUFFIX_release}"
+      DOC "Path to OCC release DLLs" NO_DEFAULT_PATH)
     MARK_AS_ADVANCED(OCC_INCLUDE_DIR)
     MARK_AS_ADVANCED(OCC_LINK_DIRECTORY_debug)
     MARK_AS_ADVANCED(OCC_LINK_DIRECTORY_release)
