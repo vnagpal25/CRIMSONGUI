@@ -104,8 +104,9 @@ elseif(WIN32)
   )
 
   unset(QWT5_DLL_DIR CACHE)
+  # Qwt 6 (vcpkg): qwt.dll / qwtd.dll; legacy Qwt 5: qwt5.dll
   find_path(QWT5_DLL_DIR
-    NAMES "qwt5.dll"
+    NAMES qwt.dll qwt5.dll
     PATHS
       "${Qwt5_INCLUDE_DIR}/../lib"
       "${Qwt5_INCLUDE_DIR}/../bin"
@@ -397,10 +398,11 @@ if(WIN32)
   endif(INCLUDE_QT_DLL_IN_BIN_PACKAGE)
 
   if(INCLUDE_QWT5_DLL_IN_BIN_PACKAGE)
-    install(
-      FILES "${QWT5_DLL_DIR}/qwt5.dll"
-      DESTINATION "${OUTPUT_BIN_FOLDER}"
-    )
+    if(EXISTS "${QWT5_DLL_DIR}/qwt.dll")
+      install(FILES "${QWT5_DLL_DIR}/qwt.dll" DESTINATION "${OUTPUT_BIN_FOLDER}")
+    elseif(EXISTS "${QWT5_DLL_DIR}/qwt5.dll")
+      install(FILES "${QWT5_DLL_DIR}/qwt5.dll" DESTINATION "${OUTPUT_BIN_FOLDER}")
+    endif()
   endif(INCLUDE_QWT5_DLL_IN_BIN_PACKAGE)
 endif(WIN32)
 
