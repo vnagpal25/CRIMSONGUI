@@ -180,51 +180,23 @@ foreach(p MITK ${external_projects})
   include(CMakeExternals/${p}.cmake)
 endforeach()
 
-# MITK superbuild installs VMTK, CGAL, and other packages under <MITK superbuild root>/ep.
+# MITK superbuild installs VMTK and other packages under <MITK superbuild root>/ep.
 # CRIMSON-Configure must search that tree or find_package(VMTK) fails ("Missing package: VMTK").
 # If your MITK tree has no ep/lib/cmake/VMTK, build the VMTK target in the MITK *superbuild*
 # solution, or build VMTK separately and set VMTK_DIR to the folder that contains VMTKConfig.cmake.
 set(VMTK_DIR "C:/v/vmtk-install/lib" CACHE PATH "Directory containing VMTKConfig.cmake (override in CMake GUI if needed)")
-# Folder that contains CGALConfig.cmake (often <prefix>/lib/cmake/CGAL). Build CGAL via MITK superbuild,
-# or install CGAL and set this, or leave empty to autodetect under MITK_DIR/../ep/lib/cmake/CGAL.
-set(CGAL_DIR "" CACHE PATH "Directory containing CGALConfig.cmake (autodetected from MITK ep when present)")
-set(CRIMSON_EXTRA_CMAKE_PREFIX_PATH "" CACHE PATH "Optional extra prefix(es) for CRIMSON-Configure CMAKE_PREFIX_PATH if VMTK/CGAL are not under MITK_DIR/../ep")
+# CGAL from vcpkg (CGAL_DIR must be the directory that contains CGALConfig.cmake).
+set(CGAL_DIR "C:/vcpkg/installed/x64-windows/share/cgal" CACHE PATH "Directory containing CGALConfig.cmake" FORCE)
+set(CRIMSON_EXTRA_CMAKE_PREFIX_PATH "" CACHE PATH "Optional extra prefix(es) for CRIMSON-Configure CMAKE_PREFIX_PATH")
 set(_crimson_cmake_prefix_path "")
+list(APPEND _crimson_cmake_prefix_path "C:/vcpkg/installed/x64-windows")
 if(MITK_DIR)
   get_filename_component(_mitk_superbuild_root "${MITK_DIR}/.." ABSOLUTE)
   if(EXISTS "${_mitk_superbuild_root}/ep")
     list(APPEND _crimson_cmake_prefix_path "${_mitk_superbuild_root}/ep")
   endif()
-  if(NOT CGAL_DIR OR NOT EXISTS "${CGAL_DIR}/CGALConfig.cmake")
-    if(DEFINED ENV{CGAL_DIR} AND EXISTS "$ENV{CGAL_DIR}/CGALConfig.cmake")
-      set(CGAL_DIR "$ENV{CGAL_DIR}" CACHE PATH "CGAL (from environment)" FORCE)
-    else()
-      foreach(_cgal_c IN ITEMS
-          "${_mitk_superbuild_root}/ep/lib/cmake/CGAL"
-          "${_mitk_superbuild_root}/ep/lib64/cmake/CGAL"
-          "${_mitk_superbuild_root}/ep/install/lib/cmake/CGAL"
-          "${_mitk_superbuild_root}/CGAL-build"
-          "${_mitk_superbuild_root}/ep/CGAL-build"
-          "${_mitk_superbuild_root}/ep/src/CGAL-build"
-        )
-        if(EXISTS "${_cgal_c}/CGALConfig.cmake")
-          set(CGAL_DIR "${_cgal_c}" CACHE PATH "Autodetected CGAL (MITK layout)" FORCE)
-          break()
-        endif()
-      endforeach()
-      if(NOT CGAL_DIR OR NOT EXISTS "${CGAL_DIR}/CGALConfig.cmake")
-        file(GLOB _crimson_cgal_cfgs
-          "${_mitk_superbuild_root}/ep/src/*/CGALConfig.cmake"
-          "${_mitk_superbuild_root}/ep/*/lib/cmake/CGAL/CGALConfig.cmake"
-        )
-        if(_crimson_cgal_cfgs)
-          list(SORT _crimson_cgal_cfgs)
-          list(GET _crimson_cgal_cfgs 0 _crimson_cgal_cfg)
-          get_filename_component(_crimson_cgal_d "${_crimson_cgal_cfg}" DIRECTORY)
-          set(CGAL_DIR "${_crimson_cgal_d}" CACHE PATH "Autodetected CGAL (under MITK ep)" FORCE)
-        endif()
-      endif()
-    endif()
+  if(EXISTS "${MITK_DIR}/ep")
+    list(APPEND _crimson_cmake_prefix_path "${MITK_DIR}/ep")
   endif()
 endif()
 if(CRIMSON_EXTRA_CMAKE_PREFIX_PATH)
@@ -233,10 +205,6 @@ endif()
 if(VMTK_DIR AND EXISTS "${VMTK_DIR}")
   get_filename_component(_vmtk_install_root "${VMTK_DIR}/.." ABSOLUTE)
   list(APPEND _crimson_cmake_prefix_path "${_vmtk_install_root}")
-endif()
-if(CGAL_DIR AND EXISTS "${CGAL_DIR}/CGALConfig.cmake")
-  get_filename_component(_cgal_install_root "${CGAL_DIR}/../.." ABSOLUTE)
-  list(APPEND _crimson_cmake_prefix_path "${_cgal_install_root}")
 endif()
 list(APPEND _crimson_cmake_prefix_path "C:/Vansh_Files/Qt/6.11.0/msvc2022_64/lib/cmake")
 list(REMOVE_DUPLICATES _crimson_cmake_prefix_path)
@@ -255,10 +223,8 @@ if(VMTK_DIR)
   file(APPEND "${_crimson_configure_initial_cache}"
     "set(VMTK_DIR \"${VMTK_DIR}\" CACHE PATH \"\" FORCE)\n")
 endif()
-if(CGAL_DIR AND EXISTS "${CGAL_DIR}/CGALConfig.cmake")
-  file(APPEND "${_crimson_configure_initial_cache}"
-    "set(CGAL_DIR \"${CGAL_DIR}\" CACHE PATH \"\" FORCE)\n")
-endif()
+file(APPEND "${_crimson_configure_initial_cache}"
+  "set(CGAL_DIR \"${CGAL_DIR}\" CACHE PATH \"\" FORCE)\n")
 
 set(_crimson_qmake "")
 if(Qt6_DIR)
@@ -281,9 +247,7 @@ set(CRIMSON_CONFIGURE_EXTRA_ARGS "")
 if(VMTK_DIR)
   list(APPEND CRIMSON_CONFIGURE_EXTRA_ARGS "-DVMTK_DIR:PATH=${VMTK_DIR}")
 endif()
-if(CGAL_DIR AND EXISTS "${CGAL_DIR}/CGALConfig.cmake")
-  list(APPEND CRIMSON_CONFIGURE_EXTRA_ARGS "-DCGAL_DIR:PATH=${CGAL_DIR}")
-endif()
+list(APPEND CRIMSON_CONFIGURE_EXTRA_ARGS "-DCGAL_DIR:PATH=${CGAL_DIR}")
 if(_crimson_qmake)
   list(APPEND CRIMSON_CONFIGURE_EXTRA_ARGS "-DQT_QMAKE_EXECUTABLE:FILEPATH=${_crimson_qmake}")
 endif()

@@ -1,8 +1,4 @@
-# Honor explicit install dir (seeded by SuperBuild initial cache) and MITK superbuild layout.
-if(NOT CGAL_DIR AND DEFINED ENV{CGAL_DIR})
-  set(CGAL_DIR "$ENV{CGAL_DIR}")
-endif()
-# CONFIG: use CGALConfig.cmake (install or MITK ep build tree), not the removed FindCGAL module.
+# CONFIG: CGAL_DIR is set by SuperBuild / CrimsonPreparePrebuiltMITK (vcpkg).
 find_package(CGAL CONFIG REQUIRED)
 
 if(TARGET CGAL::CGAL)
