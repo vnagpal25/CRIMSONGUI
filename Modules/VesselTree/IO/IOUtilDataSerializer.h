@@ -1,12 +1,21 @@
 #pragma once
 
-#include <itksys/SystemTools.hxx>
+#include <algorithm>
 #include <itkCreateObjectFunction.h>
 #include <mitkIOUtil.h>
 #include <mitkBaseDataSerializer.h>
+#include <string>
 
 namespace crimson
 {
+/** Prefer this over itksys::SystemTools::ConvertToOutputPath so VesselTree does not pull itksys into every serializer TU (helps MSVC /MDd link consistency). */
+inline std::string CrimsonPathNativeSeparators(std::string path)
+{
+#ifdef _WIN32
+  std::replace(path.begin(), path.end(), '/', '\\');
+#endif
+  return path;
+}
 /*!
  * \brief   Simple serializer that uses mitk::IOUtil to write the data to a unique file Don't
  *  forget to call REGISTER_IOUTILDATA_SERIALIZER(YourDataType, YourExtension) in one of source
@@ -51,7 +60,7 @@ public:
 
         std::string fullname(m_WorkingDirectory);
         fullname += "/";
-        fullname += itksys::SystemTools::ConvertToOutputPath((baseFileName + extensions[0]).c_str());
+        fullname += CrimsonPathNativeSeparators(baseFileName + extensions[0]);
 
         try {
             mitk::IOUtil::Save(data, fullname);

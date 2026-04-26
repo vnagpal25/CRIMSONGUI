@@ -273,7 +273,8 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 if(CMAKE_COMPILER_IS_MSVC)
-    set(${MY_PROJECT_NAME}_CXX_FLAGS "${MY_PROJECT_NAME}_CXX_FLAGS /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /wd4251") # Suppress dll-interface warning
+  # Expand prior flags; a literal "${MY_PROJECT_NAME}_CXX_FLAGS" breaks MSVC warning suppressions.
+  set(${MY_PROJECT_NAME}_CXX_FLAGS "${${MY_PROJECT_NAME}_CXX_FLAGS} /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /wd4251")
 endif()
 #-----------------------------------------------------------------------------
 # Set C/CXX Flags
