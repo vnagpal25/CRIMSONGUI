@@ -88,6 +88,8 @@ if(EXTERNAL_MITK_DIR)
   set(MITK_DIR "${EXTERNAL_MITK_DIR}")
 endif()
 
+set(MITK_BOOST_ROOT "" CACHE PATH "Optional Boost prefix for CRIMSON-Configure when MITK ../ep has no BoostConfig.cmake")
+
 # Look for git early on, if needed
 if(NOT MITK_DIR AND MITK_USE_CTK AND NOT CTK_DIR)
   find_package(Git REQUIRED)
@@ -251,6 +253,10 @@ if(_crimson_qmake)
   file(APPEND "${_crimson_configure_initial_cache}"
     "set(QT_QMAKE_EXECUTABLE \"${_crimson_qmake}\" CACHE FILEPATH \"\" FORCE)\n")
 endif()
+if(MITK_BOOST_ROOT)
+  file(APPEND "${_crimson_configure_initial_cache}"
+    "set(MITK_BOOST_ROOT \"${MITK_BOOST_ROOT}\" CACHE PATH \"\" FORCE)\n")
+endif()
 
 set(CRIMSON_CONFIGURE_EXTRA_ARGS "")
 if(VMTK_DIR)
@@ -261,6 +267,9 @@ if(CGAL_DIR AND EXISTS "${CGAL_DIR}/CGALConfig.cmake")
 endif()
 if(_crimson_qmake)
   list(APPEND CRIMSON_CONFIGURE_EXTRA_ARGS "-DQT_QMAKE_EXECUTABLE:FILEPATH=${_crimson_qmake}")
+endif()
+if(MITK_BOOST_ROOT)
+  list(APPEND CRIMSON_CONFIGURE_EXTRA_ARGS "-DMITK_BOOST_ROOT:PATH=${MITK_BOOST_ROOT}")
 endif()
 
 #-----------------------------------------------------------------------------

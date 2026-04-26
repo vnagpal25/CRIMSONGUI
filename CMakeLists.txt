@@ -151,6 +151,8 @@ endif()
 # Prerequesites
 #-----------------------------------------------------------------------------
 
+include(CrimsonPreparePrebuiltMITK)
+crimson_prepare_prebuilt_mitk()
 find_package(MITK 2016.11.0 REQUIRED)
 
 if(COMMAND mitkFunctionCheckMitkCompatibility)
