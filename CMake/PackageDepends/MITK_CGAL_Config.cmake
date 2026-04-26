@@ -2,7 +2,8 @@
 if(NOT CGAL_DIR AND DEFINED ENV{CGAL_DIR})
   set(CGAL_DIR "$ENV{CGAL_DIR}")
 endif()
-find_package(CGAL REQUIRED)
+# CONFIG: use CGALConfig.cmake (install or MITK ep build tree), not the removed FindCGAL module.
+find_package(CGAL CONFIG REQUIRED)
 
 if(TARGET CGAL::CGAL)
   list(APPEND ALL_LIBRARIES CGAL::CGAL)

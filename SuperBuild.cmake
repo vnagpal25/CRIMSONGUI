@@ -204,6 +204,7 @@ if(MITK_DIR)
           "${_mitk_superbuild_root}/ep/lib64/cmake/CGAL"
           "${_mitk_superbuild_root}/ep/install/lib/cmake/CGAL"
           "${_mitk_superbuild_root}/CGAL-build"
+          "${_mitk_superbuild_root}/ep/CGAL-build"
           "${_mitk_superbuild_root}/ep/src/CGAL-build"
         )
         if(EXISTS "${_cgal_c}/CGALConfig.cmake")
@@ -211,6 +212,18 @@ if(MITK_DIR)
           break()
         endif()
       endforeach()
+      if(NOT CGAL_DIR OR NOT EXISTS "${CGAL_DIR}/CGALConfig.cmake")
+        file(GLOB _crimson_cgal_cfgs
+          "${_mitk_superbuild_root}/ep/src/*/CGALConfig.cmake"
+          "${_mitk_superbuild_root}/ep/*/lib/cmake/CGAL/CGALConfig.cmake"
+        )
+        if(_crimson_cgal_cfgs)
+          list(SORT _crimson_cgal_cfgs)
+          list(GET _crimson_cgal_cfgs 0 _crimson_cgal_cfg)
+          get_filename_component(_crimson_cgal_d "${_crimson_cgal_cfg}" DIRECTORY)
+          set(CGAL_DIR "${_crimson_cgal_d}" CACHE PATH "Autodetected CGAL (under MITK ep)" FORCE)
+        endif()
+      endif()
     endif()
   endif()
 endif()
