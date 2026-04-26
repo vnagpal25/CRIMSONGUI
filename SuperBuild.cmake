@@ -187,6 +187,8 @@ endforeach()
 set(VMTK_DIR "C:/v/vmtk-install/lib" CACHE PATH "Directory containing VMTKConfig.cmake (override in CMake GUI if needed)")
 # CGAL from vcpkg (CGAL_DIR must be the directory that contains CGALConfig.cmake).
 set(CGAL_DIR "C:/vcpkg/installed/x64-windows/share/cgal" CACHE PATH "Directory containing CGALConfig.cmake" FORCE)
+# Eigen3 from vcpkg (directory containing Eigen3Config.cmake; vcpkg uses .../share/eigen3).
+set(Eigen3_DIR "C:/vcpkg/installed/x64-windows/share/eigen3" CACHE PATH "Directory containing Eigen3Config.cmake" FORCE)
 set(CRIMSON_EXTRA_CMAKE_PREFIX_PATH "" CACHE PATH "Optional extra prefix(es) for CRIMSON-Configure CMAKE_PREFIX_PATH")
 set(_crimson_cmake_prefix_path "")
 list(APPEND _crimson_cmake_prefix_path "C:/vcpkg/installed/x64-windows")
@@ -225,6 +227,8 @@ if(VMTK_DIR)
 endif()
 file(APPEND "${_crimson_configure_initial_cache}"
   "set(CGAL_DIR \"${CGAL_DIR}\" CACHE PATH \"\" FORCE)\n")
+file(APPEND "${_crimson_configure_initial_cache}"
+  "set(Eigen3_DIR \"${Eigen3_DIR}\" CACHE PATH \"\" FORCE)\n")
 
 set(_crimson_qmake "")
 if(Qt6_DIR)
@@ -248,6 +252,7 @@ if(VMTK_DIR)
   list(APPEND CRIMSON_CONFIGURE_EXTRA_ARGS "-DVMTK_DIR:PATH=${VMTK_DIR}")
 endif()
 list(APPEND CRIMSON_CONFIGURE_EXTRA_ARGS "-DCGAL_DIR:PATH=${CGAL_DIR}")
+list(APPEND CRIMSON_CONFIGURE_EXTRA_ARGS "-DEigen3_DIR:PATH=${Eigen3_DIR}")
 if(_crimson_qmake)
   list(APPEND CRIMSON_CONFIGURE_EXTRA_ARGS "-DQT_QMAKE_EXECUTABLE:FILEPATH=${_crimson_qmake}")
 endif()
