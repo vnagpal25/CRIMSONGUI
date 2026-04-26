@@ -12,7 +12,7 @@ public:
     VesselForestDataIO();
     virtual ~VesselForestDataIO();
 
-    std::vector< itk::SmartPointer<mitk::BaseData> > Read() override;
+    std::vector< itk::SmartPointer<mitk::BaseData> > DoRead() override;
     void Write() override;
 
 protected:

@@ -50,7 +50,8 @@ public:
     void setTension(mitk::ScalarType tension);
     mitk::ScalarType getTension() const;
 
-    itkEventMacro(TensionChangeEvent, VesselPathEvent);
+    // Base event type lives in VesselPathAbstractData; qualify for nested itkEventMacro on MSVC/ITK 5.
+    itkEventMacro(TensionChangeEvent, VesselPathAbstractData::VesselPathEvent);
 
     void ExecuteOperation(mitk::Operation* operation) override;
 private:

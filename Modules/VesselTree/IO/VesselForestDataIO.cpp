@@ -30,7 +30,7 @@ VesselForestDataIO::~VesselForestDataIO()
 {
 }
 
-std::vector< itk::SmartPointer<mitk::BaseData> > VesselForestDataIO::Read()
+std::vector< itk::SmartPointer<mitk::BaseData> > VesselForestDataIO::DoRead()
 {
     std::vector< itk::SmartPointer<mitk::BaseData> > result;
 

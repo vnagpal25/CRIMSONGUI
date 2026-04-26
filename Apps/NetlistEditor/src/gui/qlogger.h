@@ -25,7 +25,8 @@
 #include "logger/logger.h"
 
 #include <QtCore/QObject>
-#include <QtCore/QRegExp>
+// Qt 6: QRegExp lives in Core5Compat; use canonical include (not removed QtCore/QRegExp).
+#include <QRegExp>
 #include <QColor>
 
 

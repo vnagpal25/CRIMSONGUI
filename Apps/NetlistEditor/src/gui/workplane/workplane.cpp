@@ -23,7 +23,7 @@
 #include "gui/functor/functor_traits.hpp"
 #include "gui/qlogger.h"
 
-#include <QtCore/QRegExp>
+#include <QRegExp>
 #include <QRegExpValidator>
 #include <QHBoxLayout>
 #include <QVBoxLayout>

@@ -153,7 +153,7 @@ void VesselPathInteractor::AddPoint(mitk::StateMachineAction*, mitk::Interaction
     _addPointToPath(eventPosition, newPointIndex);
 
     // Update rendered scene
-    interactionEvent->GetSender()->GetRenderingManager()->RequestUpdateAll();
+    mitk::RenderingManager::GetInstance()->RequestUpdateAll();
 
     //return true;
 }
@@ -172,7 +172,7 @@ void VesselPathInteractor::AddPointOnPath(mitk::StateMachineAction*, mitk::Inter
         _addPointToPath(positionEvent->GetPositionInWorld(), closestPointQuery.controlPointId + 1);
 
         // Update rendered scene
-        interactionEvent->GetSender()->GetRenderingManager()->RequestUpdateAll();
+        mitk::RenderingManager::GetInstance()->RequestUpdateAll();
         //return true;
     }
 
@@ -238,7 +238,7 @@ void VesselPathInteractor::RemovePoint(mitk::StateMachineAction*, mitk::Interact
         delete doOp;
 
     // Update rendered scene
-    interactionEvent->GetSender()->GetRenderingManager()->RequestUpdateAll();
+    mitk::RenderingManager::GetInstance()->RequestUpdateAll();
 
     //return true;
 }
@@ -259,7 +259,7 @@ void VesselPathInteractor::SelectPoint(mitk::StateMachineAction*, mitk::Interact
     _previousMouseEventPosition = positionEvent->GetPositionInWorld();
 
     // Update rendered scene
-    interactionEvent->GetSender()->GetRenderingManager()->RequestUpdateAll();
+    mitk::RenderingManager::GetInstance()->RequestUpdateAll();
     //return true;
 }
 
@@ -281,7 +281,7 @@ void VesselPathInteractor::MoveSelectedPoint(mitk::StateMachineAction*, mitk::In
     vesselPath->setControlPoint(_selectedPoint, newControlPointPosition);
 
     // Update rendered scene
-    interactionEvent->GetSender()->GetRenderingManager()->RequestUpdateAll();
+    mitk::RenderingManager::GetInstance()->RequestUpdateAll();
 
     //return true;
 }
@@ -317,7 +317,7 @@ void VesselPathInteractor::DeselectPoint(mitk::StateMachineAction*, mitk::Intera
         delete doOp;
 
     // Update rendered scene
-    interactionEvent->GetSender()->GetRenderingManager()->RequestUpdateAll();
+    mitk::RenderingManager::GetInstance()->RequestUpdateAll();
 
     //return true;
 }

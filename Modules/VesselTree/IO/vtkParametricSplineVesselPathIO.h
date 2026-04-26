@@ -12,7 +12,7 @@ public:
     vtkParametricSplineVesselPathIO();
     virtual ~vtkParametricSplineVesselPathIO();
 
-    std::vector< itk::SmartPointer<mitk::BaseData> > Read() override;
+    std::vector< itk::SmartPointer<mitk::BaseData> > DoRead() override;
     void Write() override;
 
 protected:

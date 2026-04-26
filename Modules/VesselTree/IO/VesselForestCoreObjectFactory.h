@@ -1,4 +1,6 @@
-#pragma once 
+#pragma once
+
+#include <string>
 
 #include "mitkCoreObjectFactory.h"
 #include "VesselTreeExports.h"
@@ -16,11 +18,11 @@ public:
     virtual mitk::Mapper::Pointer CreateMapper(mitk::DataNode* node, MapperSlotId slotId);
     virtual void SetDefaultProperties(mitk::DataNode* node);
 
-    // Deprecated stuff
-    virtual const char* GetFileExtensions() { return ""; }
-    virtual mitk::CoreObjectFactoryBase::MultimapType GetFileExtensionsMap() { return mitk::CoreObjectFactoryBase::MultimapType(); }
-    virtual const char* GetSaveFileExtensions() { return ""; }
-    virtual mitk::CoreObjectFactoryBase::MultimapType GetSaveFileExtensionsMap() { return mitk::CoreObjectFactoryBase::MultimapType(); }
+    // Deprecated in MITK; signatures use std::string since modern CoreObjectFactoryBase.
+    std::string GetFileExtensions() override;
+    mitk::CoreObjectFactoryBase::MultimapType GetFileExtensionsMap() override;
+    std::string GetSaveFileExtensions() override;
+    mitk::CoreObjectFactoryBase::MultimapType GetSaveFileExtensionsMap() override;
 
 protected:
     VesselForestCoreObjectFactory();

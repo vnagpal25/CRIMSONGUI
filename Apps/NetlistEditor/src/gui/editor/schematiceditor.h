@@ -42,11 +42,11 @@ class SchematicEditor: public QMdiSubWindow
   Q_OBJECT
 
 public:
-  SchematicEditor(QWidget* parent = 0, Qt::WindowFlags flags = 0);
+  SchematicEditor(QWidget* parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags());
   SchematicEditor(
       SchematicScene& scene,
-      QWidget* parent = 0,
-      Qt::WindowFlags flags = 0
+      QWidget* parent = nullptr,
+      Qt::WindowFlags flags = Qt::WindowFlags()
     );
 
   inline SchematicView& view() const { return *view_; }

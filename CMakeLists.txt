@@ -154,6 +154,7 @@ endif()
 include(CrimsonPreparePrebuiltMITK)
 crimson_prepare_prebuilt_mitk()
 find_package(MITK 2016.11.0 REQUIRED)
+crimson_fix_prebuilt_mitk_ctk_imported_paths()
 
 # Prebuilt MITK CMake exports reference these targets on their link interface; creating them here
 # avoids configure failures when the consumer project has not yet run the corresponding finds.

@@ -42,7 +42,7 @@
 
 #include <QtCore/QEvent>
 #include <QtCore/QMetaType>
-#include <QtCore/QRegExp>
+#include <QRegExp>
 #include <QtCore/QCryptographicHash>
 #include <QtCore/QPointer>
 

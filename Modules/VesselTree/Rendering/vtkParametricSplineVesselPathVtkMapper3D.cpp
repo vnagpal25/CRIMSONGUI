@@ -147,7 +147,7 @@ void vtkParametricSplineVesselPathVtkMapper3D::GenerateDataForRenderer(mitk::Bas
         localStorage->scalingUpdateTime.GetMTime() < renderer->GetMTime() ||
         //localStorage->scalingUpdateTime.GetMTime() < renderer->GetCameraController()->GetMTime() ||
         localStorage->scalingUpdateTime.GetMTime() < renderer->GetCameraRotationController()->GetMTime() ||
-        localStorage->scalingUpdateTime.GetMTime() < renderer->GetSliceNavigationController()->GetSlice()->GetMTime() ||
+        localStorage->scalingUpdateTime.GetMTime() < renderer->GetSliceNavigationController()->GetStepper()->GetMTime() ||
         localStorage->glyphScreenSize != glyphScreenSize ||
         localStorage->tubeWidthInPixels != _getSplineLineWidth(renderer) ||
         renderer->GetMapperID() == mitk::BaseRenderer::Standard3D) {
@@ -237,7 +237,7 @@ void vtkParametricSplineVesselPathVtkMapper3D::_update2DOpacities(mitk::BaseRend
     if (vesselPath->getPolyDataRepresentation() != nullptr) {
         auto slicedWorldGeometry = dynamic_cast<const mitk::SlicedGeometry3D*>(renderer->GetSliceNavigationController()->GetCurrentGeometry3D());
         if (slicedWorldGeometry) {
-            mitk::Stepper* slice = renderer->GetSliceNavigationController()->GetSlice();
+            mitk::Stepper* slice = renderer->GetSliceNavigationController()->GetStepper();
             int nextSliceId = std::min(slice->GetPos() + 1, slice->GetSteps() - 1);
             mitk::PlaneGeometry* nextPlaneGeometry = slicedWorldGeometry->GetPlaneGeometry(nextSliceId);
 

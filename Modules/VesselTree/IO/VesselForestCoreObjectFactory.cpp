@@ -41,6 +41,26 @@ mitk::Mapper::Pointer VesselForestCoreObjectFactory::CreateMapper(mitk::DataNode
     return nullptr;
 }
 
+std::string VesselForestCoreObjectFactory::GetFileExtensions()
+{
+    return {};
+}
+
+mitk::CoreObjectFactoryBase::MultimapType VesselForestCoreObjectFactory::GetFileExtensionsMap()
+{
+    return {};
+}
+
+std::string VesselForestCoreObjectFactory::GetSaveFileExtensions()
+{
+    return {};
+}
+
+mitk::CoreObjectFactoryBase::MultimapType VesselForestCoreObjectFactory::GetSaveFileExtensionsMap()
+{
+    return {};
+}
+
 void VesselForestCoreObjectFactory::SetDefaultProperties(mitk::DataNode* node)
 {
     if (node == nullptr) {

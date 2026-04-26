@@ -37,7 +37,7 @@ vtkParametricSplineVesselPathIO::~vtkParametricSplineVesselPathIO()
 {
 }
 
-std::vector< itk::SmartPointer<mitk::BaseData> > vtkParametricSplineVesselPathIO::Read()
+std::vector< itk::SmartPointer<mitk::BaseData> > vtkParametricSplineVesselPathIO::DoRead()
 {
     std::vector< itk::SmartPointer<mitk::BaseData> > result;
 

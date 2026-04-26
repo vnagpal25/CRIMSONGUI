@@ -3,6 +3,10 @@
 #include <mitkBaseData.h>
 #include <mitkVector.h>
 
+// itk::AnyEvent + itkEventMacro (ITK 5 / modern MITK); mitkBaseData does not always pull these in for MSVC.
+#include <itkEventObject.h>
+#include <itkMacro.h>
+
 #include <vtkSmartPointer.h>
 #include <vtkPolyData.h>
 
