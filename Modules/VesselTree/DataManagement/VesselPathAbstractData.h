@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstddef>
+#include <string>
+
 #include <mitkBaseData.h>
 #include <mitkVector.h>
 
@@ -13,6 +16,33 @@
 #include "VesselTreeExports.h"
 
 namespace crimson {
+
+// itkEventMacro expands to full class definitions; nesting those inside VesselPathAbstractData breaks MSVC (parse errors on custom event types).
+itkEventMacro(VesselPathEvent, itk::AnyEvent);
+itkEventMacro(AllControlPointsSetEvent, VesselPathEvent);
+
+class ControlPointEvent : public VesselPathEvent
+{
+public:
+  typedef ControlPointEvent Self;
+  typedef VesselPathEvent Superclass;
+
+  ControlPointEvent() : _id(0) {}
+  ~ControlPointEvent() override = default;
+  const char* GetEventName() const override { return "ControlPointEvent"; }
+  bool CheckEvent(const ::itk::EventObject* e) const override { return dynamic_cast<const Self*>(e) != nullptr; }
+  ::itk::EventObject* MakeObject() const override { return new Self; }
+  void SetControlPointId(std::size_t id) { _id = id; }
+  std::size_t GetControlPointId() const { return _id; }
+
+private:
+  std::size_t _id;
+  void operator=(const Self&) = delete;
+};
+
+itkEventMacro(ControlPointInsertEvent, ControlPointEvent);
+itkEventMacro(ControlPointRemoveEvent, ControlPointEvent);
+itkEventMacro(ControlPointModifiedEvent, ControlPointEvent);
 
 /*! \brief   An interface class for vessel path data. */
 class VesselTree_EXPORT VesselPathAbstractData : public mitk::BaseData
@@ -144,36 +174,6 @@ public:
      * \brief   Gets the parameter value along the vessel path for a control point with index 'id'.
      */
     virtual ParameterType getControlPointParameterValue(IdType id) const = 0;
-
-public:
-    //////////////////////////////////////////////////////////////////////////
-    // Events
-    //////////////////////////////////////////////////////////////////////////
-    itkEventMacro(VesselPathEvent, itk::AnyEvent);
-    itkEventMacro(AllControlPointsSetEvent, VesselPathEvent);
-
-    class ControlPointEvent : public VesselPathEvent {
-    public:
-        typedef ControlPointEvent Self;
-        typedef VesselPathEvent Superclass;
-
-        // @path is the pointer to the path whose insertion/removal caused the change of vessel forest size
-        ControlPointEvent() : _id(0) {}
-        virtual ~ControlPointEvent() {}
-        virtual const char * GetEventName() const { return "ControlPointEvent"; }
-        virtual bool CheckEvent(const ::itk::EventObject* e) const { return dynamic_cast<const Self*>(e); }
-        virtual ::itk::EventObject* MakeObject() const { return new Self(); }
-        void SetControlPointId(IdType id) { _id = id; }
-        IdType GetControlPointId() const { return _id; }
-
-    private:
-        IdType _id;
-        void operator=(const Self&) = delete;
-    };
-
-    itkEventMacro(ControlPointInsertEvent, ControlPointEvent);
-    itkEventMacro(ControlPointRemoveEvent, ControlPointEvent);
-    itkEventMacro(ControlPointModifiedEvent, ControlPointEvent);
 
 public:
     void UpdateOutputInformation() override;

@@ -11,6 +11,8 @@
 namespace crimson {
 class vtkParametricSplineVesselPathDataPrivate;
 
+itkEventMacro(TensionChangeEvent, VesselPathEvent);
+
 /*! \brief   Vessel path based on a vtkParametericSpline. */
 class VesselTree_EXPORT vtkParametricSplineVesselPathData : public VesselPathAbstractData
 {
@@ -49,9 +51,6 @@ public:
     // Set the tension of the spline
     void setTension(mitk::ScalarType tension);
     mitk::ScalarType getTension() const;
-
-    // Base event type lives in VesselPathAbstractData; qualify for nested itkEventMacro on MSVC/ITK 5.
-    itkEventMacro(TensionChangeEvent, VesselPathAbstractData::VesselPathEvent);
 
     void ExecuteOperation(mitk::Operation* operation) override;
 private:

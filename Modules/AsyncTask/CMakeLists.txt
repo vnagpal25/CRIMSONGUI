@@ -13,6 +13,11 @@ if(_crimson_async_task_tgt)
     target_link_libraries(${_crimson_async_task_tgt} PUBLIC Boost::headers)
   elseif(TARGET Boost::boost)
     target_link_libraries(${_crimson_async_task_tgt} PUBLIC Boost::boost)
+  elseif(Boost_INCLUDE_DIRS)
+    # Pre-built MITK / FindBoost often exposes only variables; PACKAGE_DEPENDS may not add includes to this target.
+    target_include_directories(${_crimson_async_task_tgt} SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+  elseif(Boost_INCLUDE_DIR)
+    target_include_directories(${_crimson_async_task_tgt} SYSTEM PUBLIC ${Boost_INCLUDE_DIR})
   endif()
 endif()
 

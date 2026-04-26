@@ -25,8 +25,7 @@
 #include "logger/logger.h"
 
 #include <QtCore/QObject>
-// Qt 6: QRegExp lives in Core5Compat; use canonical include (not removed QtCore/QRegExp).
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QColor>
 
 
@@ -51,15 +50,15 @@ public:
   void operator()(const std::string& msg)
   {
     QString qmsg = QString::fromStdString(msg);
-    if(qmsg.contains(QRegExp("^\\[DEBUG\\]\\s*")) && debugColor_.isValid())
+    if(qmsg.contains(QRegularExpression("^\\[DEBUG\\]\\s*")) && debugColor_.isValid())
       emit textColorChanged(debugColor_);
-    if(qmsg.contains(QRegExp("^\\[INFO\\]\\s*")) && infoColor_.isValid())
+    if(qmsg.contains(QRegularExpression("^\\[INFO\\]\\s*")) && infoColor_.isValid())
       emit textColorChanged(infoColor_);
-    if(qmsg.contains(QRegExp("^\\[WARNING\\]\\s*")) && warningColor_.isValid())
+    if(qmsg.contains(QRegularExpression("^\\[WARNING\\]\\s*")) && warningColor_.isValid())
       emit textColorChanged(warningColor_);
-    if(qmsg.contains(QRegExp("^\\[ERROR\\]\\s*")) && errorColor_.isValid())
+    if(qmsg.contains(QRegularExpression("^\\[ERROR\\]\\s*")) && errorColor_.isValid())
       emit textColorChanged(errorColor_);
-    if(qmsg.contains(QRegExp("^\\[FATAL\\]\\s*")) && fatalColor_.isValid())
+    if(qmsg.contains(QRegularExpression("^\\[FATAL\\]\\s*")) && fatalColor_.isValid())
       emit textColorChanged(fatalColor_);
     emit log(qmsg);
   }

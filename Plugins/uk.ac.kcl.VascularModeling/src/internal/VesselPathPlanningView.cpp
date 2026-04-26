@@ -188,7 +188,7 @@ void VesselPathPlanningView::OnSelectionChanged(berry::IWorkbenchPart::Pointer /
             auto modifiedCommand = itk::MemberCommand<VesselPathPlanningView>::New();
             modifiedCommand->SetCallbackFunction(this, &VesselPathPlanningView::_onTensionChanged);
 
-            _observerTag = vesselPath->AddObserver(crimson::vtkParametricSplineVesselPathData::TensionChangeEvent(), modifiedCommand);
+            _observerTag = vesselPath->AddObserver(crimson::TensionChangeEvent(), modifiedCommand);
         }
     }
 
@@ -443,7 +443,7 @@ void VesselPathPlanningView::setSplineTension(int value)
 
 void VesselPathPlanningView::_onTensionChanged(itk::Object *caller, const itk::EventObject &event)
 {
-    auto tensionChangeEvt = dynamic_cast<const crimson::vtkParametricSplineVesselPathData::TensionChangeEvent*>(&event);
+    auto tensionChangeEvt = dynamic_cast<const crimson::TensionChangeEvent*>(&event);
     if (tensionChangeEvt) {
         _UI.tensionSlider->blockSignals(true);
         _UI.tensionSlider->setValue(static_cast<crimson::vtkParametricSplineVesselPathData*>(caller)->getTension() * 100);

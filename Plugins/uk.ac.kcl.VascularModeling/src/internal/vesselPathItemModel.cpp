@@ -39,7 +39,7 @@ void VesselPathItemModel::setVesselPath(crimson::VesselPathAbstractData::Pointer
         auto modifiedCommand = itk::MemberCommand<VesselPathItemModel>::New();
         modifiedCommand->SetCallbackFunction(this, &VesselPathItemModel::_onVesselPathChanged);
 
-        _observerTag = _vesselPath->AddObserver(crimson::VesselPathAbstractData::VesselPathEvent(), modifiedCommand);
+        _observerTag = _vesselPath->AddObserver(crimson::VesselPathEvent(), modifiedCommand);
     }
 }
 
@@ -49,21 +49,21 @@ void VesselPathItemModel::_onVesselPathChanged(itk::Object *, const itk::EventOb
         return;
     }
 
-    auto vesselPathEvt = dynamic_cast<const crimson::VesselPathAbstractData::VesselPathEvent*>(&event);
+    auto vesselPathEvt = dynamic_cast<const crimson::VesselPathEvent*>(&event);
     if (!vesselPathEvt) {
         return;
     }
 
-    if (auto evt = dynamic_cast<const crimson::VesselPathAbstractData::ControlPointInsertEvent*>(&event)) {
+    if (auto evt = dynamic_cast<const crimson::ControlPointInsertEvent*>(&event)) {
         _addControlPointRow(evt->GetControlPointId());
     }
-    else if (auto evt = dynamic_cast<const crimson::VesselPathAbstractData::ControlPointRemoveEvent*>(&event)) {
+    else if (auto evt = dynamic_cast<const crimson::ControlPointRemoveEvent*>(&event)) {
         _removeControlPointRow(evt->GetControlPointId());
     }
-    else if (auto evt = dynamic_cast<const crimson::VesselPathAbstractData::ControlPointModifiedEvent*>(&event)) {
+    else if (auto evt = dynamic_cast<const crimson::ControlPointModifiedEvent*>(&event)) {
         _updateControlPointRow(evt->GetControlPointId());
     }
-    else if (dynamic_cast<const crimson::VesselPathAbstractData::AllControlPointsSetEvent*>(&event)) {
+    else if (dynamic_cast<const crimson::AllControlPointsSetEvent*>(&event)) {
         _resetAllControlPoints();
     }
     else {

@@ -23,8 +23,8 @@
 #include "gui/functor/functor_traits.hpp"
 #include "gui/qlogger.h"
 
-#include <QRegExp>
-#include <QRegExpValidator>
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QFormLayout>
@@ -230,8 +230,8 @@ void WorkPlane::setData(
     
     QLineEdit* right = new QLineEdit;
     right->setText(QString::number(i->second));
-    QRegExp sn("[+\\-]?(?:0|[1-9]\\d*)(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?");
-    QRegExpValidator* validator = new QRegExpValidator(sn, right);
+    QRegularExpression sn("[+\\-]?(?:0|[1-9]\\d*)(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?");
+    auto* validator = new QRegularExpressionValidator(sn, right);
     right->setValidator(validator);
     
     data_->setCellWidget(row, 0, left);
