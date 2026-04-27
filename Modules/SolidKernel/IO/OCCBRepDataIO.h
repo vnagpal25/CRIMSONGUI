@@ -11,11 +11,11 @@ class OCCBRepDataIO : public mitk::AbstractFileIO {
 public:
     OCCBRepDataIO();
     virtual ~OCCBRepDataIO();
-    std::vector< itk::SmartPointer<mitk::BaseData> > Read() override;
     void Write() override;
 
 protected:
     OCCBRepDataIO(const OCCBRepDataIO&);
+    std::vector<itk::SmartPointer<mitk::BaseData>> DoRead() override;
     AbstractFileIO* IOClone() const override { return new OCCBRepDataIO(*this); }
 
     TopoDS_Shape trySewImportedShape(const TopoDS_Shape& importedShape);

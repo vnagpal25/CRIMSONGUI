@@ -21,26 +21,6 @@ public:
 
     virtual ~SolverSetupPythonObjectIO() {}
 
-    std::vector<itk::SmartPointer<mitk::BaseData>> Read() override
-    {
-        std::vector<itk::SmartPointer<mitk::BaseData>> result;
-
-        auto pythonServiceManager = PythonSolverSetupServiceActivator::getPythonService()->GetPythonManager();
-
-        pythonServiceManager->executeString("import CRIMSONCore");
-
-        auto module = PythonQtObjectPtr{pythonServiceManager->getVariable("CRIMSONCore")};
-        module = PythonQtObjectPtr{module.getVariable("IO")};
-
-        auto pyObjectPtr = PythonQtObjectPtr{module.call("loadFromFile", QVariantList{QString::fromStdString(GetInputLocation())})};
-
-        if (pythonServiceManager->pythonErrorOccured() || pyObjectPtr.isNull()) {
-            mitkThrow() << "Failed to load python object from " << GetInputLocation();
-        }
-
-        return {SolverSetupObject::New(pyObjectPtr).GetPointer()};
-    }
-
     void Write() override
     {
         auto data = dynamic_cast<const SolverSetupObject*>(this->GetInput());
@@ -69,6 +49,25 @@ protected:
         : AbstractFileIO(other)
     {
     }
+
+    std::vector<itk::SmartPointer<mitk::BaseData>> DoRead() override
+    {
+        auto pythonServiceManager = PythonSolverSetupServiceActivator::getPythonService()->GetPythonManager();
+
+        pythonServiceManager->executeString("import CRIMSONCore");
+
+        auto module = PythonQtObjectPtr{pythonServiceManager->getVariable("CRIMSONCore")};
+        module = PythonQtObjectPtr{module.getVariable("IO")};
+
+        auto pyObjectPtr = PythonQtObjectPtr{module.call("loadFromFile", QVariantList{QString::fromStdString(GetInputLocation())})};
+
+        if (pythonServiceManager->pythonErrorOccured() || pyObjectPtr.isNull()) {
+            mitkThrow() << "Failed to load python object from " << GetInputLocation();
+        }
+
+        return {SolverSetupObject::New(pyObjectPtr).GetPointer()};
+    }
+
     AbstractFileIO* IOClone() const override { return new SolverSetupPythonObjectIO(*this); }
 };
 

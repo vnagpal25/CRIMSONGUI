@@ -19,6 +19,7 @@
 #include <mitkInteractionConst.h>
 
 #include <mitkImage.h>
+#include <mitkUIDGenerator.h>
 
 #include "internal/uk_ac_kcl_HierarchyManager_Activator.h"
 #include <queue>
@@ -163,13 +164,14 @@ void HierarchyManager::nodeAdded(const mitk::DataNode* node)
     static mitk::UIDGenerator uidGenerator("CRIMSONUID_");
     std::string UID;
     if (!nonConstNode->GetStringProperty(nodeUIDPropertyName, UID)) {
-        nonConstNode->SetStringProperty(nodeUIDPropertyName, uidGenerator.GetUID().c_str());
+        const std::string newUid = uidGenerator.GetUID();
+        nonConstNode->SetStringProperty(nodeUIDPropertyName, newUid);
     }
 
     // Ensure name propagation to data
     nonConstNode->SetBoolProperty("propagate_name_to_data", true);
     if (nonConstNode->GetData()) {
-        nonConstNode->GetData()->GetPropertyList()->SetStringProperty("name", nonConstNode->GetName().c_str());
+        nonConstNode->GetData()->GetPropertyList()->SetStringProperty("name", nonConstNode->GetName());
     }
 
     // Set some properties that should not be persisted through save/load process

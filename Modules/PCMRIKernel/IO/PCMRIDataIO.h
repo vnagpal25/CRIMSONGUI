@@ -10,11 +10,11 @@ public:
     PCMRIDataIO();
     virtual ~PCMRIDataIO();
 
-    std::vector< itk::SmartPointer<mitk::BaseData> > Read() override;
     void Write() override;
 
 protected:
     PCMRIDataIO(const PCMRIDataIO&);
+    std::vector<itk::SmartPointer<mitk::BaseData>> DoRead() override;
 	AbstractFileIO* IOClone() const override { return new PCMRIDataIO(*this); }
 
 };

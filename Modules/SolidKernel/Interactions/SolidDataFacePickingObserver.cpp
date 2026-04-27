@@ -3,6 +3,7 @@
 
 
 #include <mitkInteractionPositionEvent.h>
+#include <mitkMouseReleaseEvent.h>
 #include <mitkBaseRenderer.h>
 #include <mitkRenderingManager.h>
 #include <mitkVtkPropRenderer.h>
@@ -19,6 +20,30 @@ namespace crimson {
 SolidDataFacePickingObserver::SolidDataFacePickingObserver()
 {
     resetSelectableTypes();
+}
+
+void SolidDataFacePickingObserver::Notify(mitk::InteractionEvent* interactionEvent, bool isHandled)
+{
+    // MITK removed mitkPickingEventObserver; mirror legacy picking: left click release with modifier keys.
+    if (!IsEnabled() || isHandled || !_dataNode) {
+        return;
+    }
+    auto* releaseEvent = dynamic_cast<mitk::MouseReleaseEvent*>(interactionEvent);
+    if (!releaseEvent || releaseEvent->GetEventButton() != mitk::InteractionEvent::LeftMouseButton) {
+        return;
+    }
+    const auto mods = releaseEvent->GetModifiers();
+    const bool ctrl = (mods & mitk::InteractionEvent::ControlKey) != 0;
+    const bool shift = (mods & mitk::InteractionEvent::ShiftKey) != 0;
+    if (ctrl) {
+        HandlePickAddEvent(interactionEvent);
+    }
+    else if (shift) {
+        HandlePickToggleEvent(interactionEvent);
+    }
+    else {
+        HandlePickOneEvent(interactionEvent);
+    }
 }
 
 void SolidDataFacePickingObserver::resetSelectableTypes()

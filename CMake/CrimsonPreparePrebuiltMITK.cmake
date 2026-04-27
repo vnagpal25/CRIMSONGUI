@@ -81,7 +81,9 @@ function(_crimson_try_fix_ctk_imported_location path out_var)
   if(NOT path)
     return()
   endif()
+  # Propagate the valid path to callers (some scripts check the out_var even when no rewrite is needed).
   if(EXISTS "${path}")
+    set(${out_var} "${path}" PARENT_SCOPE)
     return()
   endif()
   # MITK exports sometimes duplicate "CTK-build" and point at bin/<Config>/*.lib while MSVC import libs live under lib/<Config>/.

@@ -11,9 +11,14 @@
 #include <Geom_Plane.hxx>
 #include <TopoDS.hxx>
 
+#include <vtkDataObject.h>
 #include <vtkXMLPolyDataReader.h>
 #include <vtkXMLPolyDataWriter.h>
 
+#if defined(_WIN32)
+// Boost.Regex (pulled in via Boost XML archives) instantiates w32_regex_traits, which needs Win32 NLS types (LCTYPE, LCMapString*).
+#include <windows.h>
+#endif
 #include <boost/algorithm/string.hpp>
 
 #include "OCCBRepDataIO.h"
@@ -87,7 +92,7 @@ TopoDS_Shape OCCBRepDataIO::trySewImportedShape(const TopoDS_Shape& importedShap
     }
 }
 
-std::vector< itk::SmartPointer<mitk::BaseData> > OCCBRepDataIO::Read()
+std::vector<itk::SmartPointer<mitk::BaseData>> OCCBRepDataIO::DoRead()
 {
     std::vector< itk::SmartPointer<mitk::BaseData> > result;
 
@@ -234,7 +239,7 @@ void OCCBRepDataIO::Write()
     // Save polygonal representation
     vtkSmartPointer<vtkXMLPolyDataWriter> pdWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
     pdWriter->SetDataModeToBinary();
-    pdWriter->SetInputData(brep->getSurfaceRepresentation()->GetVtkPolyData());
+    pdWriter->SetInputData(static_cast<vtkDataObject*>(brep->getSurfaceRepresentation()->GetVtkPolyData()));
     pdWriter->SetFileName((GetOutputLocation() + ".vtp").c_str());
     pdWriter->Update();
 }

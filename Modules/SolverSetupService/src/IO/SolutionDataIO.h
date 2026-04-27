@@ -10,11 +10,11 @@ public:
     SolutionDataIO();
     virtual ~SolutionDataIO();
 
-    std::vector< itk::SmartPointer<mitk::BaseData> > Read() override;
     void Write() override;
 
 protected:
     SolutionDataIO(const SolutionDataIO&) = default;
+    std::vector<itk::SmartPointer<mitk::BaseData>> DoRead() override;
     AbstractFileIO* IOClone() const override { return new SolutionDataIO(*this); }
 };
 

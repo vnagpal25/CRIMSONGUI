@@ -86,7 +86,7 @@ void writeDataArrayToStream(QDataStream& stream, vtkDataArray* dataArray)
 }
 }
 
-std::vector<itk::SmartPointer<mitk::BaseData>> SolutionDataIO::Read()
+std::vector<itk::SmartPointer<mitk::BaseData>> SolutionDataIO::DoRead()
 {
     QFile file{QString::fromStdString(GetLocalFileName())};
     file.open(QIODevice::ReadOnly);

@@ -1,7 +1,11 @@
+#include <vtkDataObject.h>
 #include <vtkXMLPolyDataReader.h>
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkNew.h>
 
+#if defined(_WIN32)
+#include <windows.h>
+#endif
 #include <boost/algorithm/string.hpp>
 
 #include "DiscreteSolidDataIO.h"
@@ -48,7 +52,7 @@ namespace crimson {
 	{
 	}
 
-	std::vector< itk::SmartPointer<mitk::BaseData> > DiscreteSolidDataIO::Read()
+	std::vector<itk::SmartPointer<mitk::BaseData>> DiscreteSolidDataIO::DoRead()
 	{
 		std::vector< itk::SmartPointer<mitk::BaseData> > result;
 
@@ -106,7 +110,7 @@ namespace crimson {
 		// Save polygonal representation
 		vtkSmartPointer<vtkXMLPolyDataWriter> pdWriter = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 		pdWriter->SetDataModeToBinary();
-		pdWriter->SetInputData(solid->getSurfaceRepresentation()->GetVtkPolyData());
+		pdWriter->SetInputData(static_cast<vtkDataObject*>(solid->getSurfaceRepresentation()->GetVtkPolyData()));
 		pdWriter->SetFileName((GetOutputLocation() + ".vtp").c_str());
 		pdWriter->Update();
 	}

@@ -42,7 +42,7 @@ PCMRIDataIO::~PCMRIDataIO()
 }
 
 
-std::vector< itk::SmartPointer<mitk::BaseData> > PCMRIDataIO::Read()
+std::vector<itk::SmartPointer<mitk::BaseData>> PCMRIDataIO::DoRead()
 {
     std::vector< itk::SmartPointer<mitk::BaseData> > result;
 

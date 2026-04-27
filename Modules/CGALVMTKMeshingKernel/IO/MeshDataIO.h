@@ -10,11 +10,11 @@ public:
     MeshDataIO();
     virtual ~MeshDataIO();
 
-    std::vector< itk::SmartPointer<mitk::BaseData> > Read() override;
     void Write() override;
 
 protected:
     MeshDataIO(const MeshDataIO&);
+    std::vector<itk::SmartPointer<mitk::BaseData>> DoRead() override;
     AbstractFileIO* IOClone() const override { return new MeshDataIO(*this); }
 };
 

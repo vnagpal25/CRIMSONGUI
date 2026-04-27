@@ -185,7 +185,8 @@ reg)
     vtkIdType j,k,l; 
     static vtkIdType Id1=0;
     static vtkIdType Id2=0;
-    vtkIdType *pts = 0;
+    // VTK 9+: pointer is const vtkIdType* (not vtkIdType*).
+    const vtkIdType* pts = nullptr;
     vtkIdType npts = 0;
     vtkIdType numNei, nei, p1, p2, nIds, neis;
 

@@ -5,7 +5,7 @@
 
 #include "SolidKernelExports.h"
 
-#include <mitkPickingEventObserver.h>
+#include <mitkInteractionEventObserver.h>
 #include <mitkTransferFunctionProperty.h>
 
 namespace mitk {
@@ -19,11 +19,13 @@ namespace mitk {
 namespace crimson {
 
 /*! \brief   The picking event observer that allows selecting the faces of the SolidData in a 3D rendering window. */
-class SolidKernel_EXPORT SolidDataFacePickingObserver : public mitk::PickingEventObserver
+class SolidKernel_EXPORT SolidDataFacePickingObserver : public mitk::InteractionEventObserver
 {
 public:
     SolidDataFacePickingObserver();
     virtual ~SolidDataFacePickingObserver();
+
+    void Notify(mitk::InteractionEvent* interactionEvent, bool isHandled) override;
 
     void SetDataNode(mitk::DataNode* dataNode);
 
@@ -86,9 +88,9 @@ public:
     void setSelectionChangedObserver(const std::function<void(void)>& observer) { _selectionChangedObserver = observer; }
 
 protected:
-    void HandlePickOneEvent(mitk::InteractionEvent* interactionEvent) override;
-    void HandlePickAddEvent(mitk::InteractionEvent* interactionEvent) override;
-    void HandlePickToggleEvent(mitk::InteractionEvent* interactionEvent) override;
+    void HandlePickOneEvent(mitk::InteractionEvent* interactionEvent);
+    void HandlePickAddEvent(mitk::InteractionEvent* interactionEvent);
+    void HandlePickToggleEvent(mitk::InteractionEvent* interactionEvent);
 
 private:
     int GetPickedFaceIdentifier(const mitk::InteractionEvent* interactionEvent);

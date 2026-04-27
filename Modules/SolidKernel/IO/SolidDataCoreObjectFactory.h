@@ -1,5 +1,7 @@
 #pragma once 
 
+#include <string>
+
 #include "mitkCoreObjectFactory.h"
 #include "SolidKernelExports.h"
 
@@ -16,11 +18,11 @@ public:
     mitk::Mapper::Pointer CreateMapper(mitk::DataNode* node, MapperSlotId slotId) override;
     void SetDefaultProperties(mitk::DataNode* node) override;
 
-    // Deprecated stuff
-    virtual const char* GetFileExtensions() { return ""; }
-    virtual mitk::CoreObjectFactoryBase::MultimapType GetFileExtensionsMap() { return mitk::CoreObjectFactoryBase::MultimapType(); }
-    virtual const char* GetSaveFileExtensions() { return ""; }
-    virtual mitk::CoreObjectFactoryBase::MultimapType GetSaveFileExtensionsMap() { return mitk::CoreObjectFactoryBase::MultimapType(); }
+    // Deprecated in MITK; signatures match modern CoreObjectFactoryBase.
+    std::string GetFileExtensions() override;
+    mitk::CoreObjectFactoryBase::MultimapType GetFileExtensionsMap() override;
+    std::string GetSaveFileExtensions() override;
+    mitk::CoreObjectFactoryBase::MultimapType GetSaveFileExtensionsMap() override;
 
 protected:
     SolidDataCoreObjectFactory();

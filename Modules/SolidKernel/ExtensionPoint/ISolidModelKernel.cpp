@@ -778,8 +778,11 @@ public:
 
         double maxRisk = -1;
 
-        for (const mitk::Point2D& p : polyLine) {
-            mitk::Vector2D offset = p - figureCenter2d;
+        for (const mitk::PlanarFigure::PolyLineElement& p : polyLine) {
+            mitk::Point2D p2d;
+            p2d[0] = static_cast<mitk::ScalarType>(p[0]);
+            p2d[1] = static_cast<mitk::ScalarType>(p[1]);
+            mitk::Vector2D offset = p2d - figureCenter2d;
 
             // Offset the parameter value along the path
             double newT = vesselParameterValue + delta;

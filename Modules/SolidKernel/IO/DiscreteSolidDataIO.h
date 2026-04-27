@@ -10,11 +10,11 @@ class DiscreteSolidDataIO : public mitk::AbstractFileIO {
 public:
     DiscreteSolidDataIO();
     virtual ~DiscreteSolidDataIO();
-    std::vector< itk::SmartPointer<mitk::BaseData> > Read() override;
 	void Write() override; 
 
 protected:
     DiscreteSolidDataIO(const DiscreteSolidDataIO&);
+    std::vector<itk::SmartPointer<mitk::BaseData>> DoRead() override;
     AbstractFileIO* IOClone() const override { return new DiscreteSolidDataIO(*this); }
 
 };

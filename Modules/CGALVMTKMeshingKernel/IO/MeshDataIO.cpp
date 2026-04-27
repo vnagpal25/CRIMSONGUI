@@ -46,7 +46,7 @@ MeshDataIO::~MeshDataIO()
 {
 }
 
-std::vector< itk::SmartPointer<mitk::BaseData> > MeshDataIO::Read()
+std::vector<itk::SmartPointer<mitk::BaseData>> MeshDataIO::DoRead()
 {
     std::vector< itk::SmartPointer<mitk::BaseData> > result;
 

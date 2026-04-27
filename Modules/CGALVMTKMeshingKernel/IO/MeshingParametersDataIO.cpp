@@ -31,7 +31,7 @@ MeshingParametersDataIO::~MeshingParametersDataIO()
 {
 }
 
-std::vector< itk::SmartPointer<mitk::BaseData> > MeshingParametersDataIO::Read()
+std::vector<itk::SmartPointer<mitk::BaseData>> MeshingParametersDataIO::DoRead()
 {
     std::vector< itk::SmartPointer<mitk::BaseData> > result;
 

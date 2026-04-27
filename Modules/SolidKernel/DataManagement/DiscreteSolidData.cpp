@@ -146,7 +146,10 @@ namespace crimson
             vtkNew<vtkThreshold> faceCells;
             faceCells->SetInputConnection(cleaner->GetOutputPort());
             faceCells->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Face IDs");
-            faceCells->ThresholdBetween(faceIdIndex, faceIdIndex);
+            // vtkThreshold::ThresholdBetween removed in VTK 9+; use explicit function + bounds.
+            faceCells->SetThresholdFunction(vtkThreshold::THRESHOLD_BETWEEN);
+            faceCells->SetLowerThreshold(faceIdIndex);
+            faceCells->SetUpperThreshold(faceIdIndex);
 
             vtkNew<vtkGeometryFilter> meshToSurface;
             meshToSurface->SetInputConnection(faceCells->GetOutputPort());

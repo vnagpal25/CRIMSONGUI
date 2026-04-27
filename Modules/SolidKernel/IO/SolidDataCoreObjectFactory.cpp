@@ -59,6 +59,26 @@ void SolidDataCoreObjectFactory::SetDefaultProperties(mitk::DataNode* node)
     }
 }
 
+std::string SolidDataCoreObjectFactory::GetFileExtensions()
+{
+    return {};
+}
+
+mitk::CoreObjectFactoryBase::MultimapType SolidDataCoreObjectFactory::GetFileExtensionsMap()
+{
+    return {};
+}
+
+std::string SolidDataCoreObjectFactory::GetSaveFileExtensions()
+{
+    return {};
+}
+
+mitk::CoreObjectFactoryBase::MultimapType SolidDataCoreObjectFactory::GetSaveFileExtensionsMap()
+{
+    return {};
+}
+
 struct RegisterSolidDataCoreObjectFactory {
     RegisterSolidDataCoreObjectFactory()
         : m_Factory(SolidDataCoreObjectFactory::New())
