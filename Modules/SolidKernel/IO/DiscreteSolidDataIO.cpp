@@ -1,10 +1,17 @@
 #include <vtkDataObject.h>
+#include <vtkPolyData.h>
 #include <vtkXMLPolyDataReader.h>
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkNew.h>
 
 #if defined(_WIN32)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <windows.h>
+#ifdef byte
+#undef byte
+#endif
 #endif
 #include <boost/algorithm/string.hpp>
 

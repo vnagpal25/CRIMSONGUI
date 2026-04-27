@@ -165,13 +165,14 @@ void HierarchyManager::nodeAdded(const mitk::DataNode* node)
     std::string UID;
     if (!nonConstNode->GetStringProperty(nodeUIDPropertyName, UID)) {
         const std::string newUid = uidGenerator.GetUID();
-        nonConstNode->SetStringProperty(nodeUIDPropertyName, newUid);
+        nonConstNode->SetStringProperty(nodeUIDPropertyName, newUid.c_str());
     }
 
     // Ensure name propagation to data
     nonConstNode->SetBoolProperty("propagate_name_to_data", true);
     if (nonConstNode->GetData()) {
-        nonConstNode->GetData()->GetPropertyList()->SetStringProperty("name", nonConstNode->GetName());
+        const std::string dataNodeName = nonConstNode->GetName();
+        nonConstNode->GetData()->GetPropertyList()->SetStringProperty("name", dataNodeName.c_str());
     }
 
     // Set some properties that should not be persisted through save/load process

@@ -398,8 +398,11 @@ public:
                 TopoDS_Edge edge2d = BRepBuilderAPI_MakeEdge(curve2d, xyzPlane);
                 BRepLib::BuildCurves3d(edge2d);
 
-                // Get the starting point computed outside
-                mitk::Point2D startPtMitk = parametrizationStartPoints[i] - contourGeometryOrigin2D;
+                // Point - Point is an itk::Vector in current ITK; assign components into mitk::Point2D explicitly.
+                const auto startOffset = parametrizationStartPoints[i] - contourGeometryOrigin2D;
+                mitk::Point2D startPtMitk;
+                startPtMitk[0] = static_cast<mitk::ScalarType>(startOffset[0]);
+                startPtMitk[1] = static_cast<mitk::ScalarType>(startOffset[1]);
 
                 // Find the parametric value and the exact position of the starting point on the (potentially approximated)
                 // curve

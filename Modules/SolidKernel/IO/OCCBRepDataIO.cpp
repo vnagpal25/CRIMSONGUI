@@ -1,3 +1,14 @@
+#if defined(_WIN32)
+// Include Windows before OCCT/Boost: NLS APIs for Boost.Regex; #undef byte avoids C++17 std::byte parse errors in Boost headers.
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#ifdef byte
+#undef byte
+#endif
+#endif
+
 #include <BRepTools.hxx>
 #include <BRep_Builder.hxx>
 #include <IGESControl_Controller.hxx>
@@ -12,13 +23,10 @@
 #include <TopoDS.hxx>
 
 #include <vtkDataObject.h>
+#include <vtkPolyData.h>
 #include <vtkXMLPolyDataReader.h>
 #include <vtkXMLPolyDataWriter.h>
 
-#if defined(_WIN32)
-// Boost.Regex (pulled in via Boost XML archives) instantiates w32_regex_traits, which needs Win32 NLS types (LCTYPE, LCMapString*).
-#include <windows.h>
-#endif
 #include <boost/algorithm/string.hpp>
 
 #include "OCCBRepDataIO.h"
