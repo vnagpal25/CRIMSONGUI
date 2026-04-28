@@ -99,12 +99,11 @@ void ThumbnailGenerator::_generateThumbnail(mitk::DataNode::ConstPointer planarF
     } else {
         geo->SetReferenceGeometry(geo);
     }
-    renderer->SetCurrentWorldGeometry(geo);
-    renderer->GetCameraController()->Fit();
     mitk::ProportionalTimeGeometry::Pointer thumbTimeGeometry = mitk::ProportionalTimeGeometry::New();
     thumbTimeGeometry->Initialize(geo, 1);
     thumbTimeGeometry->SetFirstTimePoint(time);
     renderer->SetWorldTimeGeometry(thumbTimeGeometry);
+    renderer->GetCameraController()->Fit();
 
     mitk::RenderingManager::GetInstance()->AddRenderWindow(d->thumbnailRenderwindow->GetVtkRenderWindow());
 

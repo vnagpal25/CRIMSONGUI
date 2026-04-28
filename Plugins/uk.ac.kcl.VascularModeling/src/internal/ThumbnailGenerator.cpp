@@ -90,15 +90,14 @@ void ThumbnailGenerator::_generateThumbnail(mitk::DataNode::ConstPointer planarF
 {
     mitk::VtkPropRenderer* renderer = d->thumbnailRenderwindow->GetRenderer();
 
-    // MITK 2025+: renderer "world" slice geometry is SetCurrentWorldGeometry; drive time via ProportionalTimeGeometry.
+    // MITK 2025+: SetCurrentWorldGeometry is protected on BaseRenderer; SetWorldTimeGeometry updates slice geometry publicly.
     mitk::PlaneGeometry::Pointer geo = static_cast<mitk::PlanarFigure*>(planarFigureNode->GetData())->GetPlaneGeometry()->Clone();
     geo->SetReferenceGeometry(geo);
-    renderer->SetCurrentWorldGeometry(geo);
-    renderer->GetCameraController()->Fit();
     mitk::ProportionalTimeGeometry::Pointer thumbTimeGeometry = mitk::ProportionalTimeGeometry::New();
     thumbTimeGeometry->Initialize(geo, 1);
     thumbTimeGeometry->SetFirstTimePoint(time);
     renderer->SetWorldTimeGeometry(thumbTimeGeometry);
+    renderer->GetCameraController()->Fit();
 
     mitk::RenderingManager::GetInstance()->AddRenderWindow(d->thumbnailRenderwindow->GetVtkRenderWindow());
     const_cast<mitk::DataNode*>(planarFigureNode.GetPointer())->SetVisibility(true, renderer);

@@ -14,6 +14,7 @@
 
 #include <mitkSlicedGeometry3D.h>
 #include <mitkImage.h>
+#include <mitkProportionalTimeGeometry.h>
 #include <mitkRotationOperation.h>
 #include <mitkInteractionConst.h>
 #include <mitkImageTimeSelector.h>
@@ -521,7 +522,9 @@ void ResliceView::_setupMRASlice(const mitk::DataNode* node)
 	}
 
 	mitk::BaseGeometry::Pointer geo = node->GetData()->GetGeometry();
-	d->renderWindow->GetRenderer()->SetCurrentWorldGeometry(geo);
+	mitk::ProportionalTimeGeometry::Pointer worldTg = mitk::ProportionalTimeGeometry::New();
+	worldTg->Initialize(geo, 1);
+	d->renderWindow->GetRenderer()->SetWorldTimeGeometry(worldTg);
 
 	//check if there is a face previously selected
 	if (currentNode() && currentSolidNode)
@@ -654,7 +657,9 @@ void ResliceView::updateMRARendering(mitk::PlaneGeometry::Pointer plane) const
 	
 	originalMRAgeometry = plane.GetPointer();
 
-	d->renderWindow->GetRenderer()->SetCurrentWorldGeometry(plane);
+	mitk::ProportionalTimeGeometry::Pointer worldTg = mitk::ProportionalTimeGeometry::New();
+	worldTg->Initialize(plane, 1);
+	d->renderWindow->GetRenderer()->SetWorldTimeGeometry(worldTg);
 	d->renderWindow->GetRenderer()->GetCameraController()->Fit();
 	d->renderWindow->GetRenderer()->ForceImmediateUpdate();
 

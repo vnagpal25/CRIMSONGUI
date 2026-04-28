@@ -235,7 +235,9 @@ void MeshData::setUnstructuredGrid(mitk::UnstructuredGrid::Pointer data, bool fi
         vtkSmartPointer<vtkCell> tet = ug->GetCell(i);
         for (int edgeId = 0; edgeId < tet->GetNumberOfEdges(); ++edgeId) {
             vtkSmartPointer<vtkCell> edge = tet->GetEdge(edgeId);
-            std::pair<int, int> vertIds(edge->GetPointId(0), edge->GetPointId(1));
+            // vtkIdType may be 64-bit on Windows; mesh book-keeping still uses int IDs.
+            std::pair<int, int> vertIds(
+                static_cast<int>(edge->GetPointId(0)), static_cast<int>(edge->GetPointId(1)));
             if (vertIds.first > vertIds.second) {
                 std::swap(vertIds.first, vertIds.second);
             }
@@ -244,7 +246,9 @@ void MeshData::setUnstructuredGrid(mitk::UnstructuredGrid::Pointer data, bool fi
 
         for (int faceId = 0; faceId < tet->GetNumberOfFaces(); ++faceId) {
             vtkSmartPointer<vtkCell> face = tet->GetFace(faceId);
-            faces.insert(TriangleFace{{face->GetPointId(0), face->GetPointId(1), face->GetPointId(2)}});
+            faces.insert(TriangleFace{{static_cast<int>(face->GetPointId(0)),
+                                       static_cast<int>(face->GetPointId(1)),
+                                       static_cast<int>(face->GetPointId(2))}});
         }
     }
 

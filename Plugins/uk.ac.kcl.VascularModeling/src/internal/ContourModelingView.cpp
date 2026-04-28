@@ -66,7 +66,7 @@ using crimson::planarFigureSetFinalized;
 #include <mitkImageSliceSelector.h>
 #include <mitkShapeBasedInterpolationAlgorithm.h>
 
-#include <mitkBoolProperty.h>
+#include <mitkProperties.h> // BoolProperty (MITK 2025+; mitkBoolProperty.h removed)
 #include <mitkRenderingManager.h>
 #include <mitkTimeNavigationController.h>
 #include <mitkImageWriteAccessor.h>

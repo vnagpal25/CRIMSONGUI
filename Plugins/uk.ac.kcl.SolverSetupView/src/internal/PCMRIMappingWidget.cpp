@@ -79,7 +79,7 @@ using crimson::planarFigureSetFinalized;
 #include <mitkImageSliceSelector.h>
 #include <mitkShapeBasedInterpolationAlgorithm.h>
 
-#include <mitkBoolProperty.h>
+#include <mitkProperties.h>
 #include <mitkRenderingManager.h>
 #include <mitkTimeNavigationController.h>
 #include <mitkImageWriteAccessor.h>

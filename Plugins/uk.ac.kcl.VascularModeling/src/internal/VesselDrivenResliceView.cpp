@@ -145,12 +145,6 @@ VesselDrivenResliceView::~VesselDrivenResliceView()
 {
     d->resliceViewWidgetListener->unregisterListener();
 
-    // Disconnect time events
-    // MITK: global time is owned by TimeNavigationController, not SliceNavigationController.
-    mitk::TimeNavigationController* timeNavigationController = mitk::RenderingManager::GetInstance()->GetTimeNavigationController();
-    timeNavigationController->Disconnect(d->renderWindow->GetSliceNavigationController());
-    timeNavigationController->Disconnect(d->renderWindowGradMag->GetSliceNavigationController());
-
     // Remove all observers
     for (int i = 0; i < ooLast; ++i) {
         d->_removeObserver(static_cast<ObservedObject>(i));
@@ -250,11 +244,8 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
     d->renderWindowGradMag->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     renderWindowsLayout->addWidget(d->renderWindowGradMag);
 
-    // Connect time events (MITK: ConnectGeometryTimeEvent removed; ConnectTimeEvent syncs SetGeometryTime receivers).
-    mitk::TimeNavigationController* timeNavigationController = mitk::RenderingManager::GetInstance()->GetTimeNavigationController();
-    timeNavigationController->ConnectTimeEvent(d->renderWindow->GetSliceNavigationController());
-    timeNavigationController->ConnectTimeEvent(d->renderWindowGradMag->GetSliceNavigationController());
-
+    // TimeNavigationController::ConnectTimeEvent requires a receiver with SetGeometryTime (e.g. BaseRenderer).
+    // Each render window's BaseRenderer is already connected in MITK's ctor; do not pass SliceNavigationController*.
 
     d->mainLayout->addLayout(renderWindowsLayout, 1);
     d->mainLayout->addStretch(0);

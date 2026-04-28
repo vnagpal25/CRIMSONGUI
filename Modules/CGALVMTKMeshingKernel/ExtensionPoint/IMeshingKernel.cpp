@@ -1,4 +1,8 @@
 // This will be an interface for meshing service and blueberry extension point etc.
+// Must precede CGAL/ITK-Eigen: MSVC can misparse Eigen's EIGEN_NOEXCEPT otherwise (see EIGEN_DONT_USE_CXX11_NOEXCEPT).
+#ifndef EIGEN_DONT_USE_CXX11_NOEXCEPT
+#define EIGEN_DONT_USE_CXX11_NOEXCEPT
+#endif
 
 #include <numeric>
 #include <thread>
