@@ -1,30 +1,34 @@
-# - Hardcoded FindWM5 for VS2022 (v143)
-# Bypasses all version checks and points directly to the files on disk.
+# WildMagic5 (WM5) — MSVC v143 install layout under SDK/Library/v143/x64/{Debug,Release}.
+# SuperBuild passes -DWM5_ROOT_DIR; otherwise a local default is used for standalone configures.
+#
+# Visual Studio multi-config: link Debug targets to *D.lib, all other configs to Release libs
+# (RelWithDebInfo / MinSizeRel use the Release import libs — same CRT mix as Release WM5).
 
-MESSAGE(STATUS "HARDCODING WM5 PATHS for VS2022 (v143)...")
+if(NOT WM5_ROOT_DIR)
+  set(WM5_ROOT_DIR "C:/cr/CMakeExternals/Install/WM5/SDK")
+endif()
 
-# 1. Force the Include Directory
-SET(WM5_ROOT_DIR "C:/cr/CMakeExternals/Install/WM5/SDK")
-SET(WM5_INCLUDE_DIR "C:/cr/CMakeExternals/Install/WM5/SDK/Include")
+set(WM5_INCLUDE_DIR "${WM5_ROOT_DIR}/Include")
 
-# 2. Force the Library Directory (Using your specific v143 path)
-SET(WM5_LIB_DIR "C:/cr/CMakeExternals/Install/WM5/SDK/Library/v143/x64/Debug")
+set(_wm5_lib_root "${WM5_ROOT_DIR}/Library/v143/x64")
+set(_wm5_dbg_core "${_wm5_lib_root}/Debug/Wm5CoreD.lib")
+set(_wm5_rel_core "${_wm5_lib_root}/Release/Wm5Core.lib")
+set(_wm5_dbg_math "${_wm5_lib_root}/Debug/Wm5MathematicsD.lib")
+set(_wm5_rel_math "${_wm5_lib_root}/Release/Wm5Mathematics.lib")
 
-# 3. Manually define the libraries you actually have
-SET(WM5_LIBRARIES
-    "${WM5_LIB_DIR}/Wm5CoreD.lib"
-    "${WM5_LIB_DIR}/Wm5MathematicsD.lib"
+# Per-config full paths (required when Debug libraries are absent for a Release-only WM5 install).
+set(WM5_LIBRARIES
+  "$<$<CONFIG:Debug>:${_wm5_dbg_core}>$<$<NOT:$<CONFIG:Debug>>:${_wm5_rel_core}>"
+  "$<$<CONFIG:Debug>:${_wm5_dbg_math}>$<$<NOT:$<CONFIG:Debug>>:${_wm5_rel_math}>"
 )
 
-# 4. Force the "Found" flags to TRUE so CMake stops complaining
-SET(WM5_FOUND TRUE)
-SET(WM5_Wm5Core_FOUND TRUE)
-SET(WM5_Wm5Mathematics_FOUND TRUE)
+set(WM5_FOUND TRUE)
+set(WM5_Wm5Core_FOUND TRUE)
+set(WM5_Wm5Mathematics_FOUND TRUE)
 
-# Fake the missing libraries to bypass the configuration error.
-# (If the build actually needs these later, the linker will fail, and we will know).
-SET(WM5_Wm5Physics_FOUND TRUE)
-SET(WM5_Wm5Imagics_FOUND TRUE)
-SET(WM5_Wm5WglGraphics_FOUND TRUE)
+# Unused by current CRIMSON targets but kept so optional COMPONENTS checks do not fail.
+set(WM5_Wm5Physics_FOUND TRUE)
+set(WM5_Wm5Imagics_FOUND TRUE)
+set(WM5_Wm5WglGraphics_FOUND TRUE)
 
-MARK_AS_ADVANCED(WM5_ROOT_DIR WM5_INCLUDE_DIR WM5_LIBRARIES)
+mark_as_advanced(WM5_ROOT_DIR WM5_INCLUDE_DIR WM5_LIBRARIES)
