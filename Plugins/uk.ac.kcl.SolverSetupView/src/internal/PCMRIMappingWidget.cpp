@@ -79,6 +79,13 @@ using crimson::planarFigureSetFinalized;
 #include <mitkImageSliceSelector.h>
 #include <mitkShapeBasedInterpolationAlgorithm.h>
 
+#include <mitkBoolProperty.h>
+#include <mitkRenderingManager.h>
+#include <mitkTimeNavigationController.h>
+#include <mitkImageWriteAccessor.h>
+
+#include <cstring>
+
 // MITK Application
 #include <mitkApplicationCursor.h>
 #include <mitkStatusBar.h>
@@ -256,7 +263,7 @@ PCMRIMappingWidget::PCMRIMappingWidget(QWidget* parent)
 	_UI.segToolsSelectionBox->SetDisplayedToolGroups(
 		"Add Subtract Correction Paint Wipe 'Region Growing' Fill Erase 'Live Wire'"); // '2D Fast Marching'");
 	_UI.segToolsSelectionBox->SetLayoutColumns(3);
-	_UI.segToolsSelectionBox->SetEnabledMode(QmitkToolSelectionBox::EnabledWithReferenceData);
+	_UI.segToolsSelectionBox->SetGUIEnabledAccordingToToolManagerState();
 	connect(_UI.segToolsSelectionBox, &QmitkToolSelectionBox::ToolSelected, this,
 		&PCMRIMappingWidget::setToolInformation_Segmentation);
 
@@ -693,8 +700,17 @@ void PCMRIMappingWidget::cancelInteraction(bool undoingPlacement)
 			_removeCurrentContour();
 		}
 		else if (!planarFigureIsFinalized(currentPlanarFigure)) {
-			// Interaction has started, but has not completed. Attempt to save the data by imitating interactor figure finishing
-			static_cast<mitk::PlanarFigureInteractor*>(_currentContourNode->GetDataInteractor().GetPointer())->FinalizeFigure();
+			planarFigureSetFinalized(currentPlanarFigure, true);
+			currentPlanarFigure->Modified();
+			currentPlanarFigure->DeselectControlPoint();
+			currentPlanarFigure->RemoveLastControlPoint();
+			_currentContourNode->SetBoolProperty("planarfigure.drawcontrolpoints", true);
+			_currentContourNode->Modified();
+			currentPlanarFigure->SetProperty("initiallyplaced", mitk::BoolProperty::New(true));
+			currentPlanarFigure->InvokeEvent(mitk::EndPlacementPlanarFigureEvent());
+			currentPlanarFigure->InvokeEvent(mitk::EndInteractionPlanarFigureEvent());
+			currentPlanarFigure->EvaluateFeatures();
+			mitk::RenderingManager::GetInstance()->RequestUpdateAll();
 		}
 	}
 }
@@ -750,12 +766,12 @@ void PCMRIMappingWidget::_connectContourObservers(mitk::DataNode* node)
 	auto cancelFigurePlacementCommand = crimson::ConstMemberCommand<PCMRIMappingWidget>::New();
 	cancelFigurePlacementCommand->SetCallbackFunction(this, &PCMRIMappingWidget::_figurePlacementCancelled);
 	_contourObserverTags[node].tags[ContourObserverTags::FigurePlacementCancelled] =
-		node->GetData()->AddObserver(mitk::CancelPlacementPlanarFigureEvent(), cancelFigurePlacementCommand);
+		node->GetData()->AddObserver(mitk::EndPlacementPlanarFigureEvent(), cancelFigurePlacementCommand);
 
 	auto planarFigureFinishedCommand = itk::SimpleMemberCommand<PCMRIMappingWidget>::New();
 	planarFigureFinishedCommand->SetCallbackFunction(this, &PCMRIMappingWidget::cancelInteraction);
 	_contourObserverTags[node].tags[ContourObserverTags::FigureFinished] =
-		node->GetData()->AddObserver(mitk::FinalizedPlanarFigureEvent(), planarFigureFinishedCommand);
+		node->GetData()->AddObserver(mitk::EndInteractionPlanarFigureEvent(), planarFigureFinishedCommand);
 }
 
 void PCMRIMappingWidget::_connectSegmentationObservers(mitk::DataNode* segmentationNode)
@@ -1530,11 +1546,20 @@ mitk::PlanarFigure* figureToFill)
 	sliceNode->SetData(slice);
 	sliceNode->SetBoolProperty("lofting.contour_reference_image", true);
 
-	mitk::Tool* firstTool = mitk::ToolManagerProvider::GetInstance()->GetToolManager()->GetToolById(0);
-
-	float color[3] = { 1, 0, 0 };
-	mitk::DataNode::Pointer emptySegmentation =
-		firstTool->CreateEmptySegmentationNode(slice, "segmented slice", mitk::Color(color));
+	mitk::Image::Pointer segImage = mitk::Image::New();
+	segImage->Initialize(slice->GetPixelType(), slice->GetDimension(), slice->GetDimensions());
+	segImage->SetGeometry(slice->GetGeometry()->Clone());
+	{
+		mitk::ImageWriteAccessor fill(segImage);
+		size_t n = 1;
+		for (unsigned int i = 0; i < segImage->GetDimension(); ++i) {
+			n *= static_cast<size_t>(segImage->GetDimension(i));
+		}
+		const size_t bytes = n * static_cast<size_t>(segImage->GetPixelType().GetSize());
+		std::memset(fill.GetData(), 0, bytes);
+	}
+	mitk::DataNode::Pointer emptySegmentation = mitk::DataNode::New();
+	emptySegmentation->SetData(segImage);
 	emptySegmentation->SetBoolProperty("hidden object", true);
 	emptySegmentation->SetVisibility(false);
 	emptySegmentation->SetVisibility(true, _ResliceView->getPCMRIRenderer());
@@ -2598,8 +2623,8 @@ void PCMRIMappingWidget::_fillPlanarFigureInSlice(mitk::Image* segmentationImage
 	}
 
 	mitk::ContourModel::Pointer projectedContour =
-		mitk::ContourModelUtils::ProjectContourTo2DSlice(segmentationImage, contourModel, true, false);
-	mitk::ContourModelUtils::FillContourInSlice(projectedContour, 0, segmentationImage, nullptr, 1);
+		mitk::ContourModelUtils::ProjectContourTo2DSlice(segmentationImage, contourModel);
+	mitk::ContourModelUtils::FillContourInSlice2(projectedContour, 0, segmentationImage, 1);
 }
 
 void PCMRIMappingWidget::deleteSelectedContours()
@@ -2659,12 +2684,14 @@ void PCMRIMappingWidget::updateCurrentContourInfo()
 
 void PCMRIMappingWidget::_requestThumbnail(mitk::DataNode::ConstPointer node)
 {
-	mitk::SliceNavigationController* tnc;
-	if (_ResliceView)
+	mitk::TimeNavigationController* tnc = nullptr;
+	if (_ResliceView) {
 		tnc = _ResliceView->getPCMRIRenderer()->GetRenderingManager()->GetTimeNavigationController();
-	else
+	}
+	if (!tnc) {
 		tnc = mitk::RenderingManager::GetInstance()->GetTimeNavigationController();
-	mitk::TimePointType time = tnc->GetInputWorldTimeGeometry()->TimeStepToTimePoint(tnc->GetTime()->GetPos());
+	}
+	mitk::TimePointType time = tnc->GetInputWorldTimeGeometry()->TimeStepToTimePoint(tnc->GetStepper()->GetPos());
 
 	_thumbnailGenerator->requestThumbnail(node, _currentPCMRINode.GetPointer(), time);
 }

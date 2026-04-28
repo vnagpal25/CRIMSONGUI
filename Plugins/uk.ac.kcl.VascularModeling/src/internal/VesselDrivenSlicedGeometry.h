@@ -2,7 +2,7 @@
 
 #include <mitkSlicedGeometry3D.h>
 #include <mitkAnatomicalPlanes.h>
-#include <mitkBoundingBox.h>
+// mitk::BoundingBox typedef lives in mitkBaseGeometry.h (MITK 2025+; mitkBoundingBox.h removed).
 #include <VesselPathAbstractData.h>
 #include <mitkSliceNavigationController.h>
 

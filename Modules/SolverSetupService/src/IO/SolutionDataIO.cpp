@@ -89,7 +89,9 @@ void writeDataArrayToStream(QDataStream& stream, vtkDataArray* dataArray)
 std::vector<itk::SmartPointer<mitk::BaseData>> SolutionDataIO::DoRead()
 {
     QFile file{QString::fromStdString(GetLocalFileName())};
-    file.open(QIODevice::ReadOnly);
+    if (!file.open(QIODevice::ReadOnly)) {
+        mitkThrow() << "Failed to open file " << GetLocalFileName();
+    }
     QDataStream inStream{&file};
 
     auto dataType = qint64{0};
@@ -132,7 +134,9 @@ void SolutionDataIO::Write()
     }
 
     QFile file{QString::fromStdString(GetOutputLocation())};
-    file.open(QIODevice::WriteOnly);
+    if (!file.open(QIODevice::WriteOnly)) {
+        mitkThrow() << "Failed to open file for writing " << GetOutputLocation();
+    }
     QDataStream outStream{&file};
 
     auto dataArray = solutionData->getArrayData();

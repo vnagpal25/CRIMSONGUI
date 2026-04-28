@@ -66,6 +66,13 @@ using crimson::planarFigureSetFinalized;
 #include <mitkImageSliceSelector.h>
 #include <mitkShapeBasedInterpolationAlgorithm.h>
 
+#include <mitkBoolProperty.h>
+#include <mitkRenderingManager.h>
+#include <mitkTimeNavigationController.h>
+#include <mitkImageWriteAccessor.h>
+
+#include <cstring>
+
 // MITK Application
 #include <mitkApplicationCursor.h>
 #include <mitkStatusBar.h>
@@ -235,7 +242,8 @@ void ContourModelingView::CreateQtPartControl(QWidget* parent)
     _UI.segToolsSelectionBox->SetDisplayedToolGroups(
         "Add Subtract Correction Paint Wipe 'Region Growing' Fill Erase 'Live Wire'"); // '2D Fast Marching'");
     _UI.segToolsSelectionBox->SetLayoutColumns(3);
-    _UI.segToolsSelectionBox->SetEnabledMode(QmitkToolSelectionBox::EnabledWithReferenceData);
+    // QmitkToolSelectionBox::SetEnabledMode removed in newer MITK; sync enable state from ToolManager.
+    _UI.segToolsSelectionBox->SetGUIEnabledAccordingToToolManagerState();
     connect(_UI.segToolsSelectionBox, &QmitkToolSelectionBox::ToolSelected, this,
             &ContourModelingView::setToolInformation_Segmentation);
 
@@ -462,8 +470,18 @@ void ContourModelingView::cancelInteraction(bool undoingPlacement)
             // Contour has not been placed - remove the contour altogether
             _removeCurrentContour();
         } else if (!planarFigureIsFinalized(currentPlanarFigure)) {
-            // Interaction has started, but has not completed. Attempt to save the data by imitating interactor figure finishing
-            static_cast<mitk::PlanarFigureInteractor*>(_currentContourNode->GetDataInteractor().GetPointer())->FinalizeFigure();
+            // PlanarFigureInteractor::FinalizeFigure is protected; mirror MITK's implementation (see mitkPlanarFigureInteractor.cpp).
+            planarFigureSetFinalized(currentPlanarFigure, true);
+            currentPlanarFigure->Modified();
+            currentPlanarFigure->DeselectControlPoint();
+            currentPlanarFigure->RemoveLastControlPoint();
+            _currentContourNode->SetBoolProperty("planarfigure.drawcontrolpoints", true);
+            _currentContourNode->Modified();
+            currentPlanarFigure->SetProperty("initiallyplaced", mitk::BoolProperty::New(true));
+            currentPlanarFigure->InvokeEvent(mitk::EndPlacementPlanarFigureEvent());
+            currentPlanarFigure->InvokeEvent(mitk::EndInteractionPlanarFigureEvent());
+            currentPlanarFigure->EvaluateFeatures();
+            mitk::RenderingManager::GetInstance()->RequestUpdateAll();
         }
     }
 }
@@ -534,12 +552,12 @@ void ContourModelingView::_connectContourObservers(mitk::DataNode* node)
     auto cancelFigurePlacementCommand = crimson::ConstMemberCommand<ContourModelingView>::New();
     cancelFigurePlacementCommand->SetCallbackFunction(this, &ContourModelingView::_figurePlacementCancelled);
     _contourObserverTags[node].tags[ContourObserverTags::FigurePlacementCancelled] =
-        node->GetData()->AddObserver(mitk::CancelPlacementPlanarFigureEvent(), cancelFigurePlacementCommand);
+        node->GetData()->AddObserver(mitk::EndPlacementPlanarFigureEvent(), cancelFigurePlacementCommand);
 
     auto planarFigureFinishedCommand = itk::SimpleMemberCommand<ContourModelingView>::New();
     planarFigureFinishedCommand->SetCallbackFunction(this, &ContourModelingView::cancelInteraction);
     _contourObserverTags[node].tags[ContourObserverTags::FigureFinished] =
-        node->GetData()->AddObserver(mitk::FinalizedPlanarFigureEvent(), planarFigureFinishedCommand);
+        node->GetData()->AddObserver(mitk::EndInteractionPlanarFigureEvent(), planarFigureFinishedCommand);
 }
 
 void ContourModelingView::_connectSegmentationObservers(mitk::DataNode* segmentationNode)
@@ -1201,11 +1219,21 @@ ContourModelingView::_createSegmentationNodes(mitk::Image* image, const mitk::Pl
     sliceNode->SetData(slice);
     sliceNode->SetBoolProperty("lofting.contour_reference_image", true);
 
-    mitk::Tool* firstTool = mitk::ToolManagerProvider::GetInstance()->GetToolManager()->GetToolById(0);
-
-    float color[3] = {1, 0, 0};
-    mitk::DataNode::Pointer emptySegmentation =
-        firstTool->CreateEmptySegmentationNode(slice, "segmented slice", mitk::Color(color));
+    // mitk::Tool::CreateEmptySegmentationNode was removed; create same-sized blank slice for 2D tools (still mitk::Image).
+    mitk::Image::Pointer segImage = mitk::Image::New();
+    segImage->Initialize(slice->GetPixelType(), slice->GetDimension(), slice->GetDimensions());
+    segImage->SetGeometry(slice->GetGeometry()->Clone());
+    {
+        mitk::ImageWriteAccessor fill(segImage);
+        size_t n = 1;
+        for (unsigned int i = 0; i < segImage->GetDimension(); ++i) {
+            n *= static_cast<size_t>(segImage->GetDimension(i));
+        }
+        const size_t bytes = n * static_cast<size_t>(segImage->GetPixelType().GetSize());
+        std::memset(fill.GetData(), 0, bytes);
+    }
+    mitk::DataNode::Pointer emptySegmentation = mitk::DataNode::New();
+    emptySegmentation->SetData(segImage);
     emptySegmentation->SetBoolProperty("hidden object", true);
     emptySegmentation->SetVisibility(false);
     for (mitk::BaseRenderer* rend : _vesselDrivenResliceView->getAllResliceRenderers()) {
@@ -1892,8 +1920,8 @@ void ContourModelingView::_fillPlanarFigureInSlice(mitk::Image* segmentationImag
     }
 
     mitk::ContourModel::Pointer projectedContour =
-        mitk::ContourModelUtils::ProjectContourTo2DSlice(segmentationImage, contourModel, true, false);
-    mitk::ContourModelUtils::FillContourInSlice(projectedContour, 0, segmentationImage, nullptr, 1);
+        mitk::ContourModelUtils::ProjectContourTo2DSlice(segmentationImage, contourModel);
+    mitk::ContourModelUtils::FillContourInSlice2(projectedContour, 0, segmentationImage, 1);
 }
 
 void ContourModelingView::deleteSelectedContours()
@@ -1976,8 +2004,8 @@ void ContourModelingView::updateCurrentContourInfo()
 
 void ContourModelingView::_requestThumbnail(mitk::DataNode::ConstPointer node)
 {
-    mitk::SliceNavigationController* tnc = mitk::RenderingManager::GetInstance()->GetTimeNavigationController();
-    mitk::TimePointType time = tnc->GetInputWorldTimeGeometry()->TimeStepToTimePoint(tnc->GetTime()->GetPos());
+    mitk::TimeNavigationController* tnc = mitk::RenderingManager::GetInstance()->GetTimeNavigationController();
+    mitk::TimePointType time = tnc->GetInputWorldTimeGeometry()->TimeStepToTimePoint(tnc->GetStepper()->GetPos());
 
     _thumbnailGenerator->requestThumbnail(node, time);
 }

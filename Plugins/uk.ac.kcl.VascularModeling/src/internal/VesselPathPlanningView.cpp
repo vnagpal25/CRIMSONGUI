@@ -530,7 +530,8 @@ void VesselPathPlanningView::selectClosestControlPoints()
 #include <SolidData.h>
 
 struct IndexComparator {
-    bool operator()(const itk::Index<3>&l, const itk::Index<3>&r) {
+    bool operator()(const itk::Index<3>& l, const itk::Index<3>& r) const
+    {
         return l[0] != r[0] ? l[0] < r[0] : (l[1] != r[1] ? l[1] < r[1] : l[2] < r[2]);
     }
 };

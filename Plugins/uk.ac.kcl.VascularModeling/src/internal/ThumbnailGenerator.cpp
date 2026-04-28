@@ -3,7 +3,7 @@
 #include <unordered_map>
 
 #include <QTimer>
-#include <QTime>
+#include <QElapsedTimer>
 #include <QApplication>
 #include <QGuiApplication>
 #include <QScreen>
@@ -34,7 +34,7 @@ public:
     QTimer thumbnailUpdateTimer;
 
     struct ThumbnailRequestInfo {
-        QTime requestTime;
+        QElapsedTimer requestTimer;
         mitk::TimePointType time;
     };
 
@@ -72,7 +72,7 @@ ThumbnailGenerator::~ThumbnailGenerator()
 
 void ThumbnailGenerator::requestThumbnail(mitk::DataNode::ConstPointer planarFigureNode, mitk::TimePointType time)
 {
-    d->thumbnailUpdateMap[planarFigureNode].requestTime.restart();
+    d->thumbnailUpdateMap[planarFigureNode].requestTimer.restart();
     d->thumbnailUpdateMap[planarFigureNode].time = time;
 }
 
@@ -90,15 +90,15 @@ void ThumbnailGenerator::_generateThumbnail(mitk::DataNode::ConstPointer planarF
 {
     mitk::VtkPropRenderer* renderer = d->thumbnailRenderwindow->GetRenderer();
 
-    // Set renderer geometry to the planar figure's geometry
+    // MITK 2025+: renderer "world" slice geometry is SetCurrentWorldGeometry; drive time via ProportionalTimeGeometry.
     mitk::PlaneGeometry::Pointer geo = static_cast<mitk::PlanarFigure*>(planarFigureNode->GetData())->GetPlaneGeometry()->Clone();
     geo->SetReferenceGeometry(geo);
-    renderer->SetWorldGeometry3D(geo);
+    renderer->SetCurrentWorldGeometry(geo);
     renderer->GetCameraController()->Fit();
-    auto timeGeometry = dynamic_cast<mitk::ProportionalTimeGeometry*>(renderer->GetWorldTimeGeometry());
-    if (timeGeometry) {
-        timeGeometry->SetFirstTimePoint(time);
-    }
+    mitk::ProportionalTimeGeometry::Pointer thumbTimeGeometry = mitk::ProportionalTimeGeometry::New();
+    thumbTimeGeometry->Initialize(geo, 1);
+    thumbTimeGeometry->SetFirstTimePoint(time);
+    renderer->SetWorldTimeGeometry(thumbTimeGeometry);
 
     mitk::RenderingManager::GetInstance()->AddRenderWindow(d->thumbnailRenderwindow->GetVtkRenderWindow());
     const_cast<mitk::DataNode*>(planarFigureNode.GetPointer())->SetVisibility(true, renderer);
@@ -158,7 +158,7 @@ void ThumbnailGenerator::_generateOneThumbnail()
     }
 
     for (auto iter = d->thumbnailUpdateMap.begin(); iter != d->thumbnailUpdateMap.end(); ++iter) {
-        if (iter->second.requestTime.elapsed() > 300) { // Prevent continuous updates when the contour is being modified
+        if (iter->second.requestTimer.elapsed() > 300) { // Prevent continuous updates when the contour is being modified
             _generateThumbnail(iter->first, iter->second.time);
             d->thumbnailUpdateMap.erase(iter);
             return;

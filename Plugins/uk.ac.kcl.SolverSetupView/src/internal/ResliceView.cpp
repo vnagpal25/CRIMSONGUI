@@ -521,7 +521,7 @@ void ResliceView::_setupMRASlice(const mitk::DataNode* node)
 	}
 
 	mitk::BaseGeometry::Pointer geo = node->GetData()->GetGeometry();
-	d->renderWindow->GetRenderer()->SetWorldGeometry3D(geo);
+	d->renderWindow->GetRenderer()->SetCurrentWorldGeometry(geo);
 
 	//check if there is a face previously selected
 	if (currentNode() && currentSolidNode)
@@ -654,7 +654,7 @@ void ResliceView::updateMRARendering(mitk::PlaneGeometry::Pointer plane) const
 	
 	originalMRAgeometry = plane.GetPointer();
 
-	d->renderWindow->GetRenderer()->SetWorldGeometry3D(plane);
+	d->renderWindow->GetRenderer()->SetCurrentWorldGeometry(plane);
 	d->renderWindow->GetRenderer()->GetCameraController()->Fit();
 	d->renderWindow->GetRenderer()->ForceImmediateUpdate();
 

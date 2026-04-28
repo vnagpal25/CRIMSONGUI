@@ -2,6 +2,9 @@
 
 #include <array>
 
+// Return type is complete for MSVC (forward-declare is not enough in-class).
+#include <vtkPointData.h>
+
 #include <mitkBaseData.h>
 #include <mitkSurface.h>
 #include <mitkUnstructuredGrid.h>

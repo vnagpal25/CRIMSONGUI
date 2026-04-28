@@ -58,11 +58,6 @@
 #include <boost/regex.hpp>
 #include <boost/scope_exit.hpp>
 
-// ITK-bundled Eigen + MSVC: avoid noexcept-based method signatures that break under some /WX builds.
-#ifndef EIGEN_DONT_USE_CXX11_NOEXCEPT
-#define EIGEN_DONT_USE_CXX11_NOEXCEPT
-#endif
-
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues>
 #include <vtkPointData.h>

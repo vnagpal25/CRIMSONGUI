@@ -3,9 +3,10 @@
 #include <unordered_map>
 
 #include <QTimer>
-#include <QTime>
+#include <QElapsedTimer>
 #include <QApplication>
-#include <QDesktopWidget>
+#include <QGuiApplication>
+#include <QScreen>
 
 #include <vtkNew.h>
 #include <vtkWindowToImageFilter.h>
@@ -34,9 +35,9 @@ public:
     QTimer thumbnailUpdateTimer;
 
     struct ThumbnailRequestInfo {
-        QTime requestTime;
+        QElapsedTimer requestTimer;
         mitk::TimePointType time;
-		mitk::DataNode::ConstPointer imageNode;
+        mitk::DataNode::ConstPointer imageNode;
     };
 
     std::unordered_map<mitk::DataNode::ConstPointer, ThumbnailRequestInfo, DataNodeConstPointerHasher> thumbnailUpdateMap;
@@ -73,9 +74,9 @@ ThumbnailGenerator::~ThumbnailGenerator()
 
 void ThumbnailGenerator::requestThumbnail(mitk::DataNode::ConstPointer planarFigureNode, mitk::DataNode::ConstPointer imageNode, mitk::TimePointType time)
 {
-    d->thumbnailUpdateMap[planarFigureNode].requestTime.restart();
+    d->thumbnailUpdateMap[planarFigureNode].requestTimer.restart();
     d->thumbnailUpdateMap[planarFigureNode].time = time;
-	d->thumbnailUpdateMap[planarFigureNode].imageNode = imageNode;
+    d->thumbnailUpdateMap[planarFigureNode].imageNode = imageNode;
 }
 
 void ThumbnailGenerator::cancelThumbnailRequest(mitk::DataNode::ConstPointer planarFigureNode)
@@ -92,48 +93,46 @@ void ThumbnailGenerator::_generateThumbnail(mitk::DataNode::ConstPointer planarF
 {
     mitk::VtkPropRenderer* renderer = d->thumbnailRenderwindow->GetRenderer();
 
-    // Set renderer geometry to the planar figure's geometry
     mitk::PlaneGeometry::Pointer geo = static_cast<mitk::PlanarFigure*>(planarFigureNode->GetData())->GetPlaneGeometry()->Clone();
-	auto test = imageNode->GetData()->GetGeometry();
-    geo->SetReferenceGeometry(geo);
-    renderer->SetWorldGeometry3D(geo);
-    renderer->GetCameraController()->Fit();
-    auto timeGeometry = dynamic_cast<mitk::ProportionalTimeGeometry*>(renderer->GetWorldTimeGeometry());
-    if (timeGeometry) {
-        timeGeometry->SetFirstTimePoint(time);
+    if (imageNode && imageNode->GetData()) {
+        geo->SetReferenceGeometry(imageNode->GetData()->GetGeometry());
+    } else {
+        geo->SetReferenceGeometry(geo);
     }
+    renderer->SetCurrentWorldGeometry(geo);
+    renderer->GetCameraController()->Fit();
+    mitk::ProportionalTimeGeometry::Pointer thumbTimeGeometry = mitk::ProportionalTimeGeometry::New();
+    thumbTimeGeometry->Initialize(geo, 1);
+    thumbTimeGeometry->SetFirstTimePoint(time);
+    renderer->SetWorldTimeGeometry(thumbTimeGeometry);
 
     mitk::RenderingManager::GetInstance()->AddRenderWindow(d->thumbnailRenderwindow->GetVtkRenderWindow());
 
-	//render all nodes invisible in thumbnail view
-	mitk::DataStorage::SetOfObjects::ConstPointer allNodes =
-		crimson::HierarchyManager::getInstance()->getDataStorage()->GetAll();
-	for (const mitk::DataNode::Pointer& node : *allNodes) {
-		node->SetVisibility(false, renderer);
-	}
+    mitk::DataStorage::SetOfObjects::ConstPointer allNodes =
+        crimson::HierarchyManager::getInstance()->getDataStorage()->GetAll();
+    for (const mitk::DataNode::Pointer& node : *allNodes) {
+        node->SetVisibility(false, renderer);
+    }
 
-	//render current contour and image slice visible in thumbnail view
     const_cast<mitk::DataNode*>(planarFigureNode.GetPointer())->SetVisibility(true, renderer);
-	const_cast<mitk::DataNode*>(imageNode.GetPointer())->SetVisibility(true, renderer);
-
+    if (imageNode) {
+        const_cast<mitk::DataNode*>(imageNode.GetPointer())->SetVisibility(true, renderer);
+    }
 
 #ifdef Q_OS_LINUX
-    // Linux rendering issues workarounds
-    QRect rec = QApplication::desktop()->screenGeometry();
+    // Qt6: QDesktopWidget removed; primary screen comes from QGuiApplication.
+    QRect rec = QGuiApplication::primaryScreen()->geometry();
     d->thumbnailRenderwindow->move(rec.width() - d->thumbnailRenderwindow->width(), rec.height() - d->thumbnailRenderwindow->height());
     d->thumbnailRenderwindow->show();
 
-    // Render the data
     if (d->firstRender) {
         d->firstRender = false;
         renderer->ForceImmediateUpdate();
     }
 #endif
 
-    // Render the data
     renderer->ForceImmediateUpdate();
 
-    // Save the renderer output as a QImage
     vtkNew<vtkWindowToImageFilter> imageFilter;
     imageFilter->SetInput(d->thumbnailRenderwindow->GetVtkRenderWindow());
     imageFilter->SetInputBufferTypeToRGB();
@@ -142,13 +141,11 @@ void ThumbnailGenerator::_generateThumbnail(mitk::DataNode::ConstPointer planarF
     imageFilter->Update();
 
 #ifdef Q_OS_LINUX
-    // No support for off-screen rendering in Linux. Remove the render window from screen.
     d->thumbnailRenderwindow->hide();
 #endif
 
     mitk::RenderingManager::GetInstance()->RemoveRenderWindow(d->thumbnailRenderwindow->GetVtkRenderWindow());
 
-    // Extract the rendering result
     vtkImageData* imageData = imageFilter->GetOutput();
     QImage img(imageData->GetDimensions()[0], imageData->GetDimensions()[1], QImage::Format_RGB888);
     img.fill(Qt::red);
@@ -159,7 +156,6 @@ void ThumbnailGenerator::_generateThumbnail(mitk::DataNode::ConstPointer planarF
         }
     }
 
-    // Notify the listeners
     emit thumbnailGenerated(planarFigureNode, img);
 }
 
@@ -170,7 +166,7 @@ void ThumbnailGenerator::_generateOneThumbnail()
     }
 
     for (auto iter = d->thumbnailUpdateMap.begin(); iter != d->thumbnailUpdateMap.end(); ++iter) {
-        if (iter->second.requestTime.elapsed() > 300) { // Prevent continuous updates when the contour is being modified
+        if (iter->second.requestTimer.elapsed() > 300) {
             _generateThumbnail(iter->first, iter->second.imageNode, iter->second.time);
             d->thumbnailUpdateMap.erase(iter);
             return;

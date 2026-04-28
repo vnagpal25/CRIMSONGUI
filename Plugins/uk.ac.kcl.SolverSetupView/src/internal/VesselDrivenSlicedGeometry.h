@@ -2,7 +2,6 @@
 
 #include <mitkSlicedGeometry3D.h>
 #include <mitkAnatomicalPlanes.h>
-#include <mitkBoundingBox.h>
 #include <VesselPathAbstractData.h>
 #include <mitkSliceNavigationController.h>
 
