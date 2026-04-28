@@ -12,6 +12,8 @@
 
 #include <vtkCellPicker.h>
 #include <vtkCellData.h>
+// vtkCellData.h may only forward-declare vtkDataArray; GetVariantValue needs the full type (MSVC C2027).
+#include <vtkDataArray.h>
 
 #include <gsl.h>
 
