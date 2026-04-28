@@ -441,7 +441,13 @@ std::vector<int> MeshData::getElementNodeIds(int elementIndex) const
     vtkCell* cell = getUnstructuredGridRepresentation()->GetVtkUnstructuredGrid()->GetCell(elementIndex);
     vtkIdList* ids = cell->GetPointIds();
 
-    return {ids->GetPointer(0), ids->GetPointer(ids->GetNumberOfIds())};
+    // VTK vtkIdType may be 64-bit on Windows; explicit narrow for mesh APIs still using int IDs.
+    std::vector<int> out;
+    out.reserve(static_cast<size_t>(ids->GetNumberOfIds()));
+    for (vtkIdType i = 0; i < ids->GetNumberOfIds(); ++i) {
+        out.push_back(static_cast<int>(ids->GetId(i)));
+    }
+    return out;
 }
 
 std::vector<double> MeshData::getElementAspectRatios()

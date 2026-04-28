@@ -56,7 +56,7 @@ void ReparentAction::Run(const QList<mitk::DataNode::Pointer> &selectedNodes)
 
         QmitkNodeDescriptor* nodeDescriptor
             = QmitkNodeDescriptorManager::GetInstance()->GetDescriptor(parent);
-        item->setIcon(nodeDescriptor->GetIcon());
+        item->setIcon(nodeDescriptor->GetIcon(parent));
 
         dialogUI.newParentNodeListWidget->addItem(item);
     }

@@ -10,6 +10,8 @@
 
 #include <mitkSlicedGeometry3D.h>
 #include <mitkImage.h>
+#include <mitkTimeNavigationController.h>
+#include <mitkAnatomicalPlanes.h>
 
 // Qt
 #include "QmitkRenderWindow.h"
@@ -144,7 +146,8 @@ VesselDrivenResliceView::~VesselDrivenResliceView()
     d->resliceViewWidgetListener->unregisterListener();
 
     // Disconnect time events
-    mitk::SliceNavigationController* timeNavigationController = mitk::RenderingManager::GetInstance()->GetTimeNavigationController();
+    // MITK: global time is owned by TimeNavigationController, not SliceNavigationController.
+    mitk::TimeNavigationController* timeNavigationController = mitk::RenderingManager::GetInstance()->GetTimeNavigationController();
     timeNavigationController->Disconnect(d->renderWindow->GetSliceNavigationController());
     timeNavigationController->Disconnect(d->renderWindowGradMag->GetSliceNavigationController());
 
@@ -223,7 +226,7 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
     d->positionInMM = new QLabel(parent);
     d->positionInMM->setTextInteractionFlags(Qt::TextSelectableByMouse);
     d->positionInMM->setText("0.00 mm");
-    d->positionInMM->setMinimumWidth(d->positionInMM->fontMetrics().width("9999.99 mm"));
+    d->positionInMM->setMinimumWidth(d->positionInMM->fontMetrics().horizontalAdvance(QStringLiteral("9999.99 mm")));
     d->positionInMM->setToolTip(tr("Distance from the beginning of vessel path to current position"));
     d->positionInMM->setAlignment(Qt::AlignRight);
     
@@ -234,25 +237,23 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
 
     auto renderWindowsLayout = new  QHBoxLayout(parent);
 
-    d->renderWindow = new QmitkRenderWindow(parent, "reslicer", nullptr, mitk::RenderingManager::GetInstance());
+    d->renderWindow = new QmitkRenderWindow(parent, QStringLiteral("reslicer"));
     d->renderWindow->GetRenderer()->SetDataStorage(GetDataStorage());
     d->renderWindow->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->renderWindow->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     renderWindowsLayout->addWidget(d->renderWindow);
 
 
-    d->renderWindowGradMag = new QmitkRenderWindow(parent, "reslicer grad mag", nullptr, mitk::RenderingManager::GetInstance());
+    d->renderWindowGradMag = new QmitkRenderWindow(parent, QStringLiteral("reslicer grad mag"));
     d->renderWindowGradMag->GetRenderer()->SetDataStorage(GetDataStorage());
     d->renderWindowGradMag->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->renderWindowGradMag->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     renderWindowsLayout->addWidget(d->renderWindowGradMag);
 
-    // Connect time events
-    mitk::SliceNavigationController* timeNavigationController = mitk::RenderingManager::GetInstance()->GetTimeNavigationController();
-    timeNavigationController->ConnectGeometryTimeEvent(d->renderWindow->GetSliceNavigationController(), false);
-    timeNavigationController->ConnectGeometryTimeEvent(d->renderWindowGradMag->GetSliceNavigationController(), false);
-    d->renderWindow->GetSliceNavigationController()->ConnectGeometryTimeEvent(timeNavigationController, false);
-    d->renderWindowGradMag->GetSliceNavigationController()->ConnectGeometryTimeEvent(timeNavigationController, false);
+    // Connect time events (MITK: ConnectGeometryTimeEvent removed; ConnectTimeEvent syncs SetGeometryTime receivers).
+    mitk::TimeNavigationController* timeNavigationController = mitk::RenderingManager::GetInstance()->GetTimeNavigationController();
+    timeNavigationController->ConnectTimeEvent(d->renderWindow->GetSliceNavigationController());
+    timeNavigationController->ConnectTimeEvent(d->renderWindowGradMag->GetSliceNavigationController());
 
 
     d->mainLayout->addLayout(renderWindowsLayout, 1);
@@ -446,19 +447,20 @@ void VesselDrivenResliceView::_setupRendererSlices()
     // Access the saved Id here because the geometry setup will trigger Stepper's modify function to be called
     mitk::Point3D savedSlicePos = d->savedSlicePositions.value(currentNode(), vesselPath->getPosition(0));
 
-    mitk::SliceNavigationController* snc = d->renderWindow->GetRenderer()->GetSliceNavigationController();
-    unsigned int currentGeometryTime = snc->GetTime()->GetPos();
+    mitk::TimeNavigationController* tnc = mitk::RenderingManager::GetInstance()->GetTimeNavigationController();
+    unsigned int currentGeometryTime = tnc->GetStepper()->GetPos();
 
+    mitk::SliceNavigationController* snc = d->renderWindow->GetRenderer()->GetSliceNavigationController();
     snc->SetInputWorldTimeGeometry(timeGeometry);
-    snc->SetViewDirection(mitk::SliceNavigationController::Original);
+    snc->SetViewDirection(mitk::AnatomicalPlane::Original);
     snc->Update();
-    snc->GetTime()->SetPos(currentGeometryTime);
 
     snc = d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController();
     snc->SetInputWorldTimeGeometry(timeGeometry);
-    snc->SetViewDirection(mitk::SliceNavigationController::Original);
+    snc->SetViewDirection(mitk::AnatomicalPlane::Original);
     snc->Update();
-    snc->GetTime()->SetPos(currentGeometryTime);
+
+    tnc->GetStepper()->SetPos(currentGeometryTime);
 
     navigateTo(savedSlicePos);
 
@@ -469,8 +471,8 @@ void VesselDrivenResliceView::_setupRendererSlices()
 void VesselDrivenResliceView::_setSliceNumber(double slice)
 {
     unsigned int sliceNumber = static_cast<unsigned int>(slice);
-    d->renderWindow->GetRenderer()->GetSliceNavigationController()->GetSlice()->SetPos(sliceNumber);
-    d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetSlice()->SetPos(sliceNumber);
+    d->renderWindow->GetRenderer()->GetSliceNavigationController()->GetStepper()->SetPos(sliceNumber);
+    d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetStepper()->SetPos(sliceNumber);
     d->positionInMM->setText(QString("%1 mm").arg(getCurrentParameterValue(), 6, 'f', 2));
 }
 

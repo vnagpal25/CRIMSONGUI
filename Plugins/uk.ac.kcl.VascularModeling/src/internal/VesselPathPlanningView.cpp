@@ -21,8 +21,8 @@
 #include <QMessageBox>
 #include <QInputDialog>
 #include <QShortcut>
+#include <QRandomGenerator>
 
-#include <QmitkStdMultiWidget.h>
 #include <QmitkStdMultiWidgetEditor.h>
 #include <mitkNodePredicateDataType.h>
 
@@ -266,7 +266,7 @@ void VesselPathPlanningView::createNewVesselPath(mitk::DataNode* copyFrom)
     newNode->SetData(newData);
     newNode->SetName(newPathName.toStdString());
     // Assign random color
-    auto randomColor = QColor::fromHsv(qrand() % 360, 255, 210);
+    auto randomColor = QColor::fromHsv(QRandomGenerator::global()->bounded(360), 255, 210);
     newNode->SetColor(randomColor.redF(), randomColor.greenF(), randomColor.blueF());
 
     _vesselPathNodes[newData] = newNode;
@@ -382,7 +382,7 @@ void VesselPathPlanningView::navigateToControlPoint(int id)
 
     QmitkStdMultiWidgetEditor* qSMWE = dynamic_cast<QmitkStdMultiWidgetEditor*>(GetRenderWindowPart());
     if (qSMWE) {
-        qSMWE->GetStdMultiWidget()->MoveCrossToPosition(vessel->getControlPoint(id));
+        qSMWE->SetSelectedPosition(vessel->getControlPoint(id));
     }
 }
 
@@ -677,7 +677,7 @@ void VesselPathPlanningView::createMaskedImage()
 
     if (image->GetDimension() == 4) {
         mitk::ImageTimeSelector::Pointer timeStepExtractor = mitk::ImageTimeSelector::New();
-        int step = mitk::RenderingManager::GetInstance()->GetTimeNavigationController()->GetTime()->GetPos();
+        int step = mitk::RenderingManager::GetInstance()->GetTimeNavigationController()->GetStepper()->GetPos();
         timeStepExtractor->SetTimeNr(step);
         timeStepExtractor->SetInput(image);
         timeStepExtractor->Update();

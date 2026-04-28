@@ -16,11 +16,15 @@
 #include "ThumbnailGenerator.h"
 #include "ConstMemberCommand.h"
 #include "ContourTypeConversion.h"
+#include "PlanarFigureMITKCompat.h"
 #include "PCMRIUtils.h"
 #include "MapAction.h"
 #include "SolverSetupView.h"
 #include "TimeInterpolationDialog.h"
 #include <utils/TaskStateObserver.h>
+
+using crimson::planarFigureIsFinalized;
+using crimson::planarFigureSetFinalized;
 
 // Module includes
 #include <HierarchyManager.h>
@@ -688,7 +692,7 @@ void PCMRIMappingWidget::cancelInteraction(bool undoingPlacement)
 			// Contour has not been placed - remove the contour altogether
 			_removeCurrentContour();
 		}
-		else if (!currentPlanarFigure->IsFinalized()) {
+		else if (!planarFigureIsFinalized(currentPlanarFigure)) {
 			// Interaction has started, but has not completed. Attempt to save the data by imitating interactor figure finishing
 			static_cast<mitk::PlanarFigureInteractor*>(_currentContourNode->GetDataInteractor().GetPointer())->FinalizeFigure();
 		}
@@ -1556,7 +1560,7 @@ mitk::DataNode* PCMRIMappingWidget::createSegmented(bool startNewUndoGroup)
 
 	auto contour = mitk::PlanarPolygon::New();
 	contour->PlaceFigure(mitk::Point2D());
-	contour->SetFinalized(true);
+	planarFigureSetFinalized(contour, true);
 
 	assert(_ResliceView);
 
@@ -1674,7 +1678,7 @@ void PCMRIMappingWidget::_setCurrentContourNode(mitk::DataNode* node)
 		_addPlanarFigureInteractor(_currentContourNode);
 
 		auto planarFigure = static_cast<mitk::PlanarFigure*>(_currentContourNode->GetData());
-		if (!planarFigure->IsFinalized()) {
+		if (!planarFigureIsFinalized(planarFigure)) {
 			_contourTypeToButtonMap[planarFigure->GetNameOfClass()]->setChecked(true);
 		}
 	}
@@ -2633,7 +2637,7 @@ void PCMRIMappingWidget::updateCurrentContourInfo()
 
 	auto planarFigure = static_cast<mitk::PlanarFigure*>(_currentContourNode->GetData());
 
-	if (!planarFigure->IsFinalized()) {
+	if (!planarFigureIsFinalized(planarFigure)) {
 		_UI.contourInfoTextBrowser->setText("");
 		return;
 	}

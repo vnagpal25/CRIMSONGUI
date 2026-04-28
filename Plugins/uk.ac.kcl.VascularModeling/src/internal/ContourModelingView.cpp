@@ -13,11 +13,15 @@
 #include "ThumbnailGenerator.h"
 #include "ConstMemberCommand.h"
 #include "ContourTypeConversion.h"
+#include "PlanarFigureMITKCompat.h"
 #include "VascularModelingUtils.h"
 #include "LoftAction.h"
 #include "VascularModelingNodeTypes.h"
 #include "ShowHideContoursAction.h"
 #include <utils/TaskStateObserver.h>
+
+using crimson::planarFigureIsFinalized;
+using crimson::planarFigureSetFinalized;
 
 // Module includes
 #include <VesselPathAbstractData.h>
@@ -35,6 +39,10 @@
 #include <mitkVector.h>
 #include <mitkNodePredicateDataType.h>
 #include <mitkNodePredicateData.h>
+#include <mitkNodePredicateNot.h>
+#include <mitkNodePredicateOr.h>
+#include <mitkNodePredicateAnd.h>
+#include <mitkNodePredicateProperty.h>
 
 // Planar figures
 #include <mitkPlanarCircle.h>
@@ -453,7 +461,7 @@ void ContourModelingView::cancelInteraction(bool undoingPlacement)
         if (!currentPlanarFigure->IsPlaced()) {
             // Contour has not been placed - remove the contour altogether
             _removeCurrentContour();
-        } else if (!currentPlanarFigure->IsFinalized()) {
+        } else if (!planarFigureIsFinalized(currentPlanarFigure)) {
             // Interaction has started, but has not completed. Attempt to save the data by imitating interactor figure finishing
             static_cast<mitk::PlanarFigureInteractor*>(_currentContourNode->GetDataInteractor().GetPointer())->FinalizeFigure();
         }
@@ -1227,7 +1235,7 @@ void ContourModelingView::createSegmented(bool startNewUndoGroup)
 
     auto contour = mitk::PlanarPolygon::New();
     contour->PlaceFigure(mitk::Point2D());
-    contour->SetFinalized(true);
+    planarFigureSetFinalized(contour, true);
 
     assert(_vesselDrivenResliceView);
 
@@ -1320,7 +1328,7 @@ void ContourModelingView::_setCurrentContourNode(mitk::DataNode* node)
         _addPlanarFigureInteractor(_currentContourNode);
 
         auto planarFigure = static_cast<mitk::PlanarFigure*>(_currentContourNode->GetData());
-        if (!planarFigure->IsFinalized()) {
+        if (!planarFigureIsFinalized(planarFigure)) {
             _contourTypeToButtonMap[planarFigure->GetNameOfClass()]->setChecked(true);
         }
     }
@@ -1946,7 +1954,7 @@ void ContourModelingView::updateCurrentContourInfo()
 
     auto planarFigure = static_cast<mitk::PlanarFigure*>(_currentContourNode->GetData());
 
-    if (!planarFigure->IsFinalized()) {
+    if (!planarFigureIsFinalized(planarFigure)) {
         _UI.contourInfoTextBrowser->setText("");
         return;
     }

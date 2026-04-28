@@ -16,6 +16,7 @@
 // #include <CGAL/boost/graph/split_graph_into_polylines.h>
 
 #include <fstream>
+#include <limits>
 
 #include "IMeshingKernel.h"
 
@@ -56,6 +57,11 @@
 
 #include <boost/regex.hpp>
 #include <boost/scope_exit.hpp>
+
+// ITK-bundled Eigen + MSVC: avoid noexcept-based method signatures that break under some /WX builds.
+#ifndef EIGEN_DONT_USE_CXX11_NOEXCEPT
+#define EIGEN_DONT_USE_CXX11_NOEXCEPT
+#endif
 
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues>
@@ -693,14 +699,19 @@ namespace crimson
                     vtkNew<vtkThreshold> blVolumeCells;
                     blVolumeCells->SetInputData(boundaryLayer->GetOutput());
                     blVolumeCells->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Face IDs");
-                    blVolumeCells->ThresholdBetween(VolumeId, VolumeId);
+                    // VTK 9+: ThresholdBetween removed; use explicit function + bounds.
+                    blVolumeCells->SetThresholdFunction(vtkThreshold::THRESHOLD_BETWEEN);
+                    blVolumeCells->SetLowerThreshold(VolumeId);
+                    blVolumeCells->SetUpperThreshold(VolumeId);
                     blVolumeCells->Update();
 
                     // Extract sidewall cells
                     vtkNew<vtkThreshold> blSidewallCells;
                     blSidewallCells->SetInputData(boundaryLayer->GetOutput());
                     blSidewallCells->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Face IDs");
-                    blSidewallCells->ThresholdBetween(SidewallId, SidewallId);
+                    blSidewallCells->SetThresholdFunction(vtkThreshold::THRESHOLD_BETWEEN);
+                    blSidewallCells->SetLowerThreshold(SidewallId);
+                    blSidewallCells->SetUpperThreshold(SidewallId);
                     blSidewallCells->Update();
 
                     // Cap the inner surface
@@ -785,7 +796,10 @@ namespace crimson
                     vtkNew<vtkThreshold> remeshedCapCells;
                     remeshedCapCells->SetInputData(cleaner2->GetOutput());
                     remeshedCapCells->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Face IDs");
-                    remeshedCapCells->ThresholdByUpper(FirstCapId);
+                    // Remeshed caps use Face IDs >= FirstCapId (legacy ThresholdByUpper selected high labels).
+                    remeshedCapCells->SetThresholdFunction(vtkThreshold::THRESHOLD_BETWEEN);
+                    remeshedCapCells->SetLowerThreshold(FirstCapId);
+                    remeshedCapCells->SetUpperThreshold(std::numeric_limits<double>::max());
                     remeshedCapCells->Update();
 
                     vtkNew<vtkGeometryFilter> meshToSurface;

@@ -1,5 +1,7 @@
 #pragma once 
 
+#include <string>
+
 #include "mitkCoreObjectFactory.h"
 #include "CGALVMTKMeshingKernelExports.h"
 
@@ -16,10 +18,10 @@ public:
     mitk::Mapper::Pointer CreateMapper(mitk::DataNode* node, MapperSlotId slotId) override;
     void SetDefaultProperties(mitk::DataNode* node) override;
 
-    // Deprecated stuff
-    const char* GetFileExtensions() override { return ""; }
+    // Deprecated stuff (MITK: GetFileExtensions* return std::string, not const char*)
+    std::string GetFileExtensions() override { return {}; }
     mitk::CoreObjectFactoryBase::MultimapType GetFileExtensionsMap() override { return mitk::CoreObjectFactoryBase::MultimapType(); }
-    const char* GetSaveFileExtensions() override { return ""; }
+    std::string GetSaveFileExtensions() override { return {}; }
     mitk::CoreObjectFactoryBase::MultimapType GetSaveFileExtensionsMap() override { return mitk::CoreObjectFactoryBase::MultimapType(); }
 
 protected:

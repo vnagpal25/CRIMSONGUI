@@ -321,7 +321,7 @@ void VesselBlendingView::_swapBooleanOperationTableRows(const crimson::VesselFor
 
     // takes and returns the whole row
     auto takeRow = [tableWidget](int row) {
-        bool rowSelected = tableWidget->isItemSelected(tableWidget->item(row, 0));
+        bool rowSelected = tableWidget->item(row, 0) && tableWidget->item(row, 0)->isSelected();
         QList<QTableWidgetItem*> rowItems;
         for (int col = 0; col < tableWidget->columnCount(); ++col) {
             rowItems << tableWidget->takeItem(row, col);
@@ -333,8 +333,10 @@ void VesselBlendingView::_swapBooleanOperationTableRows(const crimson::VesselFor
     auto setRow = [tableWidget](int row, const QList<QTableWidgetItem*>& rowItems, bool select) {
         tableWidget->selectionModel()->blockSignals(true);
         for (int col = 0; col < tableWidget->columnCount(); ++col) {
-            tableWidget->setItem(row, col, rowItems.at(col));
-            tableWidget->setItemSelected(rowItems.at(col), select);
+            auto* cellItem = rowItems.at(col);
+            tableWidget->setItem(row, col, cellItem);
+            if (cellItem)
+                cellItem->setSelected(select);
         }
         tableWidget->selectionModel()->blockSignals(false);
     };

@@ -7,6 +7,7 @@
 #include <vtkXMLUnstructuredGridReader.h>
 #include <vtkXMLUnstructuredGridWriter.h>
 #include <vtkUnstructuredGrid.h>
+#include <vtkDataObject.h>
 
 #include "MeshDataIO.h"
 
@@ -108,7 +109,8 @@ void MeshDataIO::Write()
 
     vtkNew<vtkXMLPolyDataWriter> pdWriter;
     pdWriter->SetDataModeToBinary();
-    pdWriter->SetInputData(mesh->getSurfaceRepresentation()->GetVtkPolyData());
+    // VTK 9+: SetInputData is vtkDataObject*; narrowest cast for writers that still overload on concrete type.
+    pdWriter->SetInputData(static_cast<vtkDataObject*>(mesh->getSurfaceRepresentation()->GetVtkPolyData()));
     pdWriter->SetFileName((GetOutputLocation() + ".vtp").c_str());
     pdWriter->Update();
 }

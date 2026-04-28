@@ -1,6 +1,8 @@
 #pragma once
 
 #include <mitkSlicedGeometry3D.h>
+#include <mitkAnatomicalPlanes.h>
+#include <mitkBoundingBox.h>
 #include <VesselPathAbstractData.h>
 #include <mitkSliceNavigationController.h>
 
@@ -96,7 +98,9 @@ public:
         planeGeometry->SetSpacing(spacing);
 
         // Update the bounds of the whole 3D geometry
-        mitk::BoundingBox::Pointer bbox = this->GetBoundingBox()->Clone();
+        // itk::Object::Clone returns LightObject::Pointer; narrow back to BoundingBox for SetBounds.
+        mitk::BoundingBox::Pointer bbox(
+          dynamic_cast<mitk::BoundingBox*>(const_cast<mitk::BoundingBox*>(this->GetBoundingBox())->Clone().GetPointer()));
         for (int i = 0; i < 8; ++i) {
             bbox->ConsiderPoint(planeGeometry->GetCornerPoint(i));
         }
@@ -260,7 +264,14 @@ private:
     virtual void InitializeSlicedGeometry(unsigned int ) override { assert(false); }
     virtual void InitializeEvenlySpaced(mitk::PlaneGeometry *, unsigned int ) override { assert(false); }
     virtual void InitializeEvenlySpaced(mitk::PlaneGeometry *, mitk::ScalarType , unsigned int ) override { assert(false); }
-    virtual void InitializePlanes(const mitk::Geometry3D *, mitk::PlaneGeometry::PlaneOrientation , bool  = true, bool  = true, bool  = false)  { assert(false); }
+    void InitializePlanes(const mitk::BaseGeometry* geometry3D,
+                          mitk::AnatomicalPlane orientation,
+                          bool top = true,
+                          bool frontside = true,
+                          bool rotated = false) override
+    {
+      assert(false);
+    }
 };
 
 

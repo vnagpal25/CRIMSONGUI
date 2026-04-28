@@ -7,17 +7,10 @@ MITK_CREATE_MODULE( CGALVMTKMeshingKernel
   PRIVATE Eigen3 WM5
 )
 
-# [AJM] Debug builds require this, to avoid this error:
-#   error C1128: number of sections exceeded object file format limit : 
-#   compile with /bigobj [C:\fd\CRIMSON-build\Modules\CGALVMTKMeshingKernel\CGALVMTKMeshingKernel.vcxproj]
-#   C:\tetcrim\Modules\CGALVMTKMeshingKernel\ExtensionPoint\IMeshingKernel.cpp 1 1 CRIMSON-build
-
+# MSVC: IMeshingKernel.cpp and tetgen.cxx can exceed the default .obj section limit in any config
+# when using multi-config generators (CMAKE_BUILD_TYPE may be empty at configure time).
 if (MSVC)
-  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message("MSVC Debug build detected: Enabling /bigobj")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj" )
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /bigobj" )
-  endif()
+  target_compile_options(${MODULE_TARGET} PRIVATE /bigobj)
 endif()
 
 target_compile_definitions(${MODULE_TARGET} PRIVATE TETLIBRARY)

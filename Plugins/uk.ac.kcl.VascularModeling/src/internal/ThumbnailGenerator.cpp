@@ -5,7 +5,8 @@
 #include <QTimer>
 #include <QTime>
 #include <QApplication>
-#include <QDesktopWidget>
+#include <QGuiApplication>
+#include <QScreen>
 
 #include <vtkNew.h>
 #include <vtkWindowToImageFilter.h>
@@ -105,7 +106,8 @@ void ThumbnailGenerator::_generateThumbnail(mitk::DataNode::ConstPointer planarF
 
 #ifdef Q_OS_LINUX
     // Linux rendering issues workarounds
-    QRect rec = QApplication::desktop()->screenGeometry();
+    // Qt6: QDesktopWidget removed; primary screen comes from QGuiApplication.
+    QRect rec = QGuiApplication::primaryScreen()->geometry();
     d->thumbnailRenderwindow->move(rec.width() - d->thumbnailRenderwindow->width(), rec.height() - d->thumbnailRenderwindow->height());
     d->thumbnailRenderwindow->show();
 

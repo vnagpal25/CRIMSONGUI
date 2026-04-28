@@ -4,6 +4,8 @@
 
 #include <QFileDialog>
 
+#include <QRandomGenerator>
+
 #include <HierarchyManager.h>
 #include <VascularModelingNodeTypes.h>
 #include <vtkParametricSplineVesselPathData.h>
@@ -20,6 +22,7 @@
 #include <vtkCell.h>
 
 #include "ContourTypeConversion.h"
+#include "PlanarFigureMITKCompat.h"
 
 #include <Wm5DistPoint2Ellipse2.h>
 
@@ -276,7 +279,7 @@ void ImportVesselsAction::Run(const QList<mitk::DataNode::Pointer> &selectedNode
             vesselPathNode->SetData(vesselPath);
             vesselPathNode->SetName(QFileInfo(fileName).baseName().toStdString());
 
-            auto randomColor = QColor::fromHsv(qrand() % 360, 255, 210);
+            auto randomColor = QColor::fromHsv(QRandomGenerator::global()->bounded(360), 255, 210);
             vesselPathNode->SetColor(randomColor.redF(), randomColor.greenF(), randomColor.blueF());
 
 
@@ -337,7 +340,7 @@ void ImportVesselsAction::Run(const QList<mitk::DataNode::Pointer> &selectedNode
                     planarPolygon->SetControlPoint(i, controlPoint, true);
                 }
 
-                planarPolygon->SetFinalized(true);
+                crimson::planarFigureSetFinalized(planarPolygon, true);
 
                 // Try to convert to simple figures
                 mitk::PlanarFigure::Pointer planarFigure = detail::tryConvertToSimpleFigures(planarPolygon);

@@ -1,5 +1,6 @@
 #include "LoftAction.h"
 #include "VascularModelingUtils.h"
+#include "PlanarFigureMITKCompat.h"
 
 #include <HierarchyManager.h>
 #include <VascularModelingNodeTypes.h>
@@ -47,7 +48,7 @@ std::shared_ptr<crimson::CreateDataNodeAsyncTask> LoftAction::Run(const mitk::Da
 
     // Ignore unfinished contours
 	contours.erase(std::remove_if(contours.begin(), contours.end(), [](const mitk::PlanarFigure* pf) {
-		return !pf->IsFinalized();
+		return !crimson::planarFigureIsFinalized(pf);
 	}), contours.end());
 
 	bool useInflowAsWall = false, useOutflowAsWall = false;

@@ -1,6 +1,7 @@
 #include "MapAction.h"
 #include "PCMRIUtils.h"
 #include "PCMRIMappingWidget.h"
+#include "PlanarFigureMITKCompat.h"
 
 #include <HierarchyManager.h>
 #include <SolverSetupNodeTypes.h>
@@ -515,7 +516,7 @@ std::shared_ptr<crimson::CreateDataNodeAsyncTask> MapAction::Run(const mitk::Dat
 
 	// Ignore unfinished contours
 	contoursPCMRI.erase(std::remove_if(contoursPCMRI.begin(), contoursPCMRI.end(), [](const mitk::PlanarFigure* pf) {
-		return !pf->IsFinalized();
+		return !crimson::planarFigureIsFinalized(pf);
 	}), contoursPCMRI.end());
 
 

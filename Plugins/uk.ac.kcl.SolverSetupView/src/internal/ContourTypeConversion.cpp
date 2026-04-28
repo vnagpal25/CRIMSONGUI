@@ -4,6 +4,8 @@
 // Main include
 #include "ContourTypeConversion.h"
 
+#include "PlanarFigureMITKCompat.h"
+
 // MITK
 #include <mitkPlaneGeometry.h>
 
@@ -19,7 +21,7 @@ static void preparePlanarFigureConversion(mitk::PlanarFigure* to, mitk::PlanarFi
 {
     to->SetPlaneGeometry(from->GetPlaneGeometry()->Clone());
     to->PlaceFigure(mitk::Point2D());
-    to->SetFinalized(true);
+    planarFigureSetFinalized(to, true);
 }
 
 
