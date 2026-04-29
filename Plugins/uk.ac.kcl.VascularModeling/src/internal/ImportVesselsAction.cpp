@@ -224,6 +224,10 @@ ImportVesselsAction::~ImportVesselsAction()
 }
 
 
+#ifdef _MSC_VER
+// MSVC 14.44 can ICE in this large function under full optimization; keep scope-local workaround.
+#pragma optimize("", off)
+#endif
 void ImportVesselsAction::Run(const QList<mitk::DataNode::Pointer> &selectedNodes)
 {
     for (const mitk::DataNode::Pointer& node : selectedNodes) {
@@ -361,3 +365,6 @@ void ImportVesselsAction::Run(const QList<mitk::DataNode::Pointer> &selectedNode
         }
     }
 }
+#ifdef _MSC_VER
+#pragma optimize("", on)
+#endif

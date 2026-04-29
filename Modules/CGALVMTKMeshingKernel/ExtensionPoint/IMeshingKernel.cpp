@@ -3,6 +3,9 @@
 #ifndef EIGEN_DONT_USE_CXX11_NOEXCEPT
 #define EIGEN_DONT_USE_CXX11_NOEXCEPT
 #endif
+#ifndef EIGEN_NOEXCEPT
+#define EIGEN_NOEXCEPT
+#endif
 
 #include <numeric>
 #include <thread>
