@@ -113,7 +113,12 @@ message(\"End of build/CMakeExternals/tmp/PythonModules_configure_step.cmake\")
 
     set(python_lib_folder "Lib/")
     if (UNIX)
-        set(python_lib_folder "lib/python2.7/")
+        # Use the configured interpreter version instead of the legacy Python 2.7 path.
+        if(DEFINED PYTHON_VERSION_MAJOR AND DEFINED PYTHON_VERSION_MINOR)
+          set(python_lib_folder "lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/")
+        else()
+          set(python_lib_folder "lib/python3/")
+        endif()
     endif()
 
     set(PY_SOURCE_DIR "" CACHE PATH "source code location. If empty, will be cloned from GIT_REPOSITORY")
