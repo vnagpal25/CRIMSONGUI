@@ -156,6 +156,19 @@ crimson_prepare_prebuilt_mitk()
 find_package(MITK 2016.11.0 REQUIRED)
 crimson_fix_prebuilt_mitk_ctk_imported_paths()
 
+# Typical MITK superbuild on Windows installs Release import libs (/MD, _ITERATOR_DEBUG_LEVEL=0).
+# Building CRIMSON as Debug (/MDd, _IDL=2) then fails at link with LNK2038 on itksys and peers — not fixable in app code.
+if(WIN32 AND MSVC)
+  if(CMAKE_CONFIGURATION_TYPES)
+    message(NOTICE "")
+    message(NOTICE "CRIMSON: Use solution configuration **Release** or **RelWithDebInfo** when your MITK/ITK tree is Release-built.")
+    message(NOTICE "  (Debug CRIMSON + Release prebuilt MITK => LNK2038. For Debug CRIMSON, rebuild MITK in Debug.)")
+    message(NOTICE "")
+  elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message(WARNING "CRIMSON: CMAKE_BUILD_TYPE=Debug with a Release-built MITK will usually fail at link (LNK2038). Prefer Release, or rebuild MITK in Debug.")
+  endif()
+endif()
+
 # Prebuilt MITK CMake exports reference these targets on their link interface; creating them here
 # avoids configure failures when the consumer project has not yet run the corresponding finds.
 find_package(Boost 1.60.0 REQUIRED)
