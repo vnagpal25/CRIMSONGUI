@@ -3,6 +3,7 @@
 #include <PythonSolverSetupServiceActivator.h>
 
 #include <mitkNodePredicateDataType.h>
+#include <QRegularExpression>
 
 #include <PythonBoundaryCondition.h>
 #include <PythonBoundaryConditionSet.h>
@@ -59,7 +60,9 @@ void uk_ac_kcl_SolverSetupPython_Activator::_preferencesChanged(const berry::IBe
 {
     using PrefPage = crimson::PythonSolverSetupPreferencePage;
 
-    auto modulePaths = prefs->Get(PrefPage::directoriesKeyName, "").split(PrefPage::separator).filter(QRegExp{".+"});
+    auto modulePaths = prefs->Get(PrefPage::directoriesKeyName, "")
+                           .split(PrefPage::separator)
+                           .filter(QRegularExpression(QStringLiteral(".+")));
 
     crimson::PythonSolverSetupServiceActivator::reloadPythonSolverSetups(modulePaths);
 }

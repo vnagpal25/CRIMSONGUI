@@ -1,6 +1,7 @@
 #include <mitkPythonService.h>
 
 #include <QMessageBox>
+#include <QRegularExpression>
 #include <ctkPopupWidget.h>
 
 #include <PythonSolverStudyData.h>
@@ -312,7 +313,7 @@ bool PythonSolverStudyData::writeSolverSetup(const IDataProvider& dataProvider, 
         auto name = std::string{};
         uidVesselPathDataPair.second->GetPropertyList()->GetStringProperty("name", name);
         auto simplifiedName = QString::fromStdString(name);
-        simplifiedName.replace(QRegExp("\\W"), QString("_"));
+        simplifiedName.replace(QRegularExpression(QStringLiteral("\\W")), QStringLiteral("_"));
 
         if (uidToFileNameMap.keys(simplifiedName).size() != 0) {
             MITK_WARN << "Duplicate vessel name found: " << name;
