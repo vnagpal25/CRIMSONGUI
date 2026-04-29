@@ -155,10 +155,6 @@ ResliceView::~ResliceView()
 {
     d->resliceViewWidgetListener->unregisterListener();
 
-    // Disconnect time events
-	mitk::SliceNavigationController* timeNavigationController = pcmriManager->GetInstance()->GetTimeNavigationController();
-	timeNavigationController->Disconnect(d->renderWindowPCMRI->GetSliceNavigationController()); 
-
     // Remove all observers
     for (int i = 0; i < ooLast; ++i) {
         d->_removeObserver(static_cast<ObservedObject>(i));
@@ -217,7 +213,7 @@ void ResliceView::CreateQtPartControl(QWidget *parent)
 	d->time = new QLabel(parent);
 	d->time->setTextInteractionFlags(Qt::TextSelectableByMouse);
 	d->time->setText("0");
-	d->time->setMinimumWidth(d->time->fontMetrics().width("99"));
+	d->time->setMinimumWidth(d->time->fontMetrics().horizontalAdvance(QStringLiteral("99")));
 	d->time->setToolTip(tr("Time step in PCMRI image"));
 	d->time->setAlignment(Qt::AlignRight);
 	hLayout->addWidget(d->time);
@@ -242,10 +238,8 @@ void ResliceView::CreateQtPartControl(QWidget *parent)
 	renderWindowsLayout->addWidget(d->renderWindowPCMRI);
 
 	
-    // Connect time events
-	mitk::SliceNavigationController* timeNavigationController = pcmriManager->GetInstance()->GetTimeNavigationController();
-	timeNavigationController->ConnectGeometryTimeEvent(d->renderWindowPCMRI->GetSliceNavigationController(), false);
-	d->renderWindowPCMRI->GetSliceNavigationController()->ConnectGeometryTimeEvent(timeNavigationController, false);
+	// TimeNavigationController wiring to SliceNavigationController is version-sensitive in newer MITK.
+	// Render window internals already keep time/slice steppers in sync, so avoid manual cross-connection here.
 
     d->mainLayout->addLayout(renderWindowsLayout, 1);
     d->mainLayout->addStretch(0);
@@ -256,7 +250,7 @@ void ResliceView::CreateQtPartControl(QWidget *parent)
     auto modifiedCommand = itk::MemberCommand<ResliceView>::New();
     modifiedCommand->SetCallbackFunction(this, &ResliceView::_syncSliderWithStepper);
     modifiedCommand->SetCallbackFunction(this, &ResliceView::_syncSliderWithStepperC);
-	d->_addObserver(ooSNC_PCMRI, d->renderWindowPCMRI->GetRenderer()->GetSliceNavigationController()->GetTime(), itk::ModifiedEvent(), modifiedCommand);
+	d->_addObserver(ooSNC_PCMRI, d->renderWindowPCMRI->GetRenderer()->GetSliceNavigationController()->GetStepper(), itk::ModifiedEvent(), modifiedCommand);
 
 
     // Connect to the reinitialize command as Global Reinit replaces the renderer's geometries
@@ -301,7 +295,7 @@ void ResliceView::navigateTo(float parameterValue)
     if (worldTimeGeometry == nullptr) {
         return;
     }
-	snc->GetTime()->SetPos(parameterValue);
+	snc->GetStepper()->SetPos(parameterValue);
 }
 
 float ResliceView::getCurrentParameterValue() const
@@ -309,7 +303,7 @@ float ResliceView::getCurrentParameterValue() const
 	mitk::SliceNavigationController* snc = d->renderWindowPCMRI->GetRenderer()->GetSliceNavigationController();
 	const mitk::TimeGeometry* worldTimeGeometry = snc->GetInputWorldTimeGeometry();
 
-	return getPCMRIRenderer()->GetSliceNavigationController()->GetTime()->GetPos();
+	return getPCMRIRenderer()->GetSliceNavigationController()->GetStepper()->GetPos();
 
 }
 
@@ -457,7 +451,7 @@ void ResliceView::_setupPCMRISlices(const mitk::DataNode* node)
 	float savedSlicePos = d->savedSlicePositions.value(currentNode(), 0);
 
 	mitk::SliceNavigationController* snc = d->renderWindowPCMRI->GetRenderer()->GetSliceNavigationController();
-	unsigned int currentGeometryTime = snc->GetTime()->GetPos();
+	unsigned int currentGeometryTime = snc->GetStepper()->GetPos();
 
 	auto timeGeom = currentPCMRINode->GetData()->GetTimeGeometry();
 	auto geometry = currentPCMRINode->GetData()->GetUpdatedTimeGeometry();
@@ -478,7 +472,7 @@ void ResliceView::_setupPCMRISlices(const mitk::DataNode* node)
 		snc->SetDefaultViewDirection(mitk::SliceNavigationController::Sagittal);
 	}
 	snc->Update();
-	snc->GetTime()->SetPos(currentGeometryTime);
+	snc->GetStepper()->SetPos(currentGeometryTime);
 		
 	navigateTo(savedSlicePos);
 
@@ -552,7 +546,7 @@ void ResliceView::_changeReslicePlane()
 	float savedSlicePos = d->savedSlicePositions.value(currentNode(), 0);
 
 	mitk::SliceNavigationController* snc = d->renderWindowPCMRI->GetRenderer()->GetSliceNavigationController();
-	unsigned int currentGeometryTime = snc->GetTime()->GetPos();
+	unsigned int currentGeometryTime = snc->GetStepper()->GetPos();
 
 	if (d->reslicePlane->currentIndex() == 0)
 	{
@@ -570,7 +564,7 @@ void ResliceView::_changeReslicePlane()
 		snc->SetDefaultViewDirection(mitk::SliceNavigationController::Sagittal);
 	}
 	snc->Update();
-	snc->GetTime()->SetPos(currentGeometryTime);
+	snc->GetStepper()->SetPos(currentGeometryTime);
 
 	navigateTo(savedSlicePos);
 
@@ -580,7 +574,7 @@ void ResliceView::_changeReslicePlane()
 void ResliceView::_setTimeSliceNumber(double slice)
 {
 	unsigned int sliceNumber = static_cast<unsigned int>(slice);
-	d->renderWindowPCMRI->GetRenderer()->GetSliceNavigationController()->GetTime()->SetPos(sliceNumber);
+	d->renderWindowPCMRI->GetRenderer()->GetSliceNavigationController()->GetStepper()->SetPos(sliceNumber);
 	d->time->setText(QString("%1").arg(getCurrentParameterValue(), 6, 'f', 2));
 }
 

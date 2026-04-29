@@ -55,7 +55,7 @@ mitk::ScalarType PCMRIUtils::assignPlanarFigureParameter(mitk::DataNode* BCNode,
 
 	//TODO can a PlanarFigure node contain time data?
 
-	auto param = manager->GetSliceNavigationController()->GetTime()->GetPos();
+	auto param = manager->GetSliceNavigationController()->GetStepper()->GetPos();
 
 	figureNode->SetFloatProperty("mapping.parameterValue", param);
 	return param;

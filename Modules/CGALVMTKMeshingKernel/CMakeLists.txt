@@ -13,8 +13,7 @@ if (MSVC)
   target_compile_options(${MODULE_TARGET} PRIVATE /bigobj)
 endif()
 
-# CGAL can pull ITK-bundled Eigen before our .cpp defines run; set globally for this target (MSVC /WX).
-# Also force-empty EIGEN_NOEXCEPT for legacy ITK-Eigen + MSVC parser compatibility.
-target_compile_definitions(${MODULE_TARGET} PRIVATE TETLIBRARY EIGEN_DONT_USE_CXX11_NOEXCEPT EIGEN_NOEXCEPT=)
+# CGAL can pull ITK-bundled Eigen before our .cpp defines run; keep noexcept compatibility define target-wide.
+target_compile_definitions(${MODULE_TARGET} PRIVATE TETLIBRARY EIGEN_DONT_USE_CXX11_NOEXCEPT)
 
 message("End of Modules/CGALVMTKMeshingKernel/CMakeLists.txt")

@@ -263,7 +263,7 @@ PCMRIMappingWidget::PCMRIMappingWidget(QWidget* parent)
 	_UI.segToolsSelectionBox->SetDisplayedToolGroups(
 		"Add Subtract Correction Paint Wipe 'Region Growing' Fill Erase 'Live Wire'"); // '2D Fast Marching'");
 	_UI.segToolsSelectionBox->SetLayoutColumns(3);
-	_UI.segToolsSelectionBox->SetGUIEnabledAccordingToToolManagerState();
+	// API availability differs across MITK versions; keep default enable behavior for compatibility.
 	connect(_UI.segToolsSelectionBox, &QmitkToolSelectionBox::ToolSelected, this,
 		&PCMRIMappingWidget::setToolInformation_Segmentation);
 
