@@ -183,7 +183,6 @@ void MeshExplorationView::_addClippingProperty(const mitk::DataNode* clippingPla
     unsigned long observerTag = data->AddObserver(itk::ModifiedEvent(), modifiedCommand);
 
     auto clippingPlaneProperty = mitk::ClippingProperty::New(data->GetPlaneGeometry()->GetOrigin(), data->GetPlaneGeometry()->GetNormal());
-    clippingPlaneProperty->SetTransient(true); // Do not save the property to file
     _planeWidgetToClippingPropertyMap[clippingPlaneNode] = std::make_tuple(clippingPlaneProperty, false, false, observerTag);
 }
 

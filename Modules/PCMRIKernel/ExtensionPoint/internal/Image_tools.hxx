@@ -13,7 +13,6 @@
 
 /// For resampling
 #include <itkResampleImageFilter.h>
-#include <itkVectorResampleImageFilter.h>
 #include <itkIdentityTransform.h>
 #include <itkBSplineInterpolateImageFunction.h>
 #include <itkLinearInterpolateImageFunction.h>
@@ -361,7 +360,7 @@ template <typename InputImageType>
 typename InputImageType::Pointer downsampleVector(typename InputImageType::Pointer image, double *downsampling_factor_vector, Interpolator interp)
 {
 
-    typedef itk::VectorResampleImageFilter<InputImageType,InputImageType> ResampleFilterType;
+    typedef itk::ResampleImageFilter<InputImageType,InputImageType> ResampleFilterType;
     const unsigned int  NDIMS = InputImageType::ImageDimension;
     typedef itk::IdentityTransform<double , NDIMS> TransformType;
     typedef itk::DiscreteGaussianImageFilter< InputImageType, InputImageType >  BlurringFilterType;
