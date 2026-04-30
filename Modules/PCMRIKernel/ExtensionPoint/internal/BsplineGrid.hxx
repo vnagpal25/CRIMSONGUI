@@ -31,6 +31,10 @@
 #include "myTimer.hxx"
 
 /// Matrix
+#include <Eigen/Core>
+#ifndef EIGEN_DEPRECATED_WITH_REASON
+#define EIGEN_DEPRECATED_WITH_REASON(message)
+#endif
 #include <Eigen/Sparse>
 #include <Eigen/Dense>
 
@@ -3044,4 +3048,3 @@ std::vector<typename InputImage::Pointer> calculateVectorImageAllLevels(const ty
 
 
 #endif /* BSPLINEGRID_H_ */
-

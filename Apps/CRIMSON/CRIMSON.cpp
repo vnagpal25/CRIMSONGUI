@@ -35,7 +35,9 @@ int main(int argc, char** argv)
 
         qApp->sendPostedEvents();
         qApp->processEvents();
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         qApp->flush();
+#endif
 
         QTimer::singleShot(3000, &splash, SLOT(close()));
     }
