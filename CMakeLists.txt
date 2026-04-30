@@ -285,9 +285,9 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   set(${MY_PROJECT_NAME}_CXX_FLAGS -std=c++1y)
 endif()
 
-if(CMAKE_COMPILER_IS_MSVC)
+if(MSVC)
   # Expand prior flags; a literal "${MY_PROJECT_NAME}_CXX_FLAGS" breaks MSVC warning suppressions.
-  set(${MY_PROJECT_NAME}_CXX_FLAGS "${${MY_PROJECT_NAME}_CXX_FLAGS} /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /wd4251")
+  set(${MY_PROJECT_NAME}_CXX_FLAGS "${${MY_PROJECT_NAME}_CXX_FLAGS} /std:c++14 /Zc:__cplusplus /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /wd4251")
 endif()
 #-----------------------------------------------------------------------------
 # Set C/CXX Flags

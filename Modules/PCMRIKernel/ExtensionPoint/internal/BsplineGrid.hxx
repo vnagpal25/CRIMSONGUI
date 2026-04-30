@@ -32,9 +32,6 @@
 
 /// Matrix
 #include <Eigen/Core>
-#ifndef EIGEN_DEPRECATED_WITH_REASON
-#define EIGEN_DEPRECATED_WITH_REASON(message)
-#endif
 #include <Eigen/Sparse>
 #include <Eigen/Dense>
 
