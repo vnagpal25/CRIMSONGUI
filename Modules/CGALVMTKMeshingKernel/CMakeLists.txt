@@ -13,7 +13,8 @@ if (MSVC)
   target_compile_options(${MODULE_TARGET} PRIVATE /bigobj)
 endif()
 
-# ITK-bundled Eigen + MSVC: EIGEN_NOEXCEPT can trigger C3646 ("unknown override specifier") in some include orders; disable C++11 noexcept in Eigen macros.
-target_compile_definitions(${MODULE_TARGET} PRIVATE TETLIBRARY EIGEN_DONT_USE_CXX11_NOEXCEPT)
+# TETLIBRARY: tetgen.cxx / wrapper. (ITK 5.4 itkeigen no longer honors EIGEN_DONT_USE_CXX11_NOEXCEPT; MSVC C3646 on
+# EIGEN_NOEXCEPT is fixed by including Eigen/Core before CGAL/MITK in IMeshingKernel.cpp.)
+target_compile_definitions(${MODULE_TARGET} PRIVATE TETLIBRARY)
 
 message("End of Modules/CGALVMTKMeshingKernel/CMakeLists.txt")
