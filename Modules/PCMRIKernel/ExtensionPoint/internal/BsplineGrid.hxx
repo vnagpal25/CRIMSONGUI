@@ -21,6 +21,8 @@
 #include <string>
 #include <functional>
 
+#include "EigenCompat.h"
+
 /// Convenience tools
 #include "Image_tools.hxx"
 #include "Point_tools.hxx"
@@ -31,7 +33,6 @@
 #include "myTimer.hxx"
 
 /// Matrix
-#include <Eigen/Core>
 #include <Eigen/Sparse>
 #include <Eigen/Dense>
 

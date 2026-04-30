@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "EigenCompat.h"
+
 #include <vector>
 #include <functional>
 #include <mitkBaseData.h>

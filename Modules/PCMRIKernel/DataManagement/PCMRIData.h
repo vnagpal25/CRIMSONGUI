@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "EigenCompat.h"
+
 #include <mitkBaseData.h>
 #include <mitkImage.h>
 #include <mitkSurface.h>

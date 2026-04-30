@@ -1,7 +1,7 @@
 #ifndef LINEARSOLVERS_H_
 #define LINEARSOLVERS_H_
 
-#include <Eigen/Core>
+#include "EigenCompat.h"
 #include <Eigen/Sparse>
 //#include <SuiteSparse_config.h>
 #include <Eigen/IterativeLinearSolvers>
@@ -9,8 +9,6 @@
 //#include <Eigen/SPQRSupport>
 #include <unsupported/Eigen/IterativeSolvers>
 //#include <Eigen/PaStiXSupport>
-
-using namespace Eigen;
 
 namespace echo
 {
@@ -99,17 +97,17 @@ template <class SparseMatrixType, class DenseVectorType>
 void echo::solvers::solveWithConjugateGradient(const SparseMatrixType &A, const DenseVectorType &b, DenseVectorType &x, ConfigurationParameter &config)
 {
 
-    ConjugateGradient<SparseMatrixType > solver;
+    Eigen::ConjugateGradient<SparseMatrixType > solver;
     solver.setMaxIterations(config.max_iterations);
     solver.setTolerance(config.tol);
     solver.compute(A);
-    if(solver.info()!=Success)
+    if(solver.info()!=Eigen::Success)
     {
         /// decomposition failed
         if (config.verbose)          std::cerr << "\t\tERROR: CG decomposition failed with a matrix of size "<< A.rows() <<"x"<<A.cols()<<std::endl;
     }
     x = solver.solve(b);
-    if(solver.info()!=Success)
+    if(solver.info()!=Eigen::Success)
     {
         /// solving failed
         if (config.verbose) std::cerr << "\t\tERROR: CG solver failed with a matrix of size "<< A.rows() <<"x"<<A.cols()<<std::endl;
@@ -124,17 +122,17 @@ void echo::solvers::solveWithConjugateGradient(const SparseMatrixType &A, const 
 void echo::solvers::solveWithSparseQR(const SparseMatrixType &A, const DenseVectorType &b, DenseVectorType &x, ConfigurationParameter &config)
 {
 
-    SparseQR<SparseMatrixType, COLAMDOrdering<int> > solver;
+    Eigen::SparseQR<SparseMatrixType, Eigen::COLAMDOrdering<int> > solver;
     //solver.setMaxIterations(config.max_iterations);
     //solver.setTolerance(config.tol);
     solver.compute(A);
-    if(solver.info()!=Success)
+    if(solver.info()!=Eigen::Success)
     {
         /// decomposition failed
         if (config.verbose)          std::cerr << "\t\tERROR: SparseQR decomposition failed with a matrix of size "<< A.rows() <<"x"<<A.cols()<<std::endl;
     }
     x = solver.solve(b);
-    if(solver.info()!=Success)
+    if(solver.info()!=Eigen::Success)
     {
         /// solving failed
         if (config.verbose) std::cerr << "\t\tERROR: SparseQR solver failed with a matrix of size "<< A.rows() <<"x"<<A.cols()<<std::endl;
@@ -149,19 +147,19 @@ void echo::solvers::solveWithSparseQR(const SparseMatrixType &A, const DenseVect
 void echo::solvers::solveWithSPQR(const SparseMatrixType &A, const DenseVectorType &b, DenseVectorType &x, ConfigurationParameter &config)
 {
 
-    SPQR<SparseMatrixType > solver;
+    Eigen::SPQR<SparseMatrixType > solver;
     //solver.setMaxIterations(config.max_iterations);
     //solver.setTolerance(config.tol);
 
     solver.compute(A);
 
-    if(solver.info()!=Success)
+    if(solver.info()!=Eigen::Success)
     {
         /// decomposition failed
         if (config.verbose)          std::cerr << "\t\tERROR: SPQR decomposition failed with a matrix of size "<< A.rows() <<"x"<<A.cols()<<std::endl;
     }
     x = solver.solve(b);
-    if(solver.info()!=Success)
+    if(solver.info()!=Eigen::Success)
     {
         /// solving failed
         if (config.verbose) std::cerr << "\t\tERROR: SPQR solver failed with a matrix of size "<< A.rows() <<"x"<<A.cols()<<std::endl;
@@ -175,17 +173,17 @@ void echo::solvers::solveWithSPQR(const SparseMatrixType &A, const DenseVectorTy
 template <class SparseMatrixType, class DenseVectorType>
 void echo::solvers::solveWithBiCGSTAB(const SparseMatrixType &A, const DenseVectorType &b, DenseVectorType &x, ConfigurationParameter &config){
 
-    BiCGSTAB<SparseMatrixType, IncompleteLUT<double> > solver;
+    Eigen::BiCGSTAB<SparseMatrixType, Eigen::IncompleteLUT<double> > solver;
     solver.setMaxIterations(config.max_iterations);
     solver.setTolerance(config.tol);
     solver.compute(A);
-    if(solver.info()!=Success)
+    if(solver.info()!=Eigen::Success)
     {
         /// decomposition failed
         if (config.verbose)          std::cerr << "\t\tERROR: BiCGSTAB decomposition failed with a matrix of size "<< A.rows() <<"x"<<A.cols()<<std::endl;
     }
     x = solver.solve(b);
-    if(solver.info()!=Success)
+    if(solver.info()!=Eigen::Success)
     {
         /// solving failed
         if (config.verbose) std::cerr << "\t\tERROR: BiCGSTAB solver failed with a matrix of size "<< A.rows() <<"x"<<A.cols() <<std::endl;
@@ -198,17 +196,17 @@ void echo::solvers::solveWithBiCGSTAB(const SparseMatrixType &A, const DenseVect
 template <class SparseMatrixType, class DenseVectorType>
 void echo::solvers::solveWithGMRES(const SparseMatrixType &A, const DenseVectorType &b, DenseVectorType &x, ConfigurationParameter &config){
 
-    GMRES<SparseMatrixType, IncompleteLUT<double> > solver;
+    Eigen::GMRES<SparseMatrixType, Eigen::IncompleteLUT<double> > solver;
     solver.setMaxIterations(config.max_iterations);
     solver.setTolerance(config.tol);
     solver.compute(A);
-    if(solver.info()!=Success)
+    if(solver.info()!=Eigen::Success)
     {
         /// decomposition failed
         if (config.verbose)          std::cerr << "\t\tERROR: GMRES decomposition failed with a matrix of size "<< A.rows() <<"x"<<A.cols()<<std::endl;
     }
     x = solver.solve(b);
-    if(solver.info()!=Success)
+    if(solver.info()!=Eigen::Success)
     {
         /// solving failed
         if (config.verbose) std::cerr << "\t\tERROR: GMRES solver failed with a matrix of size "<< A.rows() <<"x"<<A.cols()<<std::endl;
