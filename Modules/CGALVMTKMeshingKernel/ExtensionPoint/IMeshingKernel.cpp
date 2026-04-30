@@ -1,5 +1,14 @@
 // This will be an interface for meshing service and blueberry extension point etc.
 
+// Defensive fallback for ITK-bundled Eigen include ordering/macro visibility on MSVC.
+// In failing builds EIGEN_NOEXCEPT can leak through unexpanded from Eigen headers.
+#ifndef EIGEN_NOEXCEPT
+#define EIGEN_NOEXCEPT noexcept
+#endif
+#ifndef EIGEN_NOEXCEPT_IF
+#define EIGEN_NOEXCEPT_IF(x) noexcept(x)
+#endif
+
 // ITK's itkeigen (Eigen 3.4.x): EIGEN_* exception macros live in Eigen/Core. CGAL / MITK can pull other
 // Eigen headers first; if Core is not parsed yet, MSVC reports C3646 on the token EIGEN_NOEXCEPT in LLT.h.
 #include <Eigen/Core>
