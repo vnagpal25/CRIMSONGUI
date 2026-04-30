@@ -59,8 +59,11 @@ public:
 
 	typedef std::vector<mitk::PlanarFigure::Pointer> ContourSet;
 
-	struct ToBSGridType : public std::unary_function<mitk::Point2D, IPCMRIKernel::PointType>
+	struct ToBSGridType
 	{
+		using argument_type = mitk::Point2D;
+		using result_type = IPCMRIKernel::PointType;
+
 		IPCMRIKernel::PointType operator()(mitk::Point2D original) const
 		{
 			IPCMRIKernel::PointType pointBS = IPCMRIKernel::BsplineGridType::PointType(original.GetDataPointer());
@@ -68,8 +71,11 @@ public:
 		}
 	};
 
-	struct ToMitkType : public std::unary_function<IPCMRIKernel::BsplineGrid1DType::PointType, double>
+	struct ToMitkType
 	{
+		using argument_type = IPCMRIKernel::BsplineGrid1DType::PointType;
+		using result_type = double;
+
 		double operator()(IPCMRIKernel::BsplineGrid1DType::PointType original) const
 		{
 			double pointBS = double(original.at(0));
@@ -194,6 +200,9 @@ void interpolateClosedContour(const std::vector< typename TBsplineGrid2DType::Po
 	std::vector< typename TBsplineGrid2DType::PointType> &interpolated_contour){
 
 	/// parameters: these normally do not need changing
+	const unsigned int bsd = 3;
+	const bool parallel_on = false;
+	const int threads_to_use = 2;
 	double grid_spacing1D = M_PI / 2;
 	double lambda = 0;
 

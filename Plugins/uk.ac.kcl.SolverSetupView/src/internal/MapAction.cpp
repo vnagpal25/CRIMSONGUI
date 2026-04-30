@@ -20,6 +20,7 @@
 #include <mitkPointSet.h>
 #include <mitkExtractSliceFilter.h>
 #include <mitkVtkImageOverwrite.h>
+#include <mitkImagePixelReadAccessor.h>
 #include <itkDiscreteGaussianImageFilter.h>
 #include "itkSmoothingRecursiveGaussianImageFilter.h"
 #include "mitkImageTimeSelector.h"
@@ -271,13 +272,14 @@ bool sortContours(mitk::DataNode* i, mitk::DataNode* j)
 double calculateParRecScaling(mitk::Image::Pointer pcmriImage, int startIndex)
 {
 	int phaseEncodingVelocityValue = 0;
-	std::vector<short> phaseValues;
 	double max_ph = 0;
 
 	pcmriImage->GetPropertyList()->GetIntProperty("mapping.vencP", phaseEncodingVelocityValue);
 
 	for (int i = startIndex; i < pcmriImage->GetDimensions()[3]; i++)
 	{
+		auto volume = pcmriImage->GetVolumeData(i);
+		mitk::ImagePixelReadAccessor<short, 3> readAccess(pcmriImage, volume);
 		for (int j = 0; j < pcmriImage->GetDimensions()[0]; j++)
 		{
 			for (int z = 0; z < pcmriImage->GetDimensions()[1]; z++)
@@ -286,10 +288,9 @@ double calculateParRecScaling(mitk::Image::Pointer pcmriImage, int startIndex)
 				idx[0] = j;
 				idx[1] = z;
 				idx[2] = 0;
-				phaseValues.push_back(pcmriImage->GetPixelValueByIndex(idx, i));
-				auto pixValue = pcmriImage->GetPixelValueByIndex(idx, i);
-				if (pcmriImage->GetPixelValueByIndex(idx, i)>max_ph)
-					max_ph = pcmriImage->GetPixelValueByIndex(idx, i);
+				auto pixValue = readAccess.GetPixelByIndex(idx);
+				if (pixValue > max_ph)
+					max_ph = pixValue;
 			}
 		}
 	}
@@ -693,4 +694,3 @@ void MapAction::Run(const QList<mitk::DataNode::Pointer>& selectedNodes)
 		Run(node);
 	}
 }
-

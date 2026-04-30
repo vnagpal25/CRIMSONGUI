@@ -1,8 +1,6 @@
 
 #pragma once
 
-#include "EigenCompat.h"
-
 #include <mitkBaseData.h>
 #include <mitkImage.h>
 #include <mitkSurface.h>
@@ -26,6 +24,8 @@ class access;
 }
 
 namespace crimson {
+
+	class IPCMRIKernel;
 
 	//pass parameters from MappingTask to enable time interpolation
 	struct TimeInterpolationParameters

@@ -153,7 +153,6 @@ namespace crimson
 	{
 		int numPhases = 0;
 		int phaseEncodingVelocityValue = 0;
-		std::vector<short> phaseValues;
 		double max_ph = 0;
 
 		pcmriImage->GetPropertyList()->GetIntProperty("mapping.venc", phaseEncodingVelocityValue);
@@ -161,6 +160,8 @@ namespace crimson
 
 		for (int i = 2*numPhases; i < pcmriImage->GetDimensions()[3]; i++)
 		{
+			auto volume = pcmriImage->GetVolumeData(i);
+			mitk::ImagePixelReadAccessor<short, 3> readAccess(pcmriImage, volume);
 			for (int j = 0; j < pcmriImage->GetDimensions()[0]; j++)
 			{
 				for (int z = 0; z < pcmriImage->GetDimensions()[1]; z++)
@@ -169,10 +170,9 @@ namespace crimson
 					idx[0] = j;
 					idx[1] = z;
 					idx[2] = 0;
-					phaseValues.push_back(pcmriImage->GetPixelValueByIndex(idx, i));
-					auto pixValue = pcmriImage->GetPixelValueByIndex(idx, i);
-					if (pcmriImage->GetPixelValueByIndex(idx, i)>max_ph)
-						max_ph = pcmriImage->GetPixelValueByIndex(idx, i);
+					auto pixValue = readAccess.GetPixelByIndex(idx);
+					if (pixValue > max_ph)
+						max_ph = pixValue;
 				}
 			}
 		}

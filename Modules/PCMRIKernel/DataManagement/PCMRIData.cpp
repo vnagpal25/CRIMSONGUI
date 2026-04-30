@@ -1,5 +1,7 @@
 #include "PCMRIData.h"
 
+#include "IPCMRIKernel.h"
+
 #include <vtkIdList.h>
 #include <vtkPolyData.h>
 #include <vtkDoubleArray.h>

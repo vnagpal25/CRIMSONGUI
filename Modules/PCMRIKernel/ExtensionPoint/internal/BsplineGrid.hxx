@@ -86,7 +86,6 @@ public:
     /// Matrix types
     typedef Eigen::Matrix<MatrixElementType, Eigen::Dynamic,Eigen::Dynamic> DenseMatrixType;
     typedef Eigen::SparseMatrix<MatrixElementType> SparseMatrixType; /// Sparse and Col major.
-    typedef Eigen::SparseVector<MatrixElementType> SparseVectorType;
     typedef Eigen::Matrix<MatrixElementType, Eigen::Dynamic,1> DenseVectorType;
     typedef Eigen::Triplet<MatrixElementType> TripletType;
     /// ITK stuff
