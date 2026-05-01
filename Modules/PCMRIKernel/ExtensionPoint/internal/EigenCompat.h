@@ -26,3 +26,17 @@
 #endif
 
 #include <Eigen/Core>
+
+#if !defined(EIGEN_WORLD_VERSION) || EIGEN_WORLD_VERSION < 5
+namespace Eigen
+{
+namespace numext
+{
+template <typename Scalar>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Scalar madd(const Scalar& a, const Scalar& b, const Scalar& c)
+{
+    return a * b + c;
+}
+}
+}
+#endif
