@@ -92,17 +92,17 @@ template <class SparseMatrixType, class DenseVectorType>
 void echo::solvers::solveWithConjugateGradient(const SparseMatrixType &A, const DenseVectorType &b, DenseVectorType &x, ConfigurationParameter &config)
 {
 
-    Eigen::ConjugateGradient<SparseMatrixType > solver;
+    ::Eigen::ConjugateGradient<SparseMatrixType > solver;
     solver.setMaxIterations(config.max_iterations);
     solver.setTolerance(config.tol);
     solver.compute(A);
-    if(solver.info()!=Eigen::Success)
+    if(solver.info()!=::Eigen::Success)
     {
         /// decomposition failed
         if (config.verbose)          std::cerr << "\t\tERROR: CG decomposition failed with a matrix of size "<< A.rows() <<"x"<<A.cols()<<std::endl;
     }
     x = solver.solve(b);
-    if(solver.info()!=Eigen::Success)
+    if(solver.info()!=::Eigen::Success)
     {
         /// solving failed
         if (config.verbose) std::cerr << "\t\tERROR: CG solver failed with a matrix of size "<< A.rows() <<"x"<<A.cols()<<std::endl;
@@ -169,17 +169,17 @@ template <class SparseMatrixType, class DenseVectorType>
 void echo::solvers::solveWithBiCGSTAB(const SparseMatrixType &A, const DenseVectorType &b, DenseVectorType &x, ConfigurationParameter &config){
 
     typedef typename SparseMatrixType::Scalar ScalarType;
-    Eigen::BiCGSTAB<SparseMatrixType, Eigen::IncompleteLUT<ScalarType> > solver;
+    ::Eigen::BiCGSTAB<SparseMatrixType, ::Eigen::IncompleteLUT<ScalarType> > solver;
     solver.setMaxIterations(config.max_iterations);
     solver.setTolerance(config.tol);
     solver.compute(A);
-    if(solver.info()!=Eigen::Success)
+    if(solver.info()!=::Eigen::Success)
     {
         /// decomposition failed
         if (config.verbose)          std::cerr << "\t\tERROR: BiCGSTAB decomposition failed with a matrix of size "<< A.rows() <<"x"<<A.cols()<<std::endl;
     }
     x = solver.solve(b);
-    if(solver.info()!=Eigen::Success)
+    if(solver.info()!=::Eigen::Success)
     {
         /// solving failed
         if (config.verbose) std::cerr << "\t\tERROR: BiCGSTAB solver failed with a matrix of size "<< A.rows() <<"x"<<A.cols() <<std::endl;
@@ -193,17 +193,17 @@ template <class SparseMatrixType, class DenseVectorType>
 void echo::solvers::solveWithGMRES(const SparseMatrixType &A, const DenseVectorType &b, DenseVectorType &x, ConfigurationParameter &config){
 
     typedef typename SparseMatrixType::Scalar ScalarType;
-    Eigen::BiCGSTAB<SparseMatrixType, Eigen::IncompleteLUT<ScalarType> > solver;
+    ::Eigen::BiCGSTAB<SparseMatrixType, ::Eigen::IncompleteLUT<ScalarType> > solver;
     solver.setMaxIterations(config.max_iterations);
     solver.setTolerance(config.tol);
     solver.compute(A);
-    if(solver.info()!=Eigen::Success)
+    if(solver.info()!=::Eigen::Success)
     {
         /// decomposition failed
         if (config.verbose)          std::cerr << "\t\tERROR: GMRES decomposition failed with a matrix of size "<< A.rows() <<"x"<<A.cols()<<std::endl;
     }
     x = solver.solve(b);
-    if(solver.info()!=Eigen::Success)
+    if(solver.info()!=::Eigen::Success)
     {
         /// solving failed
         if (config.verbose) std::cerr << "\t\tERROR: GMRES solver failed with a matrix of size "<< A.rows() <<"x"<<A.cols()<<std::endl;
