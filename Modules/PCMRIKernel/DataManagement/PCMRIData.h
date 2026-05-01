@@ -10,7 +10,6 @@
 #include <boost/multi_array.hpp>
 #include <boost/serialization/vector.hpp>
 
-#include "IPCMRIKernel.h"
 #include "IMeshingKernel.h"
 
 #include "PCMRIKernelExports.h"

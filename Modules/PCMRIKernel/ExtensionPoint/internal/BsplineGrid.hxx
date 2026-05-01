@@ -22,6 +22,8 @@
 #include <functional>
 
 #include "EigenCompat.h"
+#include <Eigen/Sparse>
+#include <Eigen/Dense>
 
 /// Convenience tools
 #include "Image_tools.hxx"
@@ -31,10 +33,6 @@
 #include "String_tools.hxx"
 #include "BSplines.hxx"
 #include "myTimer.hxx"
-
-/// Matrix
-#include <Eigen/Sparse>
-#include <Eigen/Dense>
 
 /// Smart Pointers from boost library
 #include <boost/shared_ptr.hpp>
