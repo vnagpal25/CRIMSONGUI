@@ -173,7 +173,7 @@ void echo::solvers::solveWithSPQR(const SparseMatrixType &A, const DenseVectorTy
 template <class SparseMatrixType, class DenseVectorType>
 void echo::solvers::solveWithBiCGSTAB(const SparseMatrixType &A, const DenseVectorType &b, DenseVectorType &x, ConfigurationParameter &config){
 
-    Eigen::BiCGSTAB<SparseMatrixType, Eigen::IncompleteLUT<double> > solver;
+    Eigen::BiCGSTAB<SparseMatrixType, Eigen::IncompleteLUT<typename SparseMatrixType::Scalar> > solver;
     solver.setMaxIterations(config.max_iterations);
     solver.setTolerance(config.tol);
     solver.compute(A);
@@ -196,7 +196,7 @@ void echo::solvers::solveWithBiCGSTAB(const SparseMatrixType &A, const DenseVect
 template <class SparseMatrixType, class DenseVectorType>
 void echo::solvers::solveWithGMRES(const SparseMatrixType &A, const DenseVectorType &b, DenseVectorType &x, ConfigurationParameter &config){
 
-    Eigen::GMRES<SparseMatrixType, Eigen::IncompleteLUT<double> > solver;
+    Eigen::GMRES<SparseMatrixType, Eigen::IncompleteLUT<typename SparseMatrixType::Scalar> > solver;
     solver.setMaxIterations(config.max_iterations);
     solver.setTolerance(config.tol);
     solver.compute(A);

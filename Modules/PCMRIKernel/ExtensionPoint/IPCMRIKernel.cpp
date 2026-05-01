@@ -670,7 +670,7 @@ namespace crimson
 						phyPoint[1] = pointDisplaced[1];
 						phyPoint[2] = 0;
 						phyPoint[3] = slice;
-						pcmriImage->TransformPhysicalPointToIndex(phyPoint, idx);
+						(void)pcmriImage->TransformPhysicalPointToIndex(phyPoint, idx);
 						pointDisplacedIndex[0] = idx[0];
 						pointDisplacedIndex[1] = idx[1];
 						coordinatesDisplacedIndex.push_back(pointDisplacedIndex);
@@ -680,7 +680,7 @@ namespace crimson
 						phyPoint2[1] = pointMapped[1];
 						phyPoint2[2] = pointMapped[2];
 						phyPoint2[3] = slice;
-						pcmriImage->TransformPhysicalPointToIndex(phyPoint2, idx2);
+						(void)pcmriImage->TransformPhysicalPointToIndex(phyPoint2, idx2);
 						pointDisplacedIndexMapped[0] = idx2[0];
 						pointDisplacedIndexMapped[1] = idx2[1];
 						coordinatesDisplacedIndexMapped.push_back(pointDisplacedIndexMapped);
@@ -717,7 +717,7 @@ namespace crimson
 						phyPoint[2] = point3D[2];
 						phyPoint[3] = slice + startIndex;
 
-						pcmriImage->TransformPhysicalPointToContinuousIndex(phyPoint, idx);
+						(void)pcmriImage->TransformPhysicalPointToContinuousIndex(phyPoint, idx);
 
 						value = interpolator->EvaluateAtContinuousIndex(idx);
 						
