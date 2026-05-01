@@ -590,8 +590,6 @@
            </spacer>
           </item>
          </layout>
-         <zorder>segToolsGUIArea</zorder>
-         <zorder>segToolsSelectionBox</zorder>
         </widget>
        </widget>
       </item>
