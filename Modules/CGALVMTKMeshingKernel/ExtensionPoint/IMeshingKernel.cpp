@@ -22,7 +22,7 @@
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygon_mesh_processing/remesh.h>
 #include <CGAL/Polygon_mesh_processing/border.h>
-#include <boost/function_output_iterator.hpp>
+#include <boost/iterator/function_output_iterator.hpp>
 
 // #include <CGAL/Polyhedron_3.h>
 // #include <CGAL/extract_mean_curvature_flow_skeleton.h>

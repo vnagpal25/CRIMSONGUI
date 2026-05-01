@@ -592,8 +592,6 @@
          </layout>
          <zorder>segToolsGUIArea</zorder>
          <zorder>segToolsSelectionBox</zorder>
-         <zorder>verticalSpacer_2</zorder>
-         <zorder></zorder>
         </widget>
        </widget>
       </item>
