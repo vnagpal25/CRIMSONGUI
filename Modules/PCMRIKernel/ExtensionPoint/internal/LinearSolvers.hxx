@@ -7,7 +7,6 @@
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/OrderingMethods>
 //#include <Eigen/SPQRSupport>
-#include <unsupported/Eigen/IterativeSolvers>
 //#include <Eigen/PaStiXSupport>
 
 namespace echo
@@ -75,10 +74,6 @@ void solveWithConjugateGradient(const SparseMatrixType &A, const DenseVectorType
 template <class SparseMatrixType, class DenseVectorType>
 void solveWithBiCGSTAB(const SparseMatrixType &A, const DenseVectorType &b, DenseVectorType &x, ConfigurationParameter &config);
 
-/**
- * This implementation of GMRES is provided *as is* by Eigen, with no support planned.
- * Documentation here http://eigen.tuxfamily.org/dox/unsupported/classEigen_1_1GMRES.html
- */
 template <class SparseMatrixType, class DenseVectorType>
 void solveWithGMRES(const SparseMatrixType &A, const DenseVectorType &b, DenseVectorType &x, ConfigurationParameter &config);
 
@@ -173,7 +168,8 @@ void echo::solvers::solveWithSPQR(const SparseMatrixType &A, const DenseVectorTy
 template <class SparseMatrixType, class DenseVectorType>
 void echo::solvers::solveWithBiCGSTAB(const SparseMatrixType &A, const DenseVectorType &b, DenseVectorType &x, ConfigurationParameter &config){
 
-    Eigen::BiCGSTAB<SparseMatrixType, Eigen::IncompleteLUT<double> > solver;
+    typedef typename SparseMatrixType::Scalar ScalarType;
+    Eigen::BiCGSTAB<SparseMatrixType, Eigen::IncompleteLUT<ScalarType> > solver;
     solver.setMaxIterations(config.max_iterations);
     solver.setTolerance(config.tol);
     solver.compute(A);
@@ -196,7 +192,8 @@ void echo::solvers::solveWithBiCGSTAB(const SparseMatrixType &A, const DenseVect
 template <class SparseMatrixType, class DenseVectorType>
 void echo::solvers::solveWithGMRES(const SparseMatrixType &A, const DenseVectorType &b, DenseVectorType &x, ConfigurationParameter &config){
 
-    Eigen::GMRES<SparseMatrixType, Eigen::IncompleteLUT<double> > solver;
+    typedef typename SparseMatrixType::Scalar ScalarType;
+    Eigen::BiCGSTAB<SparseMatrixType, Eigen::IncompleteLUT<ScalarType> > solver;
     solver.setMaxIterations(config.max_iterations);
     solver.setTolerance(config.tol);
     solver.compute(A);
