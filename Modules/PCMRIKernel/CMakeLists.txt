@@ -9,6 +9,10 @@ if (MSVC)
   target_compile_options(${MODULE_TARGET} PRIVATE /bigobj)
 endif()
 
+if(EIGEN3_INCLUDE_DIR)
+  target_include_directories(${MODULE_TARGET} BEFORE PUBLIC ${EIGEN3_INCLUDE_DIR})
+endif()
+
 IF( BUILD_TESTING )
 #  add_subdirectory(Testing)
 ENDIF()
