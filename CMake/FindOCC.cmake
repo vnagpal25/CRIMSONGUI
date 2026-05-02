@@ -117,11 +117,19 @@ else()
         "${OCC_DIR}/${OS_WITH_BIT}/${COMPILER}/bin${BUILD_SUFFIX_release}/Release"
         "${OCC_DIR}/${OS_WITH_BIT}/${COMPILER}/bin${BUILD_SUFFIX_release}"
       DOC "Path to OCC release DLLs" NO_DEFAULT_PATH)
+    if(OCC_LINK_DIRECTORY_release AND NOT OCC_LINK_DIRECTORY_relwithdebinfo)
+      set(OCC_LINK_DIRECTORY_relwithdebinfo "${OCC_LINK_DIRECTORY_release}" CACHE PATH "Path to OCC RelWithDebInfo libs" FORCE)
+    endif()
+    if(OCC_BINARY_DIRECTORY_release AND NOT OCC_BINARY_DIRECTORY_relwithdebinfo)
+      set(OCC_BINARY_DIRECTORY_relwithdebinfo "${OCC_BINARY_DIRECTORY_release}" CACHE PATH "Path to OCC RelWithDebInfo DLLs" FORCE)
+    endif()
     MARK_AS_ADVANCED(OCC_INCLUDE_DIR)
     MARK_AS_ADVANCED(OCC_LINK_DIRECTORY_debug)
     MARK_AS_ADVANCED(OCC_LINK_DIRECTORY_release)
+    MARK_AS_ADVANCED(OCC_LINK_DIRECTORY_relwithdebinfo)
     MARK_AS_ADVANCED(OCC_BINARY_DIRECTORY_debug)
     MARK_AS_ADVANCED(OCC_BINARY_DIRECTORY_release)
+    MARK_AS_ADVANCED(OCC_BINARY_DIRECTORY_relwithdebinfo)
 
     IF ( OCC_INCLUDE_DIR AND (OCC_LINK_DIRECTORY_debug OR OCC_LINK_DIRECTORY_release) ) 
 

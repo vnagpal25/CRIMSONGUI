@@ -166,6 +166,7 @@ if(WIN32)
   set(template_name "start${_APP_NAME}.bat.in")
   if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${template_name}")
     foreach(BUILD_TYPE debug release)
+      set(OCC_RUNTIME_PATH "${OCC_BINARY_DIRECTORY_${BUILD_TYPE}}")
       mitkFunctionCreateWindowsBatchScript(${template_name}
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/start${_APP_NAME}_${BUILD_TYPE}.bat
         ${BUILD_TYPE})
