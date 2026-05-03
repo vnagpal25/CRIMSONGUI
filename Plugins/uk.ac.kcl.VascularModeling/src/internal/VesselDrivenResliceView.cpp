@@ -163,7 +163,7 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
 {
     d->mainLayout = new QVBoxLayout(parent);
 
-    QHBoxLayout* hLayout = new QHBoxLayout(parent);
+    QHBoxLayout* hLayout = new QHBoxLayout;
     hLayout->addWidget(createSelectedNodeWidget(parent));
 
     QToolButton* reslicePropertiesButton = new QToolButton(parent);
@@ -212,7 +212,7 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
     connect(reslicePropertiesButton, SIGNAL(clicked()), popup, SLOT(showPopup()));
     connect(ui.resliceWindowSizeSpinBox, &QAbstractSpinBox::editingFinished, this, &VesselDrivenResliceView::_setResliceWindowSize);
 
-    hLayout = new QHBoxLayout(parent);
+    hLayout = new QHBoxLayout;
     d->sliceNumberSlider = new ctkSliderWidget(parent);
     d->sliceNumberSlider->setDecimals(0);
     hLayout->addWidget(d->sliceNumberSlider);
@@ -229,7 +229,7 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
     d->mainLayout->addLayout(hLayout);
 
 
-    auto renderWindowsLayout = new  QHBoxLayout(parent);
+    auto renderWindowsLayout = new QHBoxLayout;
 
     d->renderWindow = new QmitkRenderWindow(parent, QStringLiteral("reslicer"));
     d->renderWindow->GetRenderer()->SetDataStorage(GetDataStorage());

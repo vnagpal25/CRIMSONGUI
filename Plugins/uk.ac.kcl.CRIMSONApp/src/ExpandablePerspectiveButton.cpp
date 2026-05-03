@@ -93,7 +93,6 @@ ExpandablePerspectiveButtonFrame::ExpandablePerspectiveButtonFrame(const std::st
         berry::IViewDescriptor::Pointer viewDescriptor = viewRegistry->Find(QString::fromStdString(viewName));
 
         if (viewDescriptor.IsNull()) {
-            MITK_ERROR << "Failed to find view descriptor for view " << viewName;
             continue;
         }
 

@@ -173,7 +173,7 @@ void ResliceView::CreateQtPartControl(QWidget *parent)
 {
     d->mainLayout = new QVBoxLayout(parent);
 
-    QHBoxLayout* hLayout = new QHBoxLayout(parent);
+    QHBoxLayout* hLayout = new QHBoxLayout;
     hLayout->addWidget(createSelectedNodeWidget(parent));
 
     d->resliceWidgetVisibilityButton = new QToolButton(parent);
@@ -197,7 +197,7 @@ void ResliceView::CreateQtPartControl(QWidget *parent)
 	
     d->mainLayout->addLayout(hLayout);
 
-	hLayout = new QHBoxLayout(parent);
+	hLayout = new QHBoxLayout;
 	//PCMRI time slider
 	d->timeLabel = new QLabel(parent);
 	d->timeLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -220,7 +220,7 @@ void ResliceView::CreateQtPartControl(QWidget *parent)
 
 	d->mainLayout->addLayout(hLayout);
 
-    auto renderWindowsLayout = new  QHBoxLayout(parent);
+    auto renderWindowsLayout = new QHBoxLayout;
 
 	mraManager = mitk::RenderingManager::New();
 	d->renderWindow = new QmitkRenderWindow(parent, "reslicer", nullptr, mraManager->GetInstance());
