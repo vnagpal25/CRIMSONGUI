@@ -9,7 +9,7 @@ MeshDataMapper3D::MeshDataMapper3D() {}
 
 MeshDataMapper3D::~MeshDataMapper3D() {}
 
-const mitk::UnstructuredGrid* MeshDataMapper3D::GetInput()
+const mitk::Surface* MeshDataMapper3D::GetInput()
 {
     auto mesh = dynamic_cast<MeshData*>(GetDataNode()->GetData());
 
@@ -17,7 +17,7 @@ const mitk::UnstructuredGrid* MeshDataMapper3D::GetInput()
         return nullptr;
     }
 
-    return mesh->getUnstructuredGridRepresentation();
+    return mesh->getSurfaceRepresentation();
 }
 
 MeshDataMapper2D::MeshDataMapper2D() {}

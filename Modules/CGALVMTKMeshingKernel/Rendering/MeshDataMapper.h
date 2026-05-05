@@ -1,7 +1,7 @@
 #pragma once
 
 #include <mitkSurfaceVtkMapper2D.h>
-#include <mitkUnstructuredGridVtkMapper3D.h>
+#include <mitkSurfaceVtkMapper3D.h>
 
 #include "CGALVMTKMeshingKernelExports.h"
 
@@ -13,14 +13,14 @@
 namespace crimson {
 
 
-class CGALVMTKMeshingKernel_EXPORT MeshDataMapper3D : public mitk::UnstructuredGridVtkMapper3D {
+class CGALVMTKMeshingKernel_EXPORT MeshDataMapper3D : public mitk::SurfaceVtkMapper3D {
 public:
-    mitkClassMacro(MeshDataMapper3D, mitk::UnstructuredGridVtkMapper3D);
+    mitkClassMacro(MeshDataMapper3D, mitk::SurfaceVtkMapper3D);
 
     itkFactorylessNewMacro(Self)
     itkCloneMacro(Self)
 
-    const mitk::UnstructuredGrid* GetInput() override;
+    const mitk::Surface* GetInput() override;
     void CalculateTimeStep(mitk::BaseRenderer*) override { }
 
 protected:
