@@ -4,6 +4,7 @@
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkNew.h>
 #include <vtkPointData.h>
+#include <vtkCellData.h>
 #include <vtkXMLUnstructuredGridReader.h>
 #include <vtkXMLUnstructuredGridWriter.h>
 #include <vtkUnstructuredGrid.h>
@@ -29,6 +30,18 @@ REGISTER_IOUTILDATA_SERIALIZER(MeshData,
     )
 
 namespace crimson {
+
+static void sanitizeSurfaceForRendering(vtkPolyData* surface)
+{
+    if (!surface) {
+        return;
+    }
+
+    surface->GetPointData()->Initialize();
+    surface->GetCellData()->Initialize();
+    surface->BuildCells();
+    surface->BuildLinks();
+}
 
 MeshDataIO::MeshDataIO()
     : AbstractFileIO(MeshData::GetStaticNameOfClass(),
@@ -90,6 +103,7 @@ std::vector<itk::SmartPointer<mitk::BaseData>> MeshDataIO::DoRead()
         surfaceReader->Update();
         vtkNew<vtkPolyData> surface;
         surface->DeepCopy(surfaceReader->GetOutput());
+        sanitizeSurfaceForRendering(surface.GetPointer());
 
         mesh->_surfaceRepresentation = mitk::Surface::New();
         mesh->_surfaceRepresentation->SetVtkPolyData(surface.GetPointer());

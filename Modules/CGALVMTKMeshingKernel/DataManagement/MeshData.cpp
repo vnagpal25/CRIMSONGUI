@@ -27,6 +27,18 @@
 namespace crimson
 {
 
+static void sanitizeSurfaceForRendering(vtkPolyData* surface)
+{
+    if (!surface) {
+        return;
+    }
+
+    surface->GetPointData()->Initialize();
+    surface->GetCellData()->Initialize();
+    surface->BuildCells();
+    surface->BuildLinks();
+}
+
 struct TriangleFace {
     TriangleFace(const std::array<int, 3>& ids)
     : _ids(ids) {}
@@ -100,6 +112,7 @@ mitk::Surface::Pointer MeshData::getSurfaceRepresentation() const
 
             vtkNew<vtkPolyData> surface;
             surface->DeepCopy(geometryFilter->GetOutput());
+            sanitizeSurfaceForRendering(surface.GetPointer());
             _surfaceRepresentation->SetVtkPolyData(surface.GetPointer());
             MITK_INFO << "Extracted CRIMSON mesh sidecar surface: " << surface->GetNumberOfPoints() << " points, "
                       << surface->GetNumberOfCells() << " cells";
@@ -110,6 +123,7 @@ mitk::Surface::Pointer MeshData::getSurfaceRepresentation() const
 
             vtkNew<vtkPolyData> surface;
             surface->DeepCopy(surfaceFilter->GetOutput());
+            sanitizeSurfaceForRendering(surface.GetPointer());
             _surfaceRepresentation->SetVtkPolyData(surface.GetPointer());
             MITK_INFO << "Extracted CRIMSON mesh boundary surface: " << surface->GetNumberOfPoints() << " points, "
                       << surface->GetNumberOfCells() << " cells";
