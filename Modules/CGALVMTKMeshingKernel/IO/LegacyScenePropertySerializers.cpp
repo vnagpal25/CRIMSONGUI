@@ -4,6 +4,31 @@
 #include <mitkStringProperty.h>
 #include <tinyxml.h>
 
+#if __has_include(<tinyxml2.h>)
+#include <tinyxml2.h>
+#define CRIMSON_HAS_TINYXML2 1
+#endif
+
+namespace
+{
+const char* legacyPropertyValue(TiXmlElement* element)
+{
+  return element ? element->Attribute("value") : nullptr;
+}
+
+#ifdef CRIMSON_HAS_TINYXML2
+const char* legacyPropertyValue(tinyxml2::XMLElement* element)
+{
+  return element ? element->Attribute("value") : nullptr;
+}
+
+const char* legacyPropertyValue(const tinyxml2::XMLElement* element)
+{
+  return element ? element->Attribute("value") : nullptr;
+}
+#endif
+}
+
 #define CRIMSON_REGISTER_ENUM_PROPERTY_SERIALIZER(classname)                         \
 namespace mitk                                                                       \
 {                                                                                    \
@@ -14,16 +39,20 @@ public:                                                                         
   itkFactorylessNewMacro(Self)                                                       \
   itkCloneMacro(Self)                                                                \
                                                                                      \
-  BaseProperty::Pointer Deserialize(TiXmlElement* element) override                  \
+  BaseProperty::Pointer Deserialize(TiXmlElement* element)                           \
   {                                                                                  \
-    if (!element)                                                                    \
-      return nullptr;                                                                \
+    return DeserializeValue(legacyPropertyValue(element));                           \
+  }                                                                                  \
                                                                                      \
-    const char* value = element->Attribute("value");                                 \
+  BaseProperty::Pointer DeserializeValue(const char* value)                           \
+  {                                                                                  \
     classname::Pointer property = classname::New();                                  \
     property->SetValue(value ? value : "");                                          \
     return property.GetPointer();                                                    \
   }                                                                                  \
+                                                                                     \
+  /* Newer MITK SceneSerialization builds use TinyXML2 instead of TinyXML. */         \
+  CRIMSON_TINYXML2_DESERIALIZE(classname)                                             \
                                                                                      \
 protected:                                                                           \
   classname##Serializer() {}                                                         \
@@ -31,6 +60,21 @@ protected:                                                                      
 };                                                                                   \
 }                                                                                    \
 MITK_REGISTER_SERIALIZER(classname##Serializer);
+
+#ifdef CRIMSON_HAS_TINYXML2
+#define CRIMSON_TINYXML2_DESERIALIZE(classname)                                      \
+  BaseProperty::Pointer Deserialize(tinyxml2::XMLElement* element)                   \
+  {                                                                                  \
+    return DeserializeValue(legacyPropertyValue(element));                           \
+  }                                                                                  \
+                                                                                     \
+  BaseProperty::Pointer Deserialize(const tinyxml2::XMLElement* element)             \
+  {                                                                                  \
+    return DeserializeValue(legacyPropertyValue(element));                           \
+  }
+#else
+#define CRIMSON_TINYXML2_DESERIALIZE(classname)
+#endif
 
 namespace mitk
 {
@@ -41,9 +85,26 @@ public:
   itkFactorylessNewMacro(Self)
   itkCloneMacro(Self)
 
-  BaseProperty::Pointer Deserialize(TiXmlElement* element) override
+  BaseProperty::Pointer Deserialize(TiXmlElement* element)
   {
-    return StringProperty::New(element && element->Attribute("value") ? element->Attribute("value") : "").GetPointer();
+    return DeserializeValue(legacyPropertyValue(element));
+  }
+
+#ifdef CRIMSON_HAS_TINYXML2
+  BaseProperty::Pointer Deserialize(tinyxml2::XMLElement* element)
+  {
+    return DeserializeValue(legacyPropertyValue(element));
+  }
+
+  BaseProperty::Pointer Deserialize(const tinyxml2::XMLElement* element)
+  {
+    return DeserializeValue(legacyPropertyValue(element));
+  }
+#endif
+
+  BaseProperty::Pointer DeserializeValue(const char* value)
+  {
+    return StringProperty::New(value ? value : "").GetPointer();
   }
 
 protected:
