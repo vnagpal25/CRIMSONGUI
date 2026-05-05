@@ -42,10 +42,19 @@ struct TriangleFace {
     std::array<int, 3> _ids;
 };
 
-MeshData::MeshData() { MeshData::InitializeTimeGeometry(1); }
+MeshData::MeshData()
+    : _firstTriangleCellId(0)
+    , _nFaces(0)
+    , _nEdges(0)
+{
+    MeshData::InitializeTimeGeometry(1);
+}
 
 MeshData::MeshData(const Self& other)
     : mitk::BaseData(other)
+    , _firstTriangleCellId(0)
+    , _nFaces(0)
+    , _nEdges(0)
 {
     MeshData::InitializeTimeGeometry(1);
 
@@ -76,16 +85,25 @@ mitk::Surface::Pointer MeshData::getSurfaceRepresentation() const
     if (!_surfaceRepresentation) {
         vtkUnstructuredGridBase* ug = getUnstructuredGridRepresentation()->GetVtkUnstructuredGrid();
 
-        vtkNew<vtkExtractCells> extractCellsFilter;
-        extractCellsFilter->SetInputData(ug);
-        extractCellsFilter->AddCellRange(_firstTriangleCellId, ug->GetNumberOfCells());
-
-        vtkNew<vtkGeometryFilter> geometryFilter;
-        geometryFilter->SetInputConnection(extractCellsFilter->GetOutputPort());
-        geometryFilter->Update();
-
         _surfaceRepresentation = mitk::Surface::New();
-        _surfaceRepresentation->SetVtkPolyData(geometryFilter->GetOutput());
+
+        if (_firstTriangleCellId < ug->GetNumberOfCells()) {
+            vtkNew<vtkExtractCells> extractCellsFilter;
+            extractCellsFilter->SetInputData(ug);
+            extractCellsFilter->AddCellRange(_firstTriangleCellId, ug->GetNumberOfCells() - 1);
+
+            vtkNew<vtkGeometryFilter> geometryFilter;
+            geometryFilter->SetInputConnection(extractCellsFilter->GetOutputPort());
+            geometryFilter->Update();
+
+            _surfaceRepresentation->SetVtkPolyData(geometryFilter->GetOutput());
+        } else {
+            vtkNew<vtkDataSetSurfaceFilter> surfaceFilter;
+            surfaceFilter->SetInputData(ug);
+            surfaceFilter->Update();
+
+            _surfaceRepresentation->SetVtkPolyData(surfaceFilter->GetOutput());
+        }
     }
 
     return _surfaceRepresentation;
@@ -152,6 +170,7 @@ void MeshData::setUnstructuredGrid(mitk::UnstructuredGrid::Pointer data, bool fi
 
     // All tetrahedra come in the list of cells first. Find the partition point.
     vtkUnstructuredGridBase* ug = data->GetVtkUnstructuredGrid();
+    _firstTriangleCellId = ug->GetNumberOfCells();
     for (int i = 0; i < ug->GetNumberOfCells(); ++i) {
         if (ug->GetCellType(i) != VTK_TETRA) {
             _firstTriangleCellId = i;
