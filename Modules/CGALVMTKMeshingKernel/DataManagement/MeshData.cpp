@@ -85,6 +85,8 @@ mitk::Surface::Pointer MeshData::getSurfaceRepresentation() const
     if (!_surfaceRepresentation) {
         vtkUnstructuredGridBase* ug = getUnstructuredGridRepresentation()->GetVtkUnstructuredGrid();
 
+        MITK_INFO << "Extracting CRIMSON mesh surface from " << ug->GetNumberOfCells() << " cells";
+
         _surfaceRepresentation = mitk::Surface::New();
 
         if (_firstTriangleCellId < ug->GetNumberOfCells()) {
@@ -99,6 +101,8 @@ mitk::Surface::Pointer MeshData::getSurfaceRepresentation() const
             vtkNew<vtkPolyData> surface;
             surface->DeepCopy(geometryFilter->GetOutput());
             _surfaceRepresentation->SetVtkPolyData(surface.GetPointer());
+            MITK_INFO << "Extracted CRIMSON mesh sidecar surface: " << surface->GetNumberOfPoints() << " points, "
+                      << surface->GetNumberOfCells() << " cells";
         } else {
             vtkNew<vtkDataSetSurfaceFilter> surfaceFilter;
             surfaceFilter->SetInputData(ug);
@@ -107,6 +111,8 @@ mitk::Surface::Pointer MeshData::getSurfaceRepresentation() const
             vtkNew<vtkPolyData> surface;
             surface->DeepCopy(surfaceFilter->GetOutput());
             _surfaceRepresentation->SetVtkPolyData(surface.GetPointer());
+            MITK_INFO << "Extracted CRIMSON mesh boundary surface: " << surface->GetNumberOfPoints() << " points, "
+                      << surface->GetNumberOfCells() << " cells";
         }
     }
 

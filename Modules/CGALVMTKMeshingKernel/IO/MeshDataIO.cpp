@@ -83,6 +83,23 @@ std::vector<itk::SmartPointer<mitk::BaseData>> MeshDataIO::DoRead()
         mitkThrow() << "Failed to read mesh from " << GetLocalFileName();
     }
 
+    vtkNew<vtkXMLPolyDataReader> surfaceReader;
+    surfaceReader->SetFileName((GetLocalFileName() + ".vtp").c_str());
+
+    if (surfaceReader->CanReadFile((GetLocalFileName() + ".vtp").c_str())) {
+        surfaceReader->Update();
+        vtkNew<vtkPolyData> surface;
+        surface->DeepCopy(surfaceReader->GetOutput());
+
+        mesh->_surfaceRepresentation = mitk::Surface::New();
+        mesh->_surfaceRepresentation->SetVtkPolyData(surface.GetPointer());
+
+        MITK_INFO << "Loaded CRIMSON mesh surface: " << surface->GetNumberOfPoints() << " points, "
+                  << surface->GetNumberOfCells() << " cells";
+    } else {
+        MITK_WARN << "No CRIMSON mesh surface sidecar found; surface will be extracted on demand";
+    }
+
     result.push_back(mesh.GetPointer());
     return result;
 }
