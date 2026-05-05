@@ -1,11 +1,13 @@
 #pragma once
 
+#include "CGALVMTKMeshingKernelExports.h"
+
 #include <mitkAbstractFileIO.h>
 
 namespace crimson {
 
 /*! \brief    A class handling IO of MeshData. */
-class MeshDataIO : public mitk::AbstractFileIO {
+class CGALVMTKMeshingKernel_EXPORT MeshDataIO : public mitk::AbstractFileIO {
 public:
     MeshDataIO();
     virtual ~MeshDataIO();

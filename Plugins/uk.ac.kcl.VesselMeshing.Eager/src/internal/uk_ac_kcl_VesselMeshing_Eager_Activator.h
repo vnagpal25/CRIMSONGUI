@@ -2,6 +2,11 @@
 
 #include <ctkPluginActivator.h>
 
+#include <IO/MeshDataIO.h>
+#include <IO/MeshingParametersDataIO.h>
+
+#include <memory>
+
 class uk_ac_kcl_VesselMeshing_Eager_Activator : public QObject, public ctkPluginActivator
 {
     Q_OBJECT
@@ -18,5 +23,7 @@ public:
 private:
 
     static ctkPluginContext* PluginContext;
-}; // uk_ac_kcl_VesselMeshing_Eager_Activator
 
+    std::unique_ptr<crimson::MeshDataIO> _meshDataIO;
+    std::unique_ptr<crimson::MeshingParametersDataIO> _meshingParametersDataIO;
+}; // uk_ac_kcl_VesselMeshing_Eager_Activator

@@ -11,6 +11,8 @@
 
 #include <MeshData.h>
 #include <MeshingParametersData.h>
+#include <IO/MeshDataIO.h>
+#include <IO/MeshingParametersDataIO.h>
 
 ctkPluginContext* uk_ac_kcl_VesselMeshing_Eager_Activator::PluginContext;
 
@@ -32,10 +34,15 @@ void uk_ac_kcl_VesselMeshing_Eager_Activator::start(ctkPluginContext* context)
     mitk::NodePredicateBase::Pointer isMesh = crimson::HierarchyManager::getInstance()->getPredicate(crimson::VesselMeshingNodeTypes::Mesh());
     descriptorManager->AddDescriptor(new QmitkNodeDescriptor(QObject::tr("Mesh"), QString(":/VesselMeshing/icons/DataManagerIcon_Mesh.png"), isMesh, descriptorManager));
 
+    _meshDataIO.reset(new crimson::MeshDataIO);
+    _meshingParametersDataIO.reset(new crimson::MeshingParametersDataIO);
+
     PluginContext = context;
 }
 
 void uk_ac_kcl_VesselMeshing_Eager_Activator::stop(ctkPluginContext* context)
 {
+    _meshingParametersDataIO.reset();
+    _meshDataIO.reset();
     Q_UNUSED(context)
 }

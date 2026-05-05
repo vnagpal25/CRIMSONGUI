@@ -1,11 +1,13 @@
 #pragma once
 
+#include "CGALVMTKMeshingKernelExports.h"
+
 #include <mitkAbstractFileIO.h>
 
 namespace crimson {
 
 /*! \brief    A class handling IO of MeshingParametersData. */
-class MeshingParametersDataIO : public mitk::AbstractFileIO {
+class CGALVMTKMeshingKernel_EXPORT MeshingParametersDataIO : public mitk::AbstractFileIO {
 public:
     MeshingParametersDataIO();
     virtual ~MeshingParametersDataIO();
