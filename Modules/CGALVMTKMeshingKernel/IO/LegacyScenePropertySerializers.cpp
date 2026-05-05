@@ -1,7 +1,8 @@
 #include <mitkEnumerationPropertySerializer.h>
 #include <mitkGridRepresentationProperty.h>
 #include <mitkGridVolumeMapperProperty.h>
-#include <mitkProperties.h>
+#include <mitkStringProperty.h>
+#include <tinyxml.h>
 
 #define CRIMSON_REGISTER_ENUM_PROPERTY_SERIALIZER(classname)                         \
 namespace mitk                                                                       \
