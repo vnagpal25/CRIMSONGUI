@@ -52,6 +52,7 @@ std::vector<itk::SmartPointer<mitk::BaseData>> MeshDataIO::DoRead()
     std::vector< itk::SmartPointer<mitk::BaseData> > result;
 
     auto mesh = MeshData::New();
+    MITK_INFO << "Loading CRIMSON mesh data from " << GetLocalFileName();
 
     std::ifstream faceInfoFile(GetLocalFileName() + ".faceinfo");
 
@@ -70,9 +71,14 @@ std::vector<itk::SmartPointer<mitk::BaseData>> MeshDataIO::DoRead()
 
     if (unstructuredGridReader->CanReadFile((GetLocalFileName() + ".vtu").c_str())) {
         unstructuredGridReader->Update();
+        vtkNew<vtkUnstructuredGrid> unstructuredGrid;
+        unstructuredGrid->DeepCopy(unstructuredGridReader->GetOutput());
+
         auto ug = mitk::UnstructuredGrid::New();
-        ug->SetVtkUnstructuredGrid(unstructuredGridReader->GetOutput());
+        ug->SetVtkUnstructuredGrid(unstructuredGrid.GetPointer());
         mesh->setUnstructuredGrid(ug, false);
+        MITK_INFO << "Loaded CRIMSON mesh: " << unstructuredGrid->GetNumberOfPoints() << " points, "
+                  << unstructuredGrid->GetNumberOfCells() << " cells";
     } else {
         mitkThrow() << "Failed to read mesh from " << GetLocalFileName();
     }

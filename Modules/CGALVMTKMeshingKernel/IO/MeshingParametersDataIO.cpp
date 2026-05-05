@@ -35,6 +35,8 @@ std::vector<itk::SmartPointer<mitk::BaseData>> MeshingParametersDataIO::DoRead()
 {
     std::vector< itk::SmartPointer<mitk::BaseData> > result;
 
+    MITK_INFO << "Loading CRIMSON meshing parameters from " << GetInputLocation();
+
     std::istream* inStream = GetInputStream();
     std::shared_ptr<std::istream> fileInStream;
     if (!inStream) {

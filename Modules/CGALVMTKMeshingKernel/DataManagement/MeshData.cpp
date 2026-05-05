@@ -96,13 +96,17 @@ mitk::Surface::Pointer MeshData::getSurfaceRepresentation() const
             geometryFilter->SetInputConnection(extractCellsFilter->GetOutputPort());
             geometryFilter->Update();
 
-            _surfaceRepresentation->SetVtkPolyData(geometryFilter->GetOutput());
+            vtkNew<vtkPolyData> surface;
+            surface->DeepCopy(geometryFilter->GetOutput());
+            _surfaceRepresentation->SetVtkPolyData(surface.GetPointer());
         } else {
             vtkNew<vtkDataSetSurfaceFilter> surfaceFilter;
             surfaceFilter->SetInputData(ug);
             surfaceFilter->Update();
 
-            _surfaceRepresentation->SetVtkPolyData(surfaceFilter->GetOutput());
+            vtkNew<vtkPolyData> surface;
+            surface->DeepCopy(surfaceFilter->GetOutput());
+            _surfaceRepresentation->SetVtkPolyData(surface.GetPointer());
         }
     }
 
