@@ -5,6 +5,7 @@ set(CPP_FILES
     IO/MeshDataCoreObjectFactory.cpp 
     IO/MeshDataIO.cpp 
     IO/MeshingKernelIOMimeTypes.cpp 
+    IO/LegacyScenePropertySerializers.cpp
     ExtensionPoint/IMeshingKernel.cpp
     ExtensionPoint/crimsonTetGenWrapper.cpp
     ExtensionPoint/tetgen.cxx
