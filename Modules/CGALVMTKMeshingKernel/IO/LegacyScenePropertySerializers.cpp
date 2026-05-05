@@ -1,7 +1,7 @@
 #include <mitkEnumerationPropertySerializer.h>
 #include <mitkGridRepresentationProperty.h>
 #include <mitkGridVolumeMapperProperty.h>
-#include <mitkShaderProperty.h>
+#include <mitkProperties.h>
 
 #define CRIMSON_REGISTER_ENUM_PROPERTY_SERIALIZER(classname)                         \
 namespace mitk                                                                       \
@@ -31,6 +31,26 @@ protected:                                                                      
 }                                                                                    \
 MITK_REGISTER_SERIALIZER(classname##Serializer);
 
-CRIMSON_REGISTER_ENUM_PROPERTY_SERIALIZER(ShaderProperty)
+namespace mitk
+{
+class ShaderPropertySerializer : public BasePropertySerializer
+{
+public:
+  mitkClassMacro(ShaderPropertySerializer, BasePropertySerializer)
+  itkFactorylessNewMacro(Self)
+  itkCloneMacro(Self)
+
+  BaseProperty::Pointer Deserialize(TiXmlElement* element) override
+  {
+    return StringProperty::New(element && element->Attribute("value") ? element->Attribute("value") : "").GetPointer();
+  }
+
+protected:
+  ShaderPropertySerializer() {}
+  ~ShaderPropertySerializer() override {}
+};
+}
+MITK_REGISTER_SERIALIZER(ShaderPropertySerializer);
+
 CRIMSON_REGISTER_ENUM_PROPERTY_SERIALIZER(GridRepresentationProperty)
 CRIMSON_REGISTER_ENUM_PROPERTY_SERIALIZER(GridVolumeMapperProperty)
