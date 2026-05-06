@@ -6,6 +6,8 @@
 #include "vtkParametricSplineVesselPathData.h"
 #include "vtkParametricSplineVesselPathVtkMapper3D.h"
 
+#include <cstdlib>
+
 typedef std::multimap<std::string, std::string> MultimapType;
 
 namespace crimson {
@@ -28,6 +30,10 @@ VesselForestCoreObjectFactory::~VesselForestCoreObjectFactory()
 mitk::Mapper::Pointer VesselForestCoreObjectFactory::CreateMapper(mitk::DataNode* node, MapperSlotId /*id*/)
 {
     if (!node->GetData()) {
+        return nullptr;
+    }
+
+    if (std::getenv("CRIMSON_DISABLE_CUSTOM_MAPPERS")) {
         return nullptr;
     }
 
@@ -90,4 +96,3 @@ struct RegisterVesselForestCoreObjectFactory {
 static RegisterVesselForestCoreObjectFactory registerVesselForestCoreObjectFactory;
 
 }
-

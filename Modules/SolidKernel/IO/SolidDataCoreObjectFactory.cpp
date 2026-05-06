@@ -6,6 +6,8 @@
 #include "SolidData.h"
 #include "SolidDataMapper.h"
 
+#include <cstdlib>
+
 typedef std::multimap<std::string, std::string> MultimapType;
 
 namespace crimson {
@@ -28,6 +30,10 @@ SolidDataCoreObjectFactory::~SolidDataCoreObjectFactory()
 mitk::Mapper::Pointer SolidDataCoreObjectFactory::CreateMapper(mitk::DataNode* node, MapperSlotId id)
 {
     if (!node->GetData()) {
+        return nullptr;
+    }
+
+    if (std::getenv("CRIMSON_DISABLE_CUSTOM_MAPPERS")) {
         return nullptr;
     }
 

@@ -7,6 +7,8 @@
 #include "MeshData.h"
 #include "MeshDataMapper.h"
 
+#include <cstdlib>
+
 typedef std::multimap<std::string, std::string> MultimapType;
 
 namespace crimson {
@@ -29,6 +31,10 @@ MeshDataCoreObjectFactory::~MeshDataCoreObjectFactory()
 mitk::Mapper::Pointer MeshDataCoreObjectFactory::CreateMapper(mitk::DataNode* node, MapperSlotId id)
 {
     if (!node->GetData()) {
+        return nullptr;
+    }
+
+    if (std::getenv("CRIMSON_DISABLE_CUSTOM_MAPPERS")) {
         return nullptr;
     }
 
