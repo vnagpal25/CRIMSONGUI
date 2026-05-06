@@ -5,10 +5,13 @@
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkCellData.h>
+#include <vtkCellArray.h>
+#include <vtkIntArray.h>
 #include <vtkXMLUnstructuredGridReader.h>
 #include <vtkXMLUnstructuredGridWriter.h>
 #include <vtkUnstructuredGrid.h>
 #include <vtkPolyData.h>
+#include <vtkPoints.h>
 
 #include "MeshDataIO.h"
 
@@ -43,6 +46,35 @@ static void sanitizeSurfaceForRendering(vtkPolyData* surface)
     surface->GetCellData()->Initialize();
     surface->BuildCells();
     surface->BuildLinks();
+}
+
+static void initializeEmptyLegacyMesh(vtkUnstructuredGrid* grid, vtkPolyData* surface)
+{
+    vtkNew<vtkPoints> gridPoints;
+    grid->SetPoints(gridPoints.GetPointer());
+    grid->Allocate(0);
+
+    vtkNew<vtkIntArray> faceIds;
+    faceIds->SetName("Face IDs");
+    faceIds->SetNumberOfTuples(0);
+    grid->GetCellData()->AddArray(faceIds.GetPointer());
+
+    vtkNew<vtkIntArray> originalFaceIds;
+    originalFaceIds->SetName("originalFaceIds");
+    originalFaceIds->SetNumberOfTuples(0);
+    grid->GetCellData()->AddArray(originalFaceIds.GetPointer());
+
+    vtkNew<vtkPoints> surfacePoints;
+    vtkNew<vtkCellArray> emptyVerts;
+    vtkNew<vtkCellArray> emptyLines;
+    vtkNew<vtkCellArray> emptyPolys;
+    vtkNew<vtkCellArray> emptyStrips;
+    surface->SetPoints(surfacePoints.GetPointer());
+    surface->SetVerts(emptyVerts.GetPointer());
+    surface->SetLines(emptyLines.GetPointer());
+    surface->SetPolys(emptyPolys.GetPointer());
+    surface->SetStrips(emptyStrips.GetPointer());
+    sanitizeSurfaceForRendering(surface);
 }
 
 MeshDataIO::MeshDataIO()
@@ -86,11 +118,13 @@ std::vector<itk::SmartPointer<mitk::BaseData>> MeshDataIO::DoRead()
                   << "Set CRIMSON_LOAD_LEGACY_MESH_DATA=1 before launch to load it for debugging.";
 
         vtkNew<vtkUnstructuredGrid> emptyGrid;
+        vtkNew<vtkPolyData> emptySurface;
+        initializeEmptyLegacyMesh(emptyGrid.GetPointer(), emptySurface.GetPointer());
+
         auto ug = mitk::UnstructuredGrid::New();
         ug->SetVtkUnstructuredGrid(emptyGrid.GetPointer());
         mesh->setUnstructuredGrid(ug, false);
 
-        vtkNew<vtkPolyData> emptySurface;
         mesh->_surfaceRepresentation = mitk::Surface::New();
         mesh->_surfaceRepresentation->SetVtkPolyData(emptySurface.GetPointer());
 

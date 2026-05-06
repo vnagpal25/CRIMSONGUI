@@ -2,6 +2,7 @@
 
 #include <vtkNew.h>
 #include <vtkPoints.h>
+#include <vtkCellArray.h>
 #include <vtkPolyData.h>
 #include <vtkPointData.h>
 #include <vtkCellData.h>
@@ -37,6 +38,26 @@ static void sanitizeSurfaceForRendering(vtkPolyData* surface)
     surface->GetCellData()->Initialize();
     surface->BuildCells();
     surface->BuildLinks();
+}
+
+static mitk::Surface::Pointer makeEmptySurface()
+{
+    vtkNew<vtkPolyData> surface;
+    vtkNew<vtkPoints> points;
+    vtkNew<vtkCellArray> emptyVerts;
+    vtkNew<vtkCellArray> emptyLines;
+    vtkNew<vtkCellArray> emptyPolys;
+    vtkNew<vtkCellArray> emptyStrips;
+    surface->SetPoints(points.GetPointer());
+    surface->SetVerts(emptyVerts.GetPointer());
+    surface->SetLines(emptyLines.GetPointer());
+    surface->SetPolys(emptyPolys.GetPointer());
+    surface->SetStrips(emptyStrips.GetPointer());
+    sanitizeSurfaceForRendering(surface.GetPointer());
+
+    auto result = mitk::Surface::New();
+    result->SetVtkPolyData(surface.GetPointer());
+    return result;
 }
 
 struct TriangleFace {
@@ -95,7 +116,13 @@ void MeshData::PrintSelf(std::ostream& os, itk::Indent indent) const { mitk::Bas
 mitk::Surface::Pointer MeshData::getSurfaceRepresentation() const
 {
     if (!_surfaceRepresentation) {
-        vtkUnstructuredGridBase* ug = getUnstructuredGridRepresentation()->GetVtkUnstructuredGrid();
+        auto grid = getUnstructuredGridRepresentation();
+        vtkUnstructuredGridBase* ug = grid ? grid->GetVtkUnstructuredGrid() : nullptr;
+
+        if (!ug || ug->GetNumberOfCells() == 0) {
+            _surfaceRepresentation = makeEmptySurface();
+            return _surfaceRepresentation;
+        }
 
         MITK_INFO << "Extracting CRIMSON mesh surface from " << ug->GetNumberOfCells() << " cells";
 
@@ -135,9 +162,17 @@ mitk::Surface::Pointer MeshData::getSurfaceRepresentation() const
 
 mitk::Surface::Pointer MeshData::getSurfaceRepresentationForFace(crimson::FaceIdentifier faceId) const
 {
-    vtkUnstructuredGridBase* ug = getUnstructuredGridRepresentation()->GetVtkUnstructuredGrid();
+    auto grid = getUnstructuredGridRepresentation();
+    vtkUnstructuredGridBase* ug = grid ? grid->GetVtkUnstructuredGrid() : nullptr;
+
+    if (!ug) {
+        return makeEmptySurface();
+    }
 
     vtkDataArray* array = ug->GetCellData()->GetArray("Face IDs");
+    if (!array) {
+        return makeEmptySurface();
+    }
 
     std::vector<int> nodeIds = getNodeIdsForFace(faceId);
 
@@ -301,8 +336,16 @@ void MeshData::setUnstructuredGrid(mitk::UnstructuredGrid::Pointer data, bool fi
 
 std::vector<int> MeshData::getBoundaryNodeIdsForFace(const FaceIdentifier& faceId) const
 {
-    vtkUnstructuredGridBase* ug = getUnstructuredGridRepresentation()->GetVtkUnstructuredGrid();
+    auto grid = getUnstructuredGridRepresentation();
+    vtkUnstructuredGridBase* ug = grid ? grid->GetVtkUnstructuredGrid() : nullptr;
+    if (!ug) {
+        return {};
+    }
+
     vtkDataArray* array = ug->GetCellData()->GetArray("Face IDs");
+    if (!array) {
+        return {};
+    }
 
     int faceIdentifierIndex = _faceIdentifierMap.faceIdentifierIndex(faceId);
     std::unordered_map<int, std::unordered_set<int>> nodeIndicesAndNeightbors;
@@ -366,8 +409,16 @@ std::vector<int> MeshData::getBoundaryNodeIdsForFace(const FaceIdentifier& faceI
 
 std::vector<int> MeshData::getNodeIdsForFace(const FaceIdentifier& faceId) const
 {
-    vtkUnstructuredGridBase* ug = getUnstructuredGridRepresentation()->GetVtkUnstructuredGrid();
+    auto grid = getUnstructuredGridRepresentation();
+    vtkUnstructuredGridBase* ug = grid ? grid->GetVtkUnstructuredGrid() : nullptr;
+    if (!ug) {
+        return {};
+    }
+
     vtkDataArray* array = ug->GetCellData()->GetArray("Face IDs");
+    if (!array) {
+        return {};
+    }
 
     int faceIdentifierIndex = _faceIdentifierMap.faceIdentifierIndex(faceId);
     std::unordered_set<int> nodeIndices;
@@ -409,9 +460,17 @@ auto MeshData::getMeshFaceInfoForFace(const FaceIdentifier& faceId) const -> std
 {
     std::vector<MeshFaceInfo> out;
 
-    vtkUnstructuredGridBase* ug = getUnstructuredGridRepresentation()->GetVtkUnstructuredGrid();
+    auto grid = getUnstructuredGridRepresentation();
+    vtkUnstructuredGridBase* ug = grid ? grid->GetVtkUnstructuredGrid() : nullptr;
+    if (!ug) {
+        return out;
+    }
+
     vtkDataArray* faceIdArray = ug->GetCellData()->GetArray("Face IDs");
     vtkDataArray* globalFaceIdArray = ug->GetCellData()->GetArray("originalFaceIds");
+    if (!faceIdArray || !globalFaceIdArray) {
+        return out;
+    }
 
     int faceIdentifierIndex = _faceIdentifierMap.faceIdentifierIndex(faceId);
     for (int cellId = _firstTriangleCellId; cellId < ug->GetNumberOfCells(); ++cellId) {
@@ -470,7 +529,12 @@ std::vector<int> MeshData::getAdjacentElements(int elementIndex) const
     return adjacentElements;
 }
 
-int MeshData::getNNodes() const { return _unstructuredGridRepresentation->GetVtkUnstructuredGrid()->GetNumberOfPoints(); }
+int MeshData::getNNodes() const
+{
+    auto grid = getUnstructuredGridRepresentation();
+    vtkUnstructuredGridBase* ug = grid ? grid->GetVtkUnstructuredGrid() : nullptr;
+    return ug ? ug->GetNumberOfPoints() : 0;
+}
 
 int MeshData::getNEdges() const { return _nEdges; }
 
@@ -517,14 +581,24 @@ std::vector<double> MeshData::getElementAspectRatios()
 vtkPointData* MeshData::getPointData() const
 {
     this->Modified();
-    return getUnstructuredGridRepresentation()->GetVtkUnstructuredGrid()->GetPointData();
+    auto grid = getUnstructuredGridRepresentation();
+    vtkUnstructuredGridBase* ug = grid ? grid->GetVtkUnstructuredGrid() : nullptr;
+    return ug ? ug->GetPointData() : nullptr;
 }
 
 double MeshData::calculateArea(const FaceIdentifier& faceId)
 {
     vtkIdType faceIdIndex = _faceIdentifierMap.faceIdentifierIndex(faceId);
-    vtkUnstructuredGridBase* ug = getUnstructuredGridRepresentation()->GetVtkUnstructuredGrid();
+    auto grid = getUnstructuredGridRepresentation();
+    vtkUnstructuredGridBase* ug = grid ? grid->GetVtkUnstructuredGrid() : nullptr;
+    if (!ug) {
+        return 0;
+    }
+
     vtkDataArray* faceIdArray = ug->GetCellData()->GetArray("Face IDs");
+    if (!faceIdArray) {
+        return 0;
+    }
 
     double area = 0;
     for (vtkIdType i = _firstTriangleCellId; i < ug->GetNumberOfCells(); ++i) {
