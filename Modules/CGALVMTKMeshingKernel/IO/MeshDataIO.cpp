@@ -21,6 +21,8 @@
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>
 
+#include <cstdlib>
+
 
 REGISTER_IOUTILDATA_SERIALIZER(MeshData, 
     crimson::MeshingKernelIOMimeTypes::MESHDATA_DEFAULT_EXTENSION(),
@@ -77,6 +79,13 @@ std::vector<itk::SmartPointer<mitk::BaseData>> MeshDataIO::DoRead()
         inArchive >> BOOST_SERIALIZATION_NVP(dataRef);
     } else {
         MITK_WARN << "Failed to load the  model face information - please re-mesh for correct solver setup output";
+    }
+
+    if (!std::getenv("CRIMSON_LOAD_LEGACY_MESH_DATA")) {
+        MITK_WARN << "Skipping legacy CRIMSON mesh VTK payload by default to avoid a VTK 9.4 crash. "
+                  << "Set CRIMSON_LOAD_LEGACY_MESH_DATA=1 before launch to load it for debugging.";
+        result.push_back(mesh.GetPointer());
+        return result;
     }
 
     vtkNew<vtkXMLUnstructuredGridReader> unstructuredGridReader;
