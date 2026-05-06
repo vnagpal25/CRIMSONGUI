@@ -84,6 +84,16 @@ std::vector<itk::SmartPointer<mitk::BaseData>> MeshDataIO::DoRead()
     if (!std::getenv("CRIMSON_LOAD_LEGACY_MESH_DATA")) {
         MITK_WARN << "Skipping legacy CRIMSON mesh VTK payload by default to avoid a VTK 9.4 crash. "
                   << "Set CRIMSON_LOAD_LEGACY_MESH_DATA=1 before launch to load it for debugging.";
+
+        vtkNew<vtkUnstructuredGrid> emptyGrid;
+        auto ug = mitk::UnstructuredGrid::New();
+        ug->SetVtkUnstructuredGrid(emptyGrid.GetPointer());
+        mesh->setUnstructuredGrid(ug, false);
+
+        vtkNew<vtkPolyData> emptySurface;
+        mesh->_surfaceRepresentation = mitk::Surface::New();
+        mesh->_surfaceRepresentation->SetVtkPolyData(emptySurface.GetPointer());
+
         result.push_back(mesh.GetPointer());
         return result;
     }
