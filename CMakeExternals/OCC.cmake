@@ -14,6 +14,7 @@ set(${out_var}
       -DSTEP=${Step}
       -DBINARY_DIR=<BINARY_DIR>
       -DCMAKE_CFG_INTDIR=${CMAKE_CFG_INTDIR}
+      -DBUILD_PARALLEL_LEVEL=${OCC_BUILD_PARALLEL_LEVEL}
       -P ${CMAKE_CURRENT_LIST_DIR}/BuildOneConfiguration.cmake)
 endmacro()
 
@@ -61,6 +62,7 @@ endmacro()
 set(proj OCC)
 set(proj_DEPENDENCIES freetype TBB)
 set(OCC_DEPENDS ${proj})
+set(OCC_BUILD_PARALLEL_LEVEL "1" CACHE STRING "Maximum parallel jobs for the nested OCC build. Keep at 1 on MSVC to avoid cl.exe D8040/C1001 failures.")
 
 if(NOT DEFINED OCC_DIR)
     # -DWNT must be set before additional_args captures OCC_CXX_FLAGS (Windows OCCT).
@@ -70,15 +72,48 @@ if(NOT DEFINED OCC_DIR)
     # SuperBuild adds /MP; parallel CL on huge OCCT targets (e.g. TKGeomAlgo) can ICE or fail with
     # D8040 ("error creating or communicating with child process"). Drop /MP for OCC only.
     if(MSVC)
-      string(REGEX REPLACE " ?/MP[0-9]*" "" _occ_superbuild_cxx_flags "${CMAKE_CXX_FLAGS}")
-      string(REGEX REPLACE " ?/MP[0-9]*" "" _occ_superbuild_c_flags "${CMAKE_C_FLAGS}")
+      foreach(_occ_flag_var
+          CMAKE_C_FLAGS
+          CMAKE_CXX_FLAGS
+          CMAKE_C_FLAGS_DEBUG
+          CMAKE_CXX_FLAGS_DEBUG
+          CMAKE_C_FLAGS_RELEASE
+          CMAKE_CXX_FLAGS_RELEASE
+          CMAKE_C_FLAGS_RELWITHDEBINFO
+          CMAKE_CXX_FLAGS_RELWITHDEBINFO
+          CMAKE_C_FLAGS_MINSIZEREL
+          CMAKE_CXX_FLAGS_MINSIZEREL
+        )
+        string(REGEX REPLACE "(^| )/MP[0-9]*($| )" " " _occ_${_occ_flag_var} "${${_occ_flag_var}}")
+        string(STRIP "${_occ_${_occ_flag_var}}" _occ_${_occ_flag_var})
+      endforeach()
     else()
-      set(_occ_superbuild_cxx_flags "${CMAKE_CXX_FLAGS}")
-      set(_occ_superbuild_c_flags "${CMAKE_C_FLAGS}")
+      foreach(_occ_flag_var
+          CMAKE_C_FLAGS
+          CMAKE_CXX_FLAGS
+          CMAKE_C_FLAGS_DEBUG
+          CMAKE_CXX_FLAGS_DEBUG
+          CMAKE_C_FLAGS_RELEASE
+          CMAKE_CXX_FLAGS_RELEASE
+          CMAKE_C_FLAGS_RELWITHDEBINFO
+          CMAKE_CXX_FLAGS_RELWITHDEBINFO
+          CMAKE_C_FLAGS_MINSIZEREL
+          CMAKE_CXX_FLAGS_MINSIZEREL
+        )
+        set(_occ_${_occ_flag_var} "${${_occ_flag_var}}")
+      endforeach()
     endif()
     set(additional_args
-            "-DCMAKE_CXX_FLAGS:STRING=${_occ_superbuild_cxx_flags} ${OCC_CXX_FLAGS}"
-            "-DCMAKE_C_FLAGS:STRING=${_occ_superbuild_c_flags} ${OCC_C_FLAGS}"
+            "-DCMAKE_CXX_FLAGS:STRING=${_occ_CMAKE_CXX_FLAGS} ${OCC_CXX_FLAGS}"
+            "-DCMAKE_C_FLAGS:STRING=${_occ_CMAKE_C_FLAGS} ${OCC_C_FLAGS}"
+            "-DCMAKE_CXX_FLAGS_DEBUG:STRING=${_occ_CMAKE_CXX_FLAGS_DEBUG}"
+            "-DCMAKE_C_FLAGS_DEBUG:STRING=${_occ_CMAKE_C_FLAGS_DEBUG}"
+            "-DCMAKE_CXX_FLAGS_RELEASE:STRING=${_occ_CMAKE_CXX_FLAGS_RELEASE}"
+            "-DCMAKE_C_FLAGS_RELEASE:STRING=${_occ_CMAKE_C_FLAGS_RELEASE}"
+            "-DCMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=${_occ_CMAKE_CXX_FLAGS_RELWITHDEBINFO}"
+            "-DCMAKE_C_FLAGS_RELWITHDEBINFO:STRING=${_occ_CMAKE_C_FLAGS_RELWITHDEBINFO}"
+            "-DCMAKE_CXX_FLAGS_MINSIZEREL:STRING=${_occ_CMAKE_CXX_FLAGS_MINSIZEREL}"
+            "-DCMAKE_C_FLAGS_MINSIZEREL:STRING=${_occ_CMAKE_C_FLAGS_MINSIZEREL}"
             # VS2022 UCRT headers use C++17 features; without /std:c++17, OCCT Debug builds can fail
             # (e.g. C7525 on _NODISCARD*, garbled parses) when the superbuild CXX standard is older.
             "-DCMAKE_CXX_STANDARD:STRING=17"

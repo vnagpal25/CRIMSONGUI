@@ -18,6 +18,9 @@ endif()
 
 
 set(args --build ${BINARY_DIR} --config ${CMAKE_CFG_INTDIR})
+if(DEFINED BUILD_PARALLEL_LEVEL AND NOT "${BUILD_PARALLEL_LEVEL}" STREQUAL "")
+    list(APPEND args --parallel ${BUILD_PARALLEL_LEVEL})
+endif()
 if(STEP STREQUAL "INSTALL")
     list(APPEND args --target install)
 endif()
