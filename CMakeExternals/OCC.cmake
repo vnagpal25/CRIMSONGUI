@@ -15,6 +15,7 @@ set(${out_var}
       -DBINARY_DIR=<BINARY_DIR>
       -DCMAKE_CFG_INTDIR=${CMAKE_CFG_INTDIR}
       -DBUILD_PARALLEL_LEVEL=${OCC_BUILD_PARALLEL_LEVEL}
+      -DNATIVE_BUILD_ARGS=${OCC_NATIVE_BUILD_ARGS}
       -P ${CMAKE_CURRENT_LIST_DIR}/BuildOneConfiguration.cmake)
 endmacro()
 
@@ -63,6 +64,10 @@ set(proj OCC)
 set(proj_DEPENDENCIES freetype TBB)
 set(OCC_DEPENDS ${proj})
 set(OCC_BUILD_PARALLEL_LEVEL "1" CACHE STRING "Maximum parallel jobs for the nested OCC build. Keep at 1 on MSVC to avoid cl.exe D8040/C1001 failures.")
+set(OCC_NATIVE_BUILD_ARGS "" CACHE STRING "Extra native build-tool arguments for OCC.")
+if(MSVC AND NOT OCC_NATIVE_BUILD_ARGS)
+  set(OCC_NATIVE_BUILD_ARGS "/m:1 /p:CL_MPCount=1 /p:UseMultiToolTask=false" CACHE STRING "Extra native build-tool arguments for OCC." FORCE)
+endif()
 
 if(NOT DEFINED OCC_DIR)
     # -DWNT must be set before additional_args captures OCC_CXX_FLAGS (Windows OCCT).

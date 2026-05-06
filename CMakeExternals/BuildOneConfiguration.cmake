@@ -24,6 +24,10 @@ endif()
 if(STEP STREQUAL "INSTALL")
     list(APPEND args --target install)
 endif()
+if(DEFINED NATIVE_BUILD_ARGS AND NOT "${NATIVE_BUILD_ARGS}" STREQUAL "")
+    separate_arguments(_native_build_args WINDOWS_COMMAND "${NATIVE_BUILD_ARGS}")
+    list(APPEND args -- ${_native_build_args})
+endif()
 
 execute_process(COMMAND ${CMAKE_COMMAND} ${args} RESULT_VARIABLE error_code)
 
