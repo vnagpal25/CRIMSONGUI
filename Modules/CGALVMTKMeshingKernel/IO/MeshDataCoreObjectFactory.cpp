@@ -34,7 +34,7 @@ mitk::Mapper::Pointer MeshDataCoreObjectFactory::CreateMapper(mitk::DataNode* no
         return nullptr;
     }
 
-    if (std::getenv("CRIMSON_DISABLE_CUSTOM_MAPPERS")) {
+    if (!std::getenv("CRIMSON_ENABLE_CUSTOM_MAPPERS")) {
         return nullptr;
     }
 

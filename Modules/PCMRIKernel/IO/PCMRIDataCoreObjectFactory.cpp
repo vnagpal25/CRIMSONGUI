@@ -33,7 +33,7 @@ mitk::Mapper::Pointer PCMRIDataCoreObjectFactory::CreateMapper(mitk::DataNode* n
         return nullptr;
     }
 
-    if (std::getenv("CRIMSON_DISABLE_CUSTOM_MAPPERS")) {
+    if (!std::getenv("CRIMSON_ENABLE_CUSTOM_MAPPERS")) {
         return nullptr;
     }
 
