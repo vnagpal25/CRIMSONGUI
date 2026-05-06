@@ -11,6 +11,12 @@ MeshDataMapper3D::~MeshDataMapper3D() {}
 
 const mitk::Surface* MeshDataMapper3D::GetInput()
 {
+    bool renderMeshData = false;
+    GetDataNode()->GetBoolProperty("crimson.renderMeshData", renderMeshData);
+    if (!renderMeshData) {
+        return nullptr;
+    }
+
     auto mesh = dynamic_cast<MeshData*>(GetDataNode()->GetData());
 
     if (!mesh) {
@@ -26,6 +32,12 @@ MeshDataMapper2D::~MeshDataMapper2D() {}
 
 const mitk::Surface* MeshDataMapper2D::GetInput() const
 {
+    bool renderMeshData = false;
+    GetDataNode()->GetBoolProperty("crimson.renderMeshData", renderMeshData);
+    if (!renderMeshData) {
+        return nullptr;
+    }
+
     auto brep = dynamic_cast<MeshData*>(GetDataNode()->GetData());
 
     if (!brep) {

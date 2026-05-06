@@ -57,6 +57,7 @@ void MeshDataCoreObjectFactory::SetDefaultProperties(mitk::DataNode* node)
     if (dynamic_cast<MeshData*>(node->GetData())) {
         MeshDataMapper2D::SetDefaultProperties(node);
         MeshDataMapper3D::SetDefaultProperties(node);
+        node->AddProperty("crimson.renderMeshData", mitk::BoolProperty::New(false), nullptr, false);
     }
 }
 
