@@ -1,5 +1,16 @@
 # Crimson GUI Compilation Process
 
+## Current Dependency Refresh Documentation
+
+The recent Qt 6 / MSVC 2022 / vcpkg refresh is documented in:
+
+- [Dependency refresh notes](docs/DEPENDENCY-REFRESH.MD)
+- [Windows MSVC/CMake build instructions](docs/BUILD-WINDOWS-MSVC-CMAKE.MD)
+- [Future Mac porting notes](docs/FUTURE-MAC-PORTING-NOTES.MD)
+- [Project handoff](docs/PROJECT-HANDOFF.MD)
+
+The older `Documentation/` files below are still useful historical context, but they describe the original Visual Studio 2013 / Qt 5 workflow.
+
 ## 1. [System Requirements and Required Software](Documentation/SystemRequirementsAndRequiredSoftware.md)
 ## 2. [Build Configuration](Documentation/BuildConfiguration.md)
 
