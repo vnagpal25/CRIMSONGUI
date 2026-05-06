@@ -32,7 +32,11 @@ mitk::Mapper::Pointer MeshDataCoreObjectFactory::CreateMapper(mitk::DataNode* no
         return nullptr;
     }
 
-    if (dynamic_cast<MeshData*>(node->GetData())) {
+    if (auto mesh = dynamic_cast<MeshData*>(node->GetData())) {
+        if (mesh->isLegacyPayloadSkipped()) {
+            return nullptr;
+        }
+
         bool renderMeshData = false;
         node->GetBoolProperty("crimson.renderMeshData", renderMeshData);
         if (!renderMeshData) {
@@ -60,11 +64,15 @@ void MeshDataCoreObjectFactory::SetDefaultProperties(mitk::DataNode* node)
         return;
     }
 
-    if (dynamic_cast<MeshData*>(node->GetData())) {
+    if (auto mesh = dynamic_cast<MeshData*>(node->GetData())) {
         MeshDataMapper2D::SetDefaultProperties(node);
         MeshDataMapper3D::SetDefaultProperties(node);
         node->AddProperty("crimson.renderMeshData", mitk::BoolProperty::New(false), nullptr, false);
         node->AddProperty("visible", mitk::BoolProperty::New(false), nullptr, false);
+        if (mesh->isLegacyPayloadSkipped()) {
+            node->SetBoolProperty("crimson.renderMeshData", false);
+            node->SetVisibility(false);
+        }
     }
 }
 

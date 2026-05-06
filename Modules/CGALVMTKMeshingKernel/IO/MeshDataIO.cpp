@@ -116,6 +116,7 @@ std::vector<itk::SmartPointer<mitk::BaseData>> MeshDataIO::DoRead()
     if (!std::getenv("CRIMSON_LOAD_LEGACY_MESH_DATA")) {
         MITK_WARN << "Skipping legacy CRIMSON mesh VTK payload by default to avoid a VTK 9.4 crash. "
                   << "Set CRIMSON_LOAD_LEGACY_MESH_DATA=1 before launch to load it for debugging.";
+        mesh->_legacyPayloadSkipped = true;
 
         if (std::getenv("CRIMSON_OMIT_SKIPPED_LEGACY_MESH_NODE")) {
             MITK_WARN << "Not creating a placeholder MeshData node for the skipped legacy payload. "

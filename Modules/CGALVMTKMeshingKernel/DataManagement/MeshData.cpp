@@ -100,6 +100,7 @@ MeshData::MeshData(const Self& other)
     if (other._surfaceRepresentation) {
         this->_surfaceRepresentation = other._surfaceRepresentation->Clone();
     }
+    this->_legacyPayloadSkipped = other._legacyPayloadSkipped;
 }
 
 MeshData::~MeshData() {}

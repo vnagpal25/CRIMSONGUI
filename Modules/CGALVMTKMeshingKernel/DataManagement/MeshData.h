@@ -38,6 +38,8 @@ public:
     void SetRequestedRegion(const itk::DataObject*) override {}
     void PrintSelf(std::ostream& os, itk::Indent indent) const override;
 
+    bool isLegacyPayloadSkipped() const { return _legacyPayloadSkipped; }
+
     ///@{ 
     /*!
      * \brief   Sets the FaceIdentifierMap (see SolidData and FaceIdentifierMap documentation for
@@ -169,6 +171,7 @@ private:
     int _firstTriangleCellId;
     int _nFaces;
     int _nEdges;
+    bool _legacyPayloadSkipped = false;
 };
 
 } // namespace crimson
