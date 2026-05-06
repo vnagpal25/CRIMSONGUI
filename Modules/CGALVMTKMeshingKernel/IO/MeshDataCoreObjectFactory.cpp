@@ -33,6 +33,12 @@ mitk::Mapper::Pointer MeshDataCoreObjectFactory::CreateMapper(mitk::DataNode* no
     }
 
     if (dynamic_cast<MeshData*>(node->GetData())) {
+        bool renderMeshData = false;
+        node->GetBoolProperty("crimson.renderMeshData", renderMeshData);
+        if (!renderMeshData) {
+            return nullptr;
+        }
+
         if (id == mitk::BaseRenderer::Standard3D) {
             auto mapper = MeshDataMapper3D::New();
             mapper->SetDataNode(node);
@@ -58,6 +64,7 @@ void MeshDataCoreObjectFactory::SetDefaultProperties(mitk::DataNode* node)
         MeshDataMapper2D::SetDefaultProperties(node);
         MeshDataMapper3D::SetDefaultProperties(node);
         node->AddProperty("crimson.renderMeshData", mitk::BoolProperty::New(false), nullptr, false);
+        node->AddProperty("visible", mitk::BoolProperty::New(false), nullptr, false);
     }
 }
 
