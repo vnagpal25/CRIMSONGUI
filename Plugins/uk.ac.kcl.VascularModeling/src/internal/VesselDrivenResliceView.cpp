@@ -244,11 +244,6 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
     d->renderWindowGradMag->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     renderWindowsLayout->addWidget(d->renderWindowGradMag);
 
-    // Remove from global RenderingManager so that InitializeViews() doesn't
-    // overwrite our custom VesselDrivenSlicedGeometry with standard geometry.
-    mitk::RenderingManager::GetInstance()->RemoveRenderWindow(d->renderWindow->GetVtkRenderWindow());
-    mitk::RenderingManager::GetInstance()->RemoveRenderWindow(d->renderWindowGradMag->GetVtkRenderWindow());
-
     // TimeNavigationController::ConnectTimeEvent requires a receiver with SetGeometryTime (e.g. BaseRenderer).
     // Each render window's BaseRenderer is already connected in MITK's ctor; do not pass SliceNavigationController*.
 
@@ -464,6 +459,16 @@ void VesselDrivenResliceView::_setupRendererSlices()
 
     d->renderWindow->GetRenderer()->ForceImmediateUpdate();
     d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
+
+    // VTK resize events (fired when the widget transitions from hidden to visible)
+    // bypass MITK PrepareRender() and can overwrite the frame we just rendered.
+    // Re-render once more after Qt has finished processing layout/resize events.
+    QTimer::singleShot(0, [this]() {
+        if (_isCurrentVesselPathValid()) {
+            d->renderWindow->GetRenderer()->ForceImmediateUpdate();
+            d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
+        }
+    });
 }
 
 void VesselDrivenResliceView::_setSliceNumber(double slice)
