@@ -41,6 +41,7 @@ private slots:
     void _updateGeometryNodeInDataStorage();
     void _removeGeometryNodeFromDataStorage();
     void _setupRendererSlices();
+    void _deferredSetupRendererSlices();
 
 protected:
     void currentNodeChanged(mitk::DataNode*) override;
