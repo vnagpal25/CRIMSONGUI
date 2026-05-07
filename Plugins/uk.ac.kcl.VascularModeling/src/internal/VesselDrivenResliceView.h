@@ -3,7 +3,6 @@
 #include "NodeDependentView.h"
 #include <mitkPlaneGeometry.h>
 #include <mitkCameraController.h>
-#include <mitkRenderingManager.h>
 
 namespace mitk {
     class DataNode;
@@ -57,7 +56,6 @@ protected:
     void _syncSliderWithStepperC(const itk::Object*, const itk::EventObject&);
 
     std::unique_ptr<VesselDrivenResliceViewPrivate> d;
-    mitk::RenderingManager::Pointer resliceRenderingManager;
 
     friend class ResliceViewWidgetListener;
 };

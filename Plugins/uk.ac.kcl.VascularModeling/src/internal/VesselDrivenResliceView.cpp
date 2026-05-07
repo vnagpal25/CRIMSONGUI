@@ -12,6 +12,7 @@
 #include <mitkImage.h>
 #include <mitkTimeNavigationController.h>
 #include <mitkAnatomicalPlanes.h>
+#include <mitkRenderingManager.h>
 
 // Qt
 #include "QmitkRenderWindow.h"
@@ -155,7 +156,7 @@ VesselDrivenResliceView::~VesselDrivenResliceView()
 
 void VesselDrivenResliceView::SetFocus()
 {
-	resliceRenderingManager->SetRenderWindowFocus(d->renderWindow->GetVtkRenderWindow());
+	mitk::RenderingManager::GetInstance()->SetRenderWindowFocus(d->renderWindow->GetVtkRenderWindow());
     //d->renderWindow->GetRenderer()->SetFocused(true);
 }
 
@@ -231,20 +232,22 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
 
     auto renderWindowsLayout = new QHBoxLayout;
 
-    resliceRenderingManager = mitk::RenderingManager::New();
-
-    d->renderWindow = new QmitkRenderWindow(parent, "reslicer", nullptr, resliceRenderingManager.GetPointer());
+    d->renderWindow = new QmitkRenderWindow(parent, QStringLiteral("reslicer"));
     d->renderWindow->GetRenderer()->SetDataStorage(GetDataStorage());
     d->renderWindow->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->renderWindow->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     renderWindowsLayout->addWidget(d->renderWindow);
 
-
-    d->renderWindowGradMag = new QmitkRenderWindow(parent, "reslicer grad mag", nullptr, resliceRenderingManager.GetPointer());
+    d->renderWindowGradMag = new QmitkRenderWindow(parent, QStringLiteral("reslicer grad mag"));
     d->renderWindowGradMag->GetRenderer()->SetDataStorage(GetDataStorage());
     d->renderWindowGradMag->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->renderWindowGradMag->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     renderWindowsLayout->addWidget(d->renderWindowGradMag);
+
+    // Remove from global RenderingManager so that InitializeViews() doesn't
+    // overwrite our custom VesselDrivenSlicedGeometry with standard geometry.
+    mitk::RenderingManager::GetInstance()->RemoveRenderWindow(d->renderWindow->GetVtkRenderWindow());
+    mitk::RenderingManager::GetInstance()->RemoveRenderWindow(d->renderWindowGradMag->GetVtkRenderWindow());
 
     // TimeNavigationController::ConnectTimeEvent requires a receiver with SetGeometryTime (e.g. BaseRenderer).
     // Each render window's BaseRenderer is already connected in MITK's ctor; do not pass SliceNavigationController*.
@@ -269,7 +272,7 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
 
     auto reinitCommand = itk::SimpleMemberCommand<VesselDrivenResliceView>::New();
     reinitCommand->SetCallbackFunction(this, &VesselDrivenResliceView::_setupRendererSlices);
-    d->_addObserver(ooRenderingManager, resliceRenderingManager.GetPointer(), mitk::RenderingManagerViewsInitializedEvent(), reinitCommand);
+    d->_addObserver(ooRenderingManager, mitk::RenderingManager::GetInstance(), mitk::RenderingManagerViewsInitializedEvent(), reinitCommand);
 
     connect(&d->reinitVesselDrivenGeometryTimer, &QTimer::timeout, this, &VesselDrivenResliceView::_setupRendererSlices);
 
@@ -459,8 +462,8 @@ void VesselDrivenResliceView::_setupRendererSlices()
     d->renderWindow->GetRenderer()->GetCameraController()->Fit();
 	d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
 
-    resliceRenderingManager->RequestUpdate(d->renderWindow->GetVtkRenderWindow());
-    resliceRenderingManager->RequestUpdate(d->renderWindowGradMag->GetVtkRenderWindow());
+    d->renderWindow->GetRenderer()->ForceImmediateUpdate();
+    d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
 }
 
 void VesselDrivenResliceView::_setSliceNumber(double slice)
