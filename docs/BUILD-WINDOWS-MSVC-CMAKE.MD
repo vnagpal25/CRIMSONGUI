@@ -1,10 +1,10 @@
 # Building CRIMSON on Windows with MSVC and CMake
 
-This is the modern Windows build path reflected by the current repository. The older `Documentation/` files describe the historical Visual Studio 2013 / Qt 5.7 workflow; use this file for the Qt 6 / MSVC 2022 dependency refresh branch.
+This is the modern Windows build path reflected by the current repository. The previous Visual Studio 2013 / Qt 5.7 build instructions were removed because they contradict this Qt 6 / MSVC 2022 dependency refresh branch.
 
 ## Known-Good Direction
 
-Use a short, local path layout. The build writes absolute paths into generated files, and Windows path length still matters.
+Use a short, local path layout. The build writes absolute paths into generated files, and Windows path length still matters (max length of 140 chars)
 
 Recommended layout:
 
@@ -17,21 +17,67 @@ C:/v/vmtk-install
 C:/Qt/6.x.x/msvc2022_64
 ```
 
-The current checked-in defaults include developer-local paths such as `C:/Vansh_Files/Qt/6.11.0/msvc2022_64`. Treat those as examples and override them in CMake for your machine.
+The current checked-in defaults include developer-local paths (listed below). Treat those as examples and override them in CMake for your machine.
+
+## Checked-In Local Path Defaults
+
+The codebase still contains several hardcoded Windows paths from the current refresh machine. They document the environment that was used to get the MSVC 2022 / Qt 6 build moving. You should override these cache entries in CMake instead of recreating the exact folder layout.
+
+Active build-affecting defaults:
+
+| Path | Where it appears | Meaning |
+| --- | --- | --- |
+| `C:/v/MITK-sb/MITK-build` | `SuperBuild.cmake`: `EXTERNAL_MITK_DIR` | Locally built MITK build directory containing `MITKConfig.cmake`. |
+| `C:/Vansh_Files/Qt/6.11.0/msvc2022_64/lib/cmake/Qt6` | `SuperBuild.cmake`: `Qt6_DIR` | Qt 6 CMake package directory for the refresh machine. |
+| `C:/Vansh_Files/Qt/6.11.0/msvc2022_64/lib/cmake` | `SuperBuild.cmake`: `CMAKE_PREFIX_PATH` entries | Qt CMake prefix derived from the same local Qt install. |
+| `C:/v/vmtk-install/lib` | `SuperBuild.cmake`: `VMTK_DIR` | Separate VMTK install directory containing `VMTKConfig.cmake`. |
+| `C:/vcpkg/installed/x64-windows` | `SuperBuild.cmake`, `CMake/CrimsonPreparePrebuiltMITK.cmake` | vcpkg install prefix used for package discovery and runtime DLLs. |
+| `C:/vcpkg/installed/x64-windows/share/cgal` | `SuperBuild.cmake`, generated CRIMSON configure cache | `CGAL_DIR`. |
+| `C:/vcpkg/installed/x64-windows/share/eigen3` | `SuperBuild.cmake`, generated CRIMSON configure cache | `Eigen3_DIR`. |
+| `C:/vcpkg/installed/x64-windows/bin` | `CMake/CrimsonPreparePrebuiltMITK.cmake` | `CRIMSON_VCPKG_RUNTIME_PATH`. |
+| `C:/v/presolver_20210317_1442.zip` | `CMakeExternals/presolver.cmake`: `presolver_url` | Local presolver zip used by the superbuild. |
+| `C:/cr/CMakeExternals/Install/WM5/SDK` | `CMake/FindWM5.cmake`: fallback `WM5_ROOT_DIR` | Standalone WM5 fallback when the superbuild has not passed `WM5_ROOT_DIR`. |
+
+Dormant, legacy, or diagnostic paths also present in source:
+
+| Path | Where it appears | Meaning |
+| --- | --- | --- |
+| `C:\cb\CRIMSON-build` | comment in `SuperBuild.cmake` | Old/example generated inner build path. |
+| `C:/cr/PythonModules` | comments in `CMakeExternals/PythonModules.cmake` | Example external-project source path. |
+| `C:/cr/CMakeExternals/Source/flowsolver` | comments in `CMakeExternals/PythonModules.cmake` | Example flowsolver source path. |
+| `C:/cr/CMakeExternals/Source/presolver/presolver.exe` | comments in `CMakeExternals/PythonModules.cmake` | Example presolver executable path. |
+| `C:\crimson\rel\PythonModules` | comments in `CMakeExternals/PythonModules.cmake` | Historical example PythonModules output path. |
+| `d:/1/ep/ep.zip` | `CMakeExternals/CMakeLists.txt` | Legacy/test external-project archive path. |
+| `d:/kcl/` | `Modules/CGALVMTKMeshingKernel/ExtensionPoint/IMeshingKernel.cpp` | Disabled debug writer output path for temporary `.vtu`, `.vtp`, and `.off` mesh dumps. |
+| `D:\Data\ownCloud\Work\CRIMSON Logo\CRIMSONBoundaryConditionToolboxLogo.svg` | `Apps/NetlistEditor/src/gui/images/CRIMSONBoundaryConditionToolboxLogo.svg` metadata | Inkscape source-file metadata embedded in an SVG asset. |
+| `D:\Data\ownCloud\Work\CRIMSON Logo\CRIMSONBoundaryConditionToolboxLogo.svg.png` | `Apps/NetlistEditor/src/gui/images/CRIMSONBoundaryConditionToolboxLogo.svg` metadata | Inkscape export-file metadata embedded in an SVG asset. |
+| `C:/local/boost_<version>`, `C:/boost`, `C:/boost/include`, `C:/boost/lib` | `CMake/FindBoost.cmake` | Generic upstream FindBoost Windows search fallbacks, not specific to this refresh machine. |
+
+Recommended replacement pattern:
+
+```powershell
+cmake -S C:/src/CRIMSONGUI-update -B C:/crimson-build -G "Visual Studio 17 2022" -A x64 `
+  -DQt6_DIR:PATH=<your-qt-prefix>/lib/cmake/Qt6 `
+  -DEXTERNAL_MITK_DIR:PATH=<your-mitk-build> `
+  -DVMTK_DIR:PATH=<your-vmtk-config-dir> `
+  -DCGAL_DIR:PATH=<your-vcpkg>/installed/x64-windows/share/cgal `
+  -DEigen3_DIR:PATH=<your-vcpkg>/installed/x64-windows/share/eigen3 `
+  -Dpresolver_url:FILEPATH=<your-presolver-zip>
+```
 
 ## Required Tools
 
-- Windows 10 or Windows 11, 64-bit.
+- Windows 10/11, 64-bit.
 - Visual Studio 2022 with the Desktop development with C++ workload.
 - MSVC v143 x64 toolset.
 - Windows SDK installed through Visual Studio.
-- CMake 3.30 or newer is recommended for this refreshed branch.
-- Git for Windows.
+- CMake 3.30 or newer
+- Git for Windows
 - GNU `patch.exe`, usually available at `C:/Program Files/Git/usr/bin/patch.exe`.
-- Qt 6 for MSVC 2022 x64.
+- Qt 6 for MSVC 2022 x64. (While building MITK)
 - vcpkg with the `x64-windows` triplet.
-- A prebuilt MITK tree, or enough time to build MITK through the superbuild.
-- A VMTK install that exposes `VMTKConfig.cmake`.
+- A locally built MITK tree. The current working CRIMSON configuration used MITK v2025.12.2 built separately from MITK's own superbuild instructions.
+- A locally built and installed VMTK tree. The working layout used separate `vmtk-build` and `vmtk-install` folders.[^vmtk-build]
 - The CRIMSON presolver binary or zip expected by the existing superbuild.
 
 The repository still has `cmake_minimum_required(VERSION 3.16)`, but the recent Boost/CMake policy work was done for modern CMake behavior, including CMake 3.30+ `CMP0167`. Use a current CMake unless you are deliberately reproducing an old build.
@@ -82,7 +128,7 @@ If your vcpkg path differs, override the relevant CMake cache entries or update 
 
 ## MITK
 
-The refreshed build supports using a prebuilt MITK tree.
+You should expect to build MITK yourself first. The refreshed CRIMSON build does not currently assume a downloadable MITK developer SDK is available; it points at an already-built MITK build tree. The working setup used MITK v2025.12.2, built from MITK's own superbuild, and then passed the resulting `MITK-build` directory to CRIMSON.
 
 Expected CMake value:
 
@@ -98,12 +144,13 @@ Important notes:
 - Prefer Release or RelWithDebInfo MITK.
 - Debug CRIMSON with Release MITK usually fails with MSVC `LNK2038` runtime and iterator-debug-level mismatches.
 - MITK Python support is not friendly to Debug builds; the CMake scripts already steer MITK Python toward RelWithDebInfo when needed.
+- MITK is a moving dependency. A newer MITK release may require dependency tweaks in CRIMSON, especially around Qt components, CTK/BlueBerry exports, VTK modules, Python wrapping, and generated package paths.
 
 If MITK's external-project tree contains an `ep` folder, CRIMSON will prepend it to `CMAKE_PREFIX_PATH` through `CMake/CrimsonPreparePrebuiltMITK.cmake`.
 
 ## VMTK
 
-VMTK may need to be built separately from MITK.
+VMTK also needs to be built separately, similar to MITK. The working setup used a dedicated VMTK source checkout, a `vmtk-build` directory, and a separate `vmtk-install` directory. Point CRIMSON at the installed VMTK CMake config, not merely at the source tree.
 
 Expected CMake value:
 
@@ -112,6 +159,26 @@ VMTK_DIR=C:/v/vmtk-install/lib
 ```
 
 `VMTK_DIR` must be the folder that contains `VMTKConfig.cmake`. If the config lives somewhere else, point directly at that folder.
+
+Recommended layout:
+
+```text
+C:/v/vmtk
+C:/v/vmtk-build
+C:/v/vmtk-install
+```
+
+Build VMTK in Release with the same MSVC x64 toolchain family used by MITK and CRIMSON. During the VMTK configure step, set its install prefix to the install folder, for example:
+
+```text
+CMAKE_INSTALL_PREFIX=C:/v/vmtk-install
+```
+
+After building and installing VMTK, set CRIMSON's `VMTK_DIR` to the installed folder that actually contains `VMTKConfig.cmake`. In the current local layout that is:
+
+```text
+VMTK_DIR=C:/v/vmtk-install/lib
+```
 
 If configure fails with missing VMTK targets, verify:
 
@@ -173,7 +240,7 @@ cmake -S C:/src/CRIMSONGUI-update -B C:/crimson-build -G "Visual Studio 17 2022"
 
 ## Build
 
-Open the generated solution:
+Open the generated solution in Visual Studio 2022:
 
 ```text
 C:/crimson-build/CRIMSON-superbuild.sln
@@ -299,3 +366,9 @@ vcpkg install tinyxml:x64-windows qwt:x64-windows
 - `Apps/CRIMSON/startCRIMSON.bat.in`: runtime environment.
 - `Apps/NetlistEditor/cmake/Modules/FindQwt.cmake`: Qwt/vcpkg bridge.
 - `Modules/VesselTree/CMakeLists.txt`: TinyXML/vcpkg bridge.
+
+
+## Footnotes
+MITK build: The working refresh used MITK v2025.12.2 and was built from the MITK build-instructions page recorded for that release: <https://docs.mitk.org/2025.12.2/BuildInstructionsPage.html>. MITK's public site identifies v2025.12.2 as a February 2026 hotfix release, while the accessible 2025-era MITK build instructions describe the superbuild requirements as Git, CMake 3.22 or newer, Qt 6.6 for Qt-based applications, and Doxygen plus GraphViz for documentation. Required Qt components include Qt 5 Compatibility Module, Qt State Machines, Qt WebEngine, and, for Qt 6.8 or later, Qt WebChannel and Qt Positioning. On Windows, MITK is built by configuring the MITK superbuild with a Visual Studio generator and building `BUILD_ALL`; the usable toolkit tree is the generated `MITK-build` directory containing `MITKConfig.cmake`. Sources checked: [MITK v2025.12.2 release page](https://www.mitk.org/) and [MITK build instructions](https://docs.mitk.org/2025.08/BuildInstructionsPage.html).
+
+VMTK-build: VMTK's download/build page says to compile from source when a suitable binary package is not available, create a `vmtk-build` directory, run CMake against the VMTK source tree, and build with the platform compiler. It notes that the source build uses a CMake superbuild that downloads and builds VTK and ITK, can take a long time, and on Windows should use a Visual Studio amd64 generator with the Release configuration. The public instructions mention an automatic `vmtk-build/Install` output; for this CRIMSON refresh, use an explicit install prefix such as `C:/v/vmtk-install` so `VMTK_DIR` can point at the installed `VMTKConfig.cmake`. Source checked: [VMTK download/build instructions](https://www.vmtk.org/download/).

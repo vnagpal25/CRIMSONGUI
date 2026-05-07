@@ -1,6 +1,6 @@
 # Dependency Refresh Notes
 
-This document summarizes the recent dependency refresh work across the latest 90 commits. It is intentionally written as a handoff record: what blocked the build, why it blocked, what was patched, and what a future maintainer should watch before changing the dependency graph again.
+This document summarizes the recent dependency refresh work across the latest ~100 commits. It is intentionally written as a handoff record: what blocked the build, why it blocked, what was patched, and what a future maintainer should watch before changing the dependency graph again.
 
 ## Scope
 
@@ -268,5 +268,3 @@ Dependency and build-system patches added or heavily reworked:
 - The dependency refresh is not one patch. It is a chain: Qt 6 forces MITK/CTK/QtPropertyBrowser changes; MITK changes expose VTK/VMTK changes; VTK/VMTK changes expose Eigen and package-discovery issues; vcpkg then fixes discovery but creates runtime DLL and configuration consistency requirements.
 - Build configuration must be treated as source code. The fragile parts are include order, imported target properties, generated user files, and initial cache propagation.
 - Avoid "latest everything" upgrades. Pin toolchains and dependency roots long enough to get a known-good build, then upgrade one dependency boundary at a time.
-- When a CMake error says a package is missing, check the second CRIMSON configure pass, not just the outer superbuild.
-- Treat runtime rendering changes the same way as dependency changes: prefer safe defaults, add explicit diagnostic opt-ins, and avoid making users set environment variables for the normal path.

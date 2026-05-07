@@ -21,7 +21,6 @@ The project is no longer just the old Visual Studio 2013 / Qt 5.7 superbuild. Th
 - VTK 9-style components and APIs
 - conservative runtime rendering defaults for legacy scenes under VTK 9.4
 
-The old docs under `Documentation/` are still useful as historical context, especially for superbuild concepts and old CRIMSON workflow expectations, but they do not describe the refreshed dependency stack accurately.
 
 ## Latest Runtime Decision
 
