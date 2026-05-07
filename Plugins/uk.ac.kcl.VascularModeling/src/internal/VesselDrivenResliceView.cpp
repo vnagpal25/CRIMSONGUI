@@ -233,14 +233,14 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
 
     resliceRenderingManager = mitk::RenderingManager::New();
 
-    d->renderWindow = new QmitkRenderWindow(parent, QStringLiteral("reslicer"), nullptr, resliceRenderingManager.GetPointer());
+    d->renderWindow = new QmitkRenderWindow(parent, "reslicer", nullptr, resliceRenderingManager.GetPointer());
     d->renderWindow->GetRenderer()->SetDataStorage(GetDataStorage());
     d->renderWindow->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->renderWindow->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     renderWindowsLayout->addWidget(d->renderWindow);
 
 
-    d->renderWindowGradMag = new QmitkRenderWindow(parent, QStringLiteral("reslicer grad mag"), nullptr, resliceRenderingManager.GetPointer());
+    d->renderWindowGradMag = new QmitkRenderWindow(parent, "reslicer grad mag", nullptr, resliceRenderingManager.GetPointer());
     d->renderWindowGradMag->GetRenderer()->SetDataStorage(GetDataStorage());
     d->renderWindowGradMag->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->renderWindowGradMag->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
