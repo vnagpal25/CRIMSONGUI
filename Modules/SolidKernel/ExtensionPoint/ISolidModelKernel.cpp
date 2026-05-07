@@ -339,43 +339,43 @@ public:
 
         stepsAddedSignal(progressLeft);
 
-        int maxRiskContourIndex = -1;
-        mitk::Point2D maxRiskPoint(0);
+        try {
+            OCC_CATCH_SIGNALS;
 
-        // Find a contour with highest risk of self-intersection after lofting
-        if (loftingAlgorithm == crimson::ISolidModelKernel::laSweep) {
-            double maxRisk = 0;
-            for (size_t i = 0; i < contours.size(); ++i) {
-                mitk::Point2D p;
-                double risk = getHighestRisk(vesselPath, contours[i], p);
-                if (risk > maxRisk) {
-                    maxRiskContourIndex = i;
-                    maxRiskPoint = p;
-                    maxRisk = risk;
+            int maxRiskContourIndex = -1;
+            mitk::Point2D maxRiskPoint(0);
+
+            // Find a contour with highest risk of self-intersection after lofting
+            if (loftingAlgorithm == crimson::ISolidModelKernel::laSweep) {
+                double maxRisk = 0;
+                for (size_t i = 0; i < contours.size(); ++i) {
+                    mitk::Point2D p;
+                    double risk = getHighestRisk(vesselPath, contours[i], p);
+                    if (risk > maxRisk) {
+                        maxRiskContourIndex = i;
+                        maxRiskPoint = p;
+                        maxRisk = risk;
+                    }
+                }
+
+                if (maxRisk <= 1) {
+                    maxRiskContourIndex = -1;
                 }
             }
 
-            if (maxRisk <= 1) {
-                maxRiskContourIndex = -1;
+            // Compute the parametrization start points which define the seam edge
+            std::vector<mitk::Point2D> parametrizationStartPoints = computeContourParametrizationStartPoints(
+                contours, maxRiskContourIndex, maxRiskPoint, seamEdgeRotation / 180.0 * vnl_math::pi);
+            Handle(TColgp_HArray1OfPnt) startPoints = new TColgp_HArray1OfPnt(1, contours.size());
+            Handle(TColgp_HArray1OfPnt) centerPoints = new TColgp_HArray1OfPnt(1, contours.size());
+            std::vector<TopoDS_Edge> contourEdges;
+            std::vector<double> contourParameterValues;
+
+            GeomFill_SectionGenerator aSecGenerator;
+
+            if (isCancelling()) {
+                return std::make_tuple(State_Cancelled, std::string("Operation cancelled."));
             }
-        }
-
-        // Compute the parametrization start points which define the seam edge
-        std::vector<mitk::Point2D> parametrizationStartPoints = computeContourParametrizationStartPoints(
-            contours, maxRiskContourIndex, maxRiskPoint, seamEdgeRotation / 180.0 * vnl_math::pi);
-        Handle(TColgp_HArray1OfPnt) startPoints = new TColgp_HArray1OfPnt(1, contours.size());
-        Handle(TColgp_HArray1OfPnt) centerPoints = new TColgp_HArray1OfPnt(1, contours.size());
-        std::vector<TopoDS_Edge> contourEdges;
-        std::vector<double> contourParameterValues;
-
-        GeomFill_SectionGenerator aSecGenerator;
-
-        if (isCancelling()) {
-            return std::make_tuple(State_Cancelled, std::string("Operation cancelled."));
-        }
-
-        try {
-            OCC_CATCH_SIGNALS;
 
             for (size_t i = 0; i < contours.size(); ++i) {
                 const mitk::PlanarFigure::Pointer& figure = contours[i];

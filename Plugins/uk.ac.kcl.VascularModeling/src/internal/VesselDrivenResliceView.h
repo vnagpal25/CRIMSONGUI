@@ -3,6 +3,7 @@
 #include "NodeDependentView.h"
 #include <mitkPlaneGeometry.h>
 #include <mitkCameraController.h>
+#include <mitkRenderingManager.h>
 
 namespace mitk {
     class DataNode;
@@ -41,7 +42,6 @@ private slots:
     void _updateGeometryNodeInDataStorage();
     void _removeGeometryNodeFromDataStorage();
     void _setupRendererSlices();
-    void _deferredSetupRendererSlices();
 
 protected:
     void currentNodeChanged(mitk::DataNode*) override;
@@ -57,6 +57,7 @@ protected:
     void _syncSliderWithStepperC(const itk::Object*, const itk::EventObject&);
 
     std::unique_ptr<VesselDrivenResliceViewPrivate> d;
+    mitk::RenderingManager::Pointer resliceRenderingManager;
 
     friend class ResliceViewWidgetListener;
 };
