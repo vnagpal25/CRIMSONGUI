@@ -54,7 +54,7 @@ public:
         crimson::VesselPathAbstractData::VectorType binormal;
 
         mitk::FillVector3D(pos, 0, 0, 0);
-        mitk::FillVector3D(normal, 0, 0, 1);
+        mitk::FillVector3D(tangent, 0, 0, 1);
         mitk::FillVector3D(normal, 0, 1, 0);
         mitk::FillVector3D(binormal, 1, 0, 0);
 

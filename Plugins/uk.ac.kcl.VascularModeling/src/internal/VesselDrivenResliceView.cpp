@@ -11,7 +11,9 @@
 #include <mitkSlicedGeometry3D.h>
 #include <mitkImage.h>
 #include <mitkAnatomicalPlanes.h>
+#include <mitkProportionalTimeGeometry.h>
 #include <mitkRenderingManager.h>
+#include <mitkVtkPropRenderer.h>
 #include <vtkRenderWindow.h>
 
 // Qt
@@ -30,6 +32,30 @@
 #include <berryIPartListener.h>
 #include <berryIWorkbenchWindow.h>
 #include <berryIWorkbenchPage.h>
+
+namespace {
+
+void forceImmediateMitkRender(QmitkRenderWindow* renderWindow)
+{
+    if (!renderWindow || !renderWindow->GetVtkRenderWindow()) {
+        return;
+    }
+
+    int* size = renderWindow->GetVtkRenderWindow()->GetSize();
+    if (!size || size[0] == 0 || size[1] == 0) {
+        return;
+    }
+
+    auto renderer = dynamic_cast<mitk::VtkPropRenderer*>(renderWindow->GetRenderer());
+    if (!renderer) {
+        return;
+    }
+
+    renderer->PrepareRender();
+    renderWindow->GetVtkRenderWindow()->Render();
+}
+
+} // namespace
 
 //////////////////////////////////////////////////////////////////////////
 // The listener for the reslice view. 
@@ -242,11 +268,6 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
     d->renderWindowGradMag->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     renderWindowsLayout->addWidget(d->renderWindowGradMag);
 
-    // Remove these windows from the global RenderingManager so that
-    // InitializeViews() does not overwrite our vessel-driven geometry.
-    mitk::RenderingManager::GetInstance()->RemoveRenderWindow(d->renderWindow->GetVtkRenderWindow());
-    mitk::RenderingManager::GetInstance()->RemoveRenderWindow(d->renderWindowGradMag->GetVtkRenderWindow());
-
     d->mainLayout->addLayout(renderWindowsLayout, 1);
     d->mainLayout->addStretch(0);
 
@@ -264,6 +285,13 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
     modifiedCommand->SetCallbackFunction(this, &VesselDrivenResliceView::_syncSliderWithStepperC);
     d->_addObserver(ooSNC_GradMag, d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetStepper(), itk::ModifiedEvent(), modifiedCommand);
 
+
+    // Global InitializeViews() replaces renderer world geometries. Keep the
+    // windows registered so QmitkRenderWindow paint/update wiring still works,
+    // and restore the vessel-driven geometry whenever the global reset runs.
+    auto reinitCommand = itk::SimpleMemberCommand<VesselDrivenResliceView>::New();
+    reinitCommand->SetCallbackFunction(this, &VesselDrivenResliceView::_setupRendererSlices);
+    d->_addObserver(ooRenderingManager, mitk::RenderingManager::GetInstance(), mitk::RenderingManagerViewsInitializedEvent(), reinitCommand);
 
     connect(&d->reinitVesselDrivenGeometryTimer, &QTimer::timeout, this, &VesselDrivenResliceView::_setupRendererSlices);
 
@@ -295,7 +323,7 @@ void VesselDrivenResliceView::navigateTo(const mitk::Point3D& pos)
     auto vesselDrivenGeometry = static_cast<const crimson::VesselDrivenSlicedGeometry*>(worldTimeGeometry->GetGeometryForTimeStep(0).GetPointer());
     int sliceNo = vesselDrivenGeometry->findSliceByPoint(pos);
     snc->GetStepper()->SetPos(sliceNo);
-    //d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetStepper()->SetPos(sliceNo);
+    d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetStepper()->SetPos(sliceNo);
 }
 
 void VesselDrivenResliceView::navigateTo(float parameterValue)
@@ -308,7 +336,7 @@ void VesselDrivenResliceView::navigateTo(float parameterValue)
     auto vesselDrivenGeometry = static_cast<const crimson::VesselDrivenSlicedGeometry*>(worldTimeGeometry->GetGeometryForTimeStep(0).GetPointer());
     int sliceNo = vesselDrivenGeometry->getSliceNumberByParameterValue(parameterValue);
     snc->GetStepper()->SetPos(sliceNo);
-    //d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetStepper()->SetPos(sliceNo);
+    d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetStepper()->SetPos(sliceNo);
 }
 
 float VesselDrivenResliceView::getCurrentParameterValue() const
@@ -448,8 +476,8 @@ void VesselDrivenResliceView::_setupRendererSlices()
     d->renderWindow->GetRenderer()->GetCameraController()->Fit();
     d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
 
-    d->renderWindow->GetVtkRenderWindow()->Render();
-    d->renderWindowGradMag->GetVtkRenderWindow()->Render();
+    forceImmediateMitkRender(d->renderWindow);
+    forceImmediateMitkRender(d->renderWindowGradMag);
 }
 
 void VesselDrivenResliceView::_setSliceNumber(double slice)
@@ -459,8 +487,8 @@ void VesselDrivenResliceView::_setSliceNumber(double slice)
     d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetStepper()->SetPos(sliceNumber);
     d->positionInMM->setText(QString("%1 mm").arg(getCurrentParameterValue(), 6, 'f', 2));
 
-    d->renderWindow->GetVtkRenderWindow()->Render();
-    d->renderWindowGradMag->GetVtkRenderWindow()->Render();
+    forceImmediateMitkRender(d->renderWindow);
+    forceImmediateMitkRender(d->renderWindowGradMag);
 }
 
 void VesselDrivenResliceView::_setResliceWindowSize()
