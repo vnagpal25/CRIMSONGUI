@@ -510,10 +510,46 @@ void VesselDrivenResliceView::_setupRendererSlices()
     QTimer::singleShot(100, [this]() {
         if (_isCurrentVesselPathValid()) {
             int* s = d->renderWindow->GetVtkRenderWindow()->GetSize();
-            MITK_INFO << "[VDRV] deferred(100ms) ForceImmediateUpdate size=" << s[0] << "x" << s[1]
+            MITK_INFO << "[VDRV] deferred(100ms) size=" << s[0] << "x" << s[1]
                       << " visible=" << d->renderWindow->isVisible();
-            d->renderWindow->GetRenderer()->ForceImmediateUpdate();
-            d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
+
+            auto* renderer = d->renderWindow->GetRenderer();
+            auto* planeGeo = renderer->GetCurrentWorldPlaneGeometry();
+            auto* worldGeo = renderer->GetCurrentWorldGeometry();
+            MITK_INFO << "[VDRV] renderer state: planeGeo=" << (planeGeo ? "valid" : "NULL")
+                      << " worldGeo=" << (worldGeo ? "valid" : "NULL")
+                      << " mapperID=" << renderer->GetMapperID()
+                      << " slice=" << renderer->GetSlice();
+
+            if (planeGeo) {
+                auto origin = planeGeo->GetOrigin();
+                auto normal = planeGeo->GetNormal();
+                MITK_INFO << "[VDRV] planeGeo origin=(" << origin[0] << "," << origin[1] << "," << origin[2] << ")"
+                          << " normal=(" << normal[0] << "," << normal[1] << "," << normal[2] << ")";
+            }
+
+            auto* ds = GetDataStorage();
+            if (ds) {
+                auto allNodes = ds->GetAll();
+                MITK_INFO << "[VDRV] DataStorage has " << allNodes->size() << " nodes";
+                for (auto& node : *allNodes) {
+                    bool vis = true;
+                    node->GetVisibility(vis, renderer, "visible");
+                    auto* data = node->GetData();
+                    MITK_INFO << "[VDRV]   node='" << node->GetName() << "'"
+                              << " type=" << (data ? data->GetNameOfClass() : "no-data")
+                              << " visible=" << vis;
+                }
+            }
+
+            MITK_INFO << "[VDRV] Attempting direct VTK render...";
+            renderer->PrepareRender();
+            d->renderWindow->GetVtkRenderWindow()->Render();
+
+            auto* renderer2 = d->renderWindowGradMag->GetRenderer();
+            renderer2->PrepareRender();
+            d->renderWindowGradMag->GetVtkRenderWindow()->Render();
+            MITK_INFO << "[VDRV] Direct VTK render completed";
         }
     });
 }
