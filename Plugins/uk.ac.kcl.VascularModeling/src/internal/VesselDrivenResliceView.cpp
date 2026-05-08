@@ -118,10 +118,8 @@ void logImageNodeState(const char* label, mitk::DataNode* imageNode, QmitkRender
         prop = vtkMapper->GetVtkProp(renderer);
     }
 
-    double bounds[6] = { 0, 0, 0, 0, 0, 0 };
-    if (prop) {
-        prop->GetBounds(bounds);
-    }
+    double emptyBounds[6] = { 0, 0, 0, 0, 0, 0 };
+    double* bounds = prop ? prop->GetBounds() : emptyBounds;
 
     MITK_INFO << "VesselDrivenResliceView " << label
               << ": imageVisible=" << (visible ? "yes" : "no")
