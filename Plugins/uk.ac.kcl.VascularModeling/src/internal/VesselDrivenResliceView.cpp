@@ -51,8 +51,29 @@ void forceImmediateMitkRender(QmitkRenderWindow* renderWindow)
         return;
     }
 
-    renderer->PrepareRender();
-    renderWindow->GetVtkRenderWindow()->Render();
+    renderer->ForceImmediateUpdate();
+}
+
+void configureImageNodeForReslice(mitk::DataNode* imageNode, QmitkRenderWindow* renderWindow, bool showGradientMagnitude)
+{
+    if (!imageNode || !renderWindow || !renderWindow->GetRenderer()) {
+        return;
+    }
+
+    auto renderer = renderWindow->GetRenderer();
+    imageNode->SetBoolProperty("in plane resample extent by geometry", true, renderer);
+    imageNode->AddProperty("reslice interpolation", mitk::VtkResliceInterpolationProperty::New(VTK_RESLICE_CUBIC), renderer, true);
+    imageNode->SetBoolProperty("show gradient magnitude", showGradientMagnitude, renderer);
+    imageNode->SetVisibility(true, renderer);
+}
+
+void configureOverlayNodeForReslice(mitk::DataNode* node, QmitkRenderWindow* renderWindow, bool visible)
+{
+    if (!node || !renderWindow || !renderWindow->GetRenderer()) {
+        return;
+    }
+
+    node->SetVisibility(visible, renderWindow->GetRenderer());
 }
 
 } // namespace
@@ -441,9 +462,23 @@ void VesselDrivenResliceView::_setupRendererSlices()
     mitk::DataNode::Pointer imageNode = crimson::HierarchyManager::getInstance()->getAncestor(currentNode(), crimson::VascularModelingNodeTypes::Image());
 
     if (imageNode.IsNotNull()) {
-        imageNode->SetBoolProperty("in plane resample extent by geometry", true, d->renderWindow->GetRenderer());
-        imageNode->AddProperty("reslice interpolation", mitk::VtkResliceInterpolationProperty::New(VTK_RESLICE_CUBIC), d->renderWindow->GetRenderer(), true);
-        imageNode->SetBoolProperty("show gradient magnitude", true, d->renderWindowGradMag->GetRenderer());
+        configureImageNodeForReslice(imageNode, d->renderWindow, false);
+        configureImageNodeForReslice(imageNode, d->renderWindowGradMag, true);
+    }
+
+    configureOverlayNodeForReslice(currentNode(), d->renderWindow, true);
+    configureOverlayNodeForReslice(currentNode(), d->renderWindowGradMag, true);
+
+    mitk::DataStorage::SetOfObjects::ConstPointer contourNodes = crimson::VascularModelingUtils::getVesselContourNodes(currentNode());
+    for (const mitk::DataNode::Pointer& contourNode : *contourNodes) {
+        configureOverlayNodeForReslice(contourNode, d->renderWindow, true);
+        configureOverlayNodeForReslice(contourNode, d->renderWindowGradMag, true);
+    }
+
+    mitk::DataNode* solidNode = crimson::VascularModelingUtils::getVesselSolidModelNode(currentNode());
+    if (solidNode) {
+        configureOverlayNodeForReslice(solidNode, d->renderWindow, true);
+        configureOverlayNodeForReslice(solidNode, d->renderWindowGradMag, true);
     }
 
     auto vesselDrivenGeometry = crimson::VesselDrivenSlicedGeometry::New();
