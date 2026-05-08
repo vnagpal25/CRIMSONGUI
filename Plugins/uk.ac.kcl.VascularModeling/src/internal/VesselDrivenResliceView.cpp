@@ -11,6 +11,7 @@
 
 #include <mitkSlicedGeometry3D.h>
 #include <mitkImage.h>
+#include <mitkBoolProperty.h>
 #include <mitkMapper.h>
 #include <mitkAnatomicalPlanes.h>
 #include <mitkProportionalTimeGeometry.h>
@@ -108,6 +109,20 @@ const char* mapperName(mitk::DataNode* node)
     return mapper ? mapper->GetNameOfClass() : "none";
 }
 
+const char* boolPropertyState(mitk::DataNode* node, const char* propertyName, const mitk::BaseRenderer* renderer)
+{
+    if (!node) {
+        return "no-node";
+    }
+
+    mitk::BoolProperty* property = nullptr;
+    if (!node->GetProperty(property, propertyName, renderer) || !property) {
+        return "missing";
+    }
+
+    return property->GetValue() ? "true" : "false";
+}
+
 void logResliceRendererState(const char* label,
                              QmitkRenderWindow* renderWindow,
                              mitk::DataNode* imageNode,
@@ -151,6 +166,7 @@ void logResliceRendererState(const char* label,
               << ", vtkProps=" << renderer->GetVtkRenderer()->GetViewProps()->GetNumberOfItems()
               << ", imageVisible=" << (imageVisible ? "yes" : "no")
               << ", imageMapper=" << mapperName(imageNode)
+              << ", showGradient=" << boolPropertyState(imageNode, "show gradient magnitude", renderer)
               << ", vesselVisible=" << (vesselVisible ? "yes" : "no")
               << ", vesselMapper=" << mapperName(vesselNode)
               << ", contoursVisible=" << visibleContours << "/" << (contourNodes ? contourNodes->size() : 0)
@@ -384,13 +400,13 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
     d->sacrificialRenderWindow->setFixedWidth(1);
     renderWindowsLayout->addWidget(d->sacrificialRenderWindow);
 
-    d->renderWindow = new QmitkRenderWindow(parent, QStringLiteral("reslicer"));
+    d->renderWindow = new QmitkRenderWindow(parent, QStringLiteral("reslicer grad mag"));
     d->renderWindow->GetRenderer()->SetDataStorage(GetDataStorage());
     d->renderWindow->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->renderWindow->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     renderWindowsLayout->addWidget(d->renderWindow);
 
-    d->renderWindowGradMag = new QmitkRenderWindow(parent, QStringLiteral("reslicer grad mag"));
+    d->renderWindowGradMag = new QmitkRenderWindow(parent, QStringLiteral("reslicer"));
     d->renderWindowGradMag->GetRenderer()->SetDataStorage(GetDataStorage());
     d->renderWindowGradMag->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->renderWindowGradMag->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -577,6 +593,7 @@ void VesselDrivenResliceView::_setupRendererSlices()
 
     configureOverlayNodeForReslice(currentNode(), d->renderWindow, true);
     configureOverlayNodeForReslice(currentNode(), d->renderWindowGradMag, true);
+    ensureVesselPathMapper(currentNode());
 
     mitk::DataStorage::SetOfObjects::ConstPointer contourNodes = crimson::VascularModelingUtils::getVesselContourNodes(currentNode());
     for (const mitk::DataNode::Pointer& contourNode : *contourNodes) {

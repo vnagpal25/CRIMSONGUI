@@ -374,7 +374,7 @@ void vtkParametricSplineVesselPathData::_updateSplineSourceCellLocator() const
 
         // Assign a segment index to each point of the splineSource polyData
         auto segmentIndexArray = vtkSmartPointer<vtkIntArray>::New();
-        segmentIndexArray->Allocate(_splineSource->GetOutput()->GetNumberOfPoints());
+        segmentIndexArray->SetNumberOfTuples(_splineSource->GetOutput()->GetNumberOfPoints());
 
         vtkIdType startOfSegmentPointId = 0;
         for (IdType segmentId = 1; segmentId < controlPointsCount(); ++segmentId) {
