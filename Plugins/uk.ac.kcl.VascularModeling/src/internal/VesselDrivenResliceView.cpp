@@ -528,14 +528,15 @@ void VesselDrivenResliceView::_setupRendererSlices()
                           << " normal=(" << normal[0] << "," << normal[1] << "," << normal[2] << ")";
             }
 
-            auto* ds = GetDataStorage();
-            if (ds) {
-                auto allNodes = ds->GetAll();
+            mitk::DataStorage::Pointer ds = GetDataStorage();
+            if (ds.IsNotNull()) {
+                mitk::DataStorage::SetOfObjects::ConstPointer allNodes = ds->GetAll();
                 MITK_INFO << "[VDRV] DataStorage has " << allNodes->size() << " nodes";
-                for (auto& node : *allNodes) {
+                for (auto it = allNodes->begin(); it != allNodes->end(); ++it) {
+                    mitk::DataNode::Pointer node = *it;
                     bool vis = true;
                     node->GetVisibility(vis, renderer, "visible");
-                    auto* data = node->GetData();
+                    mitk::BaseData* data = node->GetData();
                     MITK_INFO << "[VDRV]   node='" << node->GetName() << "'"
                               << " type=" << (data ? data->GetNameOfClass() : "no-data")
                               << " visible=" << vis;
