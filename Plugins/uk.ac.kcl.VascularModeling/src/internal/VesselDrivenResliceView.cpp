@@ -11,7 +11,7 @@
 
 #include <mitkSlicedGeometry3D.h>
 #include <mitkImage.h>
-#include <mitkBoolProperty.h>
+#include <mitkProperties.h>
 #include <mitkMapper.h>
 #include <mitkAnatomicalPlanes.h>
 #include <mitkProportionalTimeGeometry.h>
