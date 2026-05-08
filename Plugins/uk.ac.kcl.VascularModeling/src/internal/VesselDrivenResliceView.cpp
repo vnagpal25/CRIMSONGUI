@@ -360,16 +360,16 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
 
     auto renderWindowsLayout = new QHBoxLayout;
 
+    d->renderWindowGradMag = new QmitkRenderWindow(parent, QStringLiteral("reslicer grad mag"));
+    d->renderWindowGradMag->GetRenderer()->SetDataStorage(GetDataStorage());
+    d->renderWindowGradMag->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
+    d->renderWindowGradMag->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
     d->renderWindow = new QmitkRenderWindow(parent, QStringLiteral("reslicer"));
     d->renderWindow->GetRenderer()->SetDataStorage(GetDataStorage());
     d->renderWindow->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->renderWindow->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     renderWindowsLayout->addWidget(d->renderWindow);
-
-    d->renderWindowGradMag = new QmitkRenderWindow(parent, QStringLiteral("reslicer grad mag"));
-    d->renderWindowGradMag->GetRenderer()->SetDataStorage(GetDataStorage());
-    d->renderWindowGradMag->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
-    d->renderWindowGradMag->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     renderWindowsLayout->addWidget(d->renderWindowGradMag);
 
     d->mainLayout->addLayout(renderWindowsLayout, 1);
@@ -595,8 +595,6 @@ void VesselDrivenResliceView::_setupRendererSlices()
     d->renderWindow->GetRenderer()->SetSlice(d->renderWindow->GetRenderer()->GetSliceNavigationController()->GetStepper()->GetPos());
     d->renderWindowGradMag->GetRenderer()->SetSlice(d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetStepper()->GetPos());
 
-    emit geometryChanged();
-
     d->renderWindow->GetRenderer()->GetCameraController()->Fit();
     d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
 
@@ -623,6 +621,7 @@ void VesselDrivenResliceView::_setResliceWindowSize()
     if (currentNode()) {
         currentNode()->SetFloatProperty("reslice.windowSize", d->resliceWindowSizeSpinBox->value());
         _setupRendererSlices();
+        emit geometryChanged();
     }
 }
 
