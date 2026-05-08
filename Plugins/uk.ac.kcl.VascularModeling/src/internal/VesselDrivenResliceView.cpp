@@ -85,7 +85,7 @@ void configureOverlayNodeForReslice(mitk::DataNode* node, QmitkRenderWindow* ren
 
 void ensureVesselPathMapper(mitk::DataNode* node)
 {
-    if (!node || !dynamic_cast<vtkParametricSplineVesselPathData*>(node->GetData())) {
+    if (!node || !dynamic_cast<crimson::vtkParametricSplineVesselPathData*>(node->GetData())) {
         return;
     }
 
