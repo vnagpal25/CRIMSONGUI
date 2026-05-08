@@ -17,7 +17,6 @@
 #include <mitkRenderingManager.h>
 #include <mitkVtkMapper.h>
 #include <mitkVtkPropRenderer.h>
-#include <vtkProp.h>
 #include <vtkPropCollection.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
@@ -90,6 +89,7 @@ void logResliceRendererState(const char* label, QmitkRenderWindow* renderWindow)
               << ", rendererBounds2=" << rendererBounds
               << ", sncSteps=" << (snc ? snc->GetStepper()->GetSteps() : 0)
               << ", sncPos=" << (snc ? snc->GetStepper()->GetPos() : 0)
+              << ", rendererSlice=" << renderer->GetSlice()
               << ", rendererWorldIsVessel=" << (currentVesselGeometry ? "yes" : "no")
               << ", currentPlane=" << (currentPlaneGeometry ? "yes" : "no")
               << ", vtkProps=" << propCount;
@@ -112,25 +112,14 @@ void logImageNodeState(const char* label, mitk::DataNode* imageNode, QmitkRender
     int layer = -1;
     imageNode->GetIntProperty("layer", layer, renderer);
 
-    vtkProp* prop = nullptr;
     auto vtkMapper = dynamic_cast<mitk::VtkMapper*>(imageNode->GetMapper(mitk::BaseRenderer::Standard2D));
-    if (vtkMapper) {
-        prop = vtkMapper->GetVtkProp(renderer);
-    }
-
-    double emptyBounds[6] = { 0, 0, 0, 0, 0, 0 };
-    double* bounds = prop ? prop->GetBounds() : emptyBounds;
 
     MITK_INFO << "VesselDrivenResliceView " << label
               << ": imageVisible=" << (visible ? "yes" : "no")
               << ", inPlaneByGeometry=" << (inPlane ? "yes" : "no")
               << ", showGradient=" << (showGradient ? "yes" : "no")
               << ", layer=" << layer
-              << ", prop=" << (prop ? prop->GetClassName() : "<none>")
-              << ", propVisible=" << (prop && prop->GetVisibility() ? "yes" : "no")
-              << ", propBounds=[" << bounds[0] << "," << bounds[1] << ","
-              << bounds[2] << "," << bounds[3] << ","
-              << bounds[4] << "," << bounds[5] << "]";
+              << ", mapper=" << (vtkMapper ? vtkMapper->GetNameOfClass() : "<none>");
 }
 
 void configureImageNodeForReslice(mitk::DataNode* imageNode, QmitkRenderWindow* renderWindow, bool showGradientMagnitude)
@@ -603,6 +592,8 @@ void VesselDrivenResliceView::_setupRendererSlices()
 
     d->renderWindow->GetRenderer()->SetWorldTimeGeometry(timeGeometry);
     d->renderWindowGradMag->GetRenderer()->SetWorldTimeGeometry(timeGeometry);
+    d->renderWindow->GetRenderer()->SetSlice(d->renderWindow->GetRenderer()->GetSliceNavigationController()->GetStepper()->GetPos());
+    d->renderWindowGradMag->GetRenderer()->SetSlice(d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetStepper()->GetPos());
 
     d->renderWindow->GetRenderer()->GetCameraController()->Fit();
     d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
