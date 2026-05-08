@@ -506,6 +506,20 @@ void VesselDrivenResliceView::_setupRendererSlices()
         } else {
             MITK_INFO << "[VDRV] planeGeo is NULL!";
         }
+
+        // DIAGNOSTIC: check visibility of ALL data nodes for our renderer
+        mitk::DataStorage::Pointer ds = GetDataStorage();
+        if (ds.IsNotNull()) {
+            mitk::DataStorage::SetOfObjects::ConstPointer allNodes = ds->GetAll();
+            for (auto it = allNodes->Begin(); it != allNodes->End(); ++it) {
+                mitk::DataNode::Pointer node = it->Value();
+                bool vis = false;
+                node->GetVisibility(vis, d->renderWindow->GetRenderer());
+                std::string className = node->GetData() ? node->GetData()->GetNameOfClass() : "no-data";
+                MITK_INFO << "[VDRV] node='" << node->GetName() << "' class=" << className
+                          << " visible=" << vis;
+            }
+        }
     }
 }
 
