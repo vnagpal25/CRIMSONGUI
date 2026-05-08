@@ -14,6 +14,9 @@
 #include <mitkAnatomicalPlanes.h>
 #include <mitkRenderingManager.h>
 #include <mitkLog.h>
+#include <vtkRenderer.h>
+#include <vtkCamera.h>
+#include <vtkRenderWindow.h>
 
 // Qt
 #include "QmitkRenderWindow.h"
@@ -476,8 +479,33 @@ void VesselDrivenResliceView::_setupRendererSlices()
         d->renderWindow->GetRenderer()->GetCameraController()->Fit();
         d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
 
+        // DIAGNOSTIC: set background to red to test if VTK rendering works
+        d->renderWindow->GetRenderer()->GetVtkRenderer()->SetBackground(1.0, 0.0, 0.0);
+        d->renderWindowGradMag->GetRenderer()->GetVtkRenderer()->SetBackground(0.0, 0.0, 1.0);
+
         d->renderWindow->GetRenderer()->ForceImmediateUpdate();
         d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
+
+        // DIAGNOSTIC: log VTK state after render
+        vtkRenderer* vr = d->renderWindow->GetRenderer()->GetVtkRenderer();
+        int nProps = vr->GetViewProps() ? vr->GetViewProps()->GetNumberOfItems() : 0;
+        double* camPos = vr->GetActiveCamera()->GetPosition();
+        double* camFoc = vr->GetActiveCamera()->GetFocalPoint();
+        double pScale = vr->GetActiveCamera()->GetParallelScale();
+        MITK_INFO << "[VDRV] VTK state: props=" << nProps
+                  << " camPos=(" << camPos[0] << "," << camPos[1] << "," << camPos[2] << ")"
+                  << " camFocal=(" << camFoc[0] << "," << camFoc[1] << "," << camFoc[2] << ")"
+                  << " parallelScale=" << pScale
+                  << " parallelProj=" << vr->GetActiveCamera()->GetParallelProjection();
+
+        auto planeGeo = d->renderWindow->GetRenderer()->GetCurrentWorldPlaneGeometry();
+        if (planeGeo) {
+            auto origin = planeGeo->GetOrigin();
+            MITK_INFO << "[VDRV] planeGeo origin=(" << origin[0] << "," << origin[1] << "," << origin[2] << ")"
+                      << " extentMM=(" << planeGeo->GetExtentInMM(0) << "," << planeGeo->GetExtentInMM(1) << ")";
+        } else {
+            MITK_INFO << "[VDRV] planeGeo is NULL!";
+        }
     }
 }
 
