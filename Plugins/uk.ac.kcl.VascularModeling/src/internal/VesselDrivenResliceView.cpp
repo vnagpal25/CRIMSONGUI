@@ -159,6 +159,21 @@ void logResliceRendererState(const char* label,
               << ", solidMapper=" << mapperName(solidNode);
 }
 
+void logResliceWindowLayout(const char* label, QmitkRenderWindow* renderWindow)
+{
+    if (!renderWindow || !renderWindow->GetVtkRenderWindow()) {
+        return;
+    }
+
+    int* vtkSize = renderWindow->GetVtkRenderWindow()->GetSize();
+    MITK_INFO << "VesselDrivenResliceView window " << label
+              << ": qtPos=" << renderWindow->x() << "," << renderWindow->y()
+              << ", qtSize=" << renderWindow->width() << "x" << renderWindow->height()
+              << ", vtkSize=" << (vtkSize ? vtkSize[0] : 0) << "x" << (vtkSize ? vtkSize[1] : 0)
+              << ", visible=" << (renderWindow->isVisible() ? "yes" : "no")
+              << ", enabled=" << (renderWindow->isEnabled() ? "yes" : "no");
+}
+
 } // namespace
 
 //////////////////////////////////////////////////////////////////////////
@@ -221,9 +236,9 @@ enum ObservedObject {
 class VesselDrivenResliceViewPrivate {
 public:
     VesselDrivenResliceViewPrivate()
-        : renderWindow(nullptr)
+        : sacrificialRenderWindow(nullptr)
+        , renderWindow(nullptr)
         , renderWindowGradMag(nullptr)
-        , renderWindowGradMagPlaceholder(nullptr)
     {
         reinitVesselDrivenGeometryTimer.setSingleShot(true);
     }
@@ -233,9 +248,9 @@ public:
     unsigned long vesselPathObserverTag;
     unsigned long renderingManagerInitializeObserverTag;
     QVBoxLayout* mainLayout;
+    QmitkRenderWindow* sacrificialRenderWindow;
     QmitkRenderWindow* renderWindow;
     QmitkRenderWindow* renderWindowGradMag;
-    QWidget* renderWindowGradMagPlaceholder;
     QSpacerItem* spacer;
     ctkSliderWidget* sliceNumberSlider;
     QDoubleSpinBox* resliceWindowSizeSpinBox;   
@@ -363,22 +378,23 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
 
     auto renderWindowsLayout = new QHBoxLayout;
 
+    d->sacrificialRenderWindow = new QmitkRenderWindow(parent, QStringLiteral("reslicer sacrificial"));
+    d->sacrificialRenderWindow->GetRenderer()->SetDataStorage(GetDataStorage());
+    d->sacrificialRenderWindow->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
+    d->sacrificialRenderWindow->setFixedWidth(1);
+    renderWindowsLayout->addWidget(d->sacrificialRenderWindow);
+
     d->renderWindow = new QmitkRenderWindow(parent, QStringLiteral("reslicer"));
     d->renderWindow->GetRenderer()->SetDataStorage(GetDataStorage());
     d->renderWindow->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->renderWindow->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     renderWindowsLayout->addWidget(d->renderWindow);
 
-    d->renderWindowGradMagPlaceholder = new QWidget(parent);
-    d->renderWindowGradMagPlaceholder->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    d->renderWindowGradMagPlaceholder->setStyleSheet(QStringLiteral("background-color: black;"));
-    renderWindowsLayout->addWidget(d->renderWindowGradMagPlaceholder);
-
     d->renderWindowGradMag = new QmitkRenderWindow(parent, QStringLiteral("reslicer grad mag"));
     d->renderWindowGradMag->GetRenderer()->SetDataStorage(GetDataStorage());
     d->renderWindowGradMag->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->renderWindowGradMag->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    d->renderWindowGradMag->hide();
+    renderWindowsLayout->addWidget(d->renderWindowGradMag);
 
     d->mainLayout->addLayout(renderWindowsLayout, 1);
     d->mainLayout->addStretch(0);
@@ -466,12 +482,12 @@ mitk::PlaneGeometry* VesselDrivenResliceView::getPlaneGeometry(float t) const
 void VesselDrivenResliceView::_setResliceViewEnabled(bool enabled)
 {
     d->sliceNumberSlider->setEnabled(enabled);
+    d->sacrificialRenderWindow->setEnabled(false);
+    d->sacrificialRenderWindow->setVisible(enabled);
     d->renderWindow->setEnabled(enabled);
     d->renderWindow->setVisible(enabled);
-    d->renderWindowGradMag->setEnabled(false);
-    d->renderWindowGradMag->setVisible(false);
-    d->renderWindowGradMagPlaceholder->setEnabled(enabled);
-    d->renderWindowGradMagPlaceholder->setVisible(enabled);
+    d->renderWindowGradMag->setEnabled(enabled);
+    d->renderWindowGradMag->setVisible(enabled);
 }
 
 void VesselDrivenResliceView::currentNodeChanged(mitk::DataNode*)
@@ -612,6 +628,9 @@ void VesselDrivenResliceView::_setupRendererSlices()
 
     logResliceRendererState("primary", d->renderWindow, imageNode.GetPointer(), currentNode(), contourNodes.GetPointer(), solidNode);
     logResliceRendererState("gradient", d->renderWindowGradMag, imageNode.GetPointer(), currentNode(), contourNodes.GetPointer(), solidNode);
+    logResliceWindowLayout("sacrificial", d->sacrificialRenderWindow);
+    logResliceWindowLayout("primary", d->renderWindow);
+    logResliceWindowLayout("gradient", d->renderWindowGradMag);
 }
 
 void VesselDrivenResliceView::_setSliceNumber(double slice)
