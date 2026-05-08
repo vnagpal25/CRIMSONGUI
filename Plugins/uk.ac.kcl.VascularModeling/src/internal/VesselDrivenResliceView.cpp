@@ -11,6 +11,7 @@
 #include <mitkSlicedGeometry3D.h>
 #include <mitkImage.h>
 #include <mitkAnatomicalPlanes.h>
+#include <mitkLogMacros.h>
 #include <mitkProportionalTimeGeometry.h>
 #include <mitkRenderingManager.h>
 #include <mitkVtkPropRenderer.h>
@@ -53,6 +54,35 @@ void forceImmediateMitkRender(QmitkRenderWindow* renderWindow)
 
     renderer->PrepareRender();
     renderWindow->GetVtkRenderWindow()->Render();
+}
+
+void logResliceRendererState(const char* label, QmitkRenderWindow* renderWindow)
+{
+    if (!renderWindow || !renderWindow->GetRenderer() || !renderWindow->GetVtkRenderWindow()) {
+        MITK_INFO << "VesselDrivenResliceView " << label << ": missing render window or renderer";
+        return;
+    }
+
+    int* size = renderWindow->GetVtkRenderWindow()->GetSize();
+    auto renderer = renderWindow->GetRenderer();
+    auto snc = renderer->GetSliceNavigationController();
+    const mitk::TimeGeometry* inputGeometry = snc ? snc->GetInputWorldTimeGeometry() : nullptr;
+    const mitk::TimeGeometry* rendererGeometry = renderer->GetWorldTimeGeometry();
+    double inputBounds = inputGeometry ? inputGeometry->GetBoundingBoxInWorld()->GetDiagonalLength2() : -1.0;
+    double rendererBounds = rendererGeometry ? rendererGeometry->GetBoundingBoxInWorld()->GetDiagonalLength2() : -1.0;
+    const auto* currentVesselGeometry = dynamic_cast<const crimson::VesselDrivenSlicedGeometry*>(renderer->GetCurrentWorldGeometry());
+    const auto* currentPlaneGeometry = renderer->GetCurrentWorldPlaneGeometry();
+
+    MITK_INFO << "VesselDrivenResliceView " << label
+              << ": vtkSize=" << (size ? size[0] : -1) << "x" << (size ? size[1] : -1)
+              << ", sncInput=" << (inputGeometry ? "yes" : "no")
+              << ", sncBounds2=" << inputBounds
+              << ", rendererTimeGeometry=" << (rendererGeometry ? "yes" : "no")
+              << ", rendererBounds2=" << rendererBounds
+              << ", sncSteps=" << (snc ? snc->GetStepper()->GetSteps() : 0)
+              << ", sncPos=" << (snc ? snc->GetStepper()->GetPos() : 0)
+              << ", rendererWorldIsVessel=" << (currentVesselGeometry ? "yes" : "no")
+              << ", currentPlane=" << (currentPlaneGeometry ? "yes" : "no");
 }
 
 } // namespace
@@ -453,6 +483,9 @@ void VesselDrivenResliceView::_setupRendererSlices()
 
     auto vesselDrivenGeometry = crimson::VesselDrivenSlicedGeometry::New();
     vesselDrivenGeometry->InitializedVesselDrivenSlicedGeometry(vesselPath, paramDelta, referenceImageSpacing, resliceWindowSize);
+    for (unsigned int slice = 0; slice < vesselDrivenGeometry->GetSlices(); ++slice) {
+        vesselDrivenGeometry->GetPlaneGeometry(slice);
+    }
 
     mitk::ProportionalTimeGeometry::Pointer timeGeometry = mitk::ProportionalTimeGeometry::New();
     timeGeometry->Initialize(vesselDrivenGeometry, timeSteps);
@@ -473,8 +506,14 @@ void VesselDrivenResliceView::_setupRendererSlices()
 
     navigateTo(savedSlicePos);
 
+    d->renderWindow->GetRenderer()->SetWorldTimeGeometry(timeGeometry);
+    d->renderWindowGradMag->GetRenderer()->SetWorldTimeGeometry(timeGeometry);
+
     d->renderWindow->GetRenderer()->GetCameraController()->Fit();
     d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
+
+    logResliceRendererState("primary setup", d->renderWindow);
+    logResliceRendererState("gradient setup", d->renderWindowGradMag);
 
     forceImmediateMitkRender(d->renderWindow);
     forceImmediateMitkRender(d->renderWindowGradMag);
