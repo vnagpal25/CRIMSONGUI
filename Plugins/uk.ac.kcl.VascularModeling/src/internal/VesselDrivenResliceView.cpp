@@ -222,6 +222,8 @@ class VesselDrivenResliceViewPrivate {
 public:
     VesselDrivenResliceViewPrivate()
         : renderWindow(nullptr)
+        , renderWindowGradMag(nullptr)
+        , renderWindowGradMagPlaceholder(nullptr)
     {
         reinitVesselDrivenGeometryTimer.setSingleShot(true);
     }
@@ -233,6 +235,7 @@ public:
     QVBoxLayout* mainLayout;
     QmitkRenderWindow* renderWindow;
     QmitkRenderWindow* renderWindowGradMag;
+    QWidget* renderWindowGradMagPlaceholder;
     QSpacerItem* spacer;
     ctkSliderWidget* sliceNumberSlider;
     QDoubleSpinBox* resliceWindowSizeSpinBox;   
@@ -359,19 +362,23 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
 
 
     auto renderWindowsLayout = new QHBoxLayout;
-    renderWindowsLayout->setDirection(QBoxLayout::RightToLeft);
-
-    d->renderWindowGradMag = new QmitkRenderWindow(parent, QStringLiteral("reslicer grad mag"));
-    d->renderWindowGradMag->GetRenderer()->SetDataStorage(GetDataStorage());
-    d->renderWindowGradMag->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
-    d->renderWindowGradMag->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     d->renderWindow = new QmitkRenderWindow(parent, QStringLiteral("reslicer"));
     d->renderWindow->GetRenderer()->SetDataStorage(GetDataStorage());
     d->renderWindow->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->renderWindow->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    renderWindowsLayout->addWidget(d->renderWindowGradMag);
     renderWindowsLayout->addWidget(d->renderWindow);
+
+    d->renderWindowGradMagPlaceholder = new QWidget(parent);
+    d->renderWindowGradMagPlaceholder->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    d->renderWindowGradMagPlaceholder->setStyleSheet(QStringLiteral("background-color: black;"));
+    renderWindowsLayout->addWidget(d->renderWindowGradMagPlaceholder);
+
+    d->renderWindowGradMag = new QmitkRenderWindow(parent, QStringLiteral("reslicer grad mag"));
+    d->renderWindowGradMag->GetRenderer()->SetDataStorage(GetDataStorage());
+    d->renderWindowGradMag->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
+    d->renderWindowGradMag->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    d->renderWindowGradMag->hide();
 
     d->mainLayout->addLayout(renderWindowsLayout, 1);
     d->mainLayout->addStretch(0);
@@ -461,8 +468,10 @@ void VesselDrivenResliceView::_setResliceViewEnabled(bool enabled)
     d->sliceNumberSlider->setEnabled(enabled);
     d->renderWindow->setEnabled(enabled);
     d->renderWindow->setVisible(enabled);
-    d->renderWindowGradMag->setEnabled(enabled);
-    d->renderWindowGradMag->setVisible(enabled);
+    d->renderWindowGradMag->setEnabled(false);
+    d->renderWindowGradMag->setVisible(false);
+    d->renderWindowGradMagPlaceholder->setEnabled(enabled);
+    d->renderWindowGradMagPlaceholder->setVisible(enabled);
 }
 
 void VesselDrivenResliceView::currentNodeChanged(mitk::DataNode*)
@@ -552,7 +561,6 @@ void VesselDrivenResliceView::_setupRendererSlices()
 
     configureOverlayNodeForReslice(currentNode(), d->renderWindow, true);
     configureOverlayNodeForReslice(currentNode(), d->renderWindowGradMag, true);
-    ensureVesselPathMapper(currentNode());
 
     mitk::DataStorage::SetOfObjects::ConstPointer contourNodes = crimson::VascularModelingUtils::getVesselContourNodes(currentNode());
     for (const mitk::DataNode::Pointer& contourNode : *contourNodes) {
