@@ -344,9 +344,13 @@ void VesselDrivenResliceView::_setResliceViewEnabled(bool enabled)
         QTimer::singleShot(50, [this]() {
             if (_isCurrentVesselPathValid()) {
                 int* s = d->renderWindow->GetVtkRenderWindow()->GetSize();
-                MITK_INFO << "[VDRV] deferred(50ms) ForceImmediateUpdate size=" << s[0] << "x" << s[1];
-                d->renderWindow->GetRenderer()->ForceImmediateUpdate();
-                d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
+                MITK_INFO << "[VDRV] deferred(50ms) Fit+Render size=" << s[0] << "x" << s[1];
+                if (s[0] > 0 && s[1] > 0) {
+                    d->renderWindow->GetRenderer()->GetCameraController()->Fit();
+                    d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
+                    d->renderWindow->GetRenderer()->ForceImmediateUpdate();
+                    d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
+                }
             }
         });
     }
@@ -492,8 +496,11 @@ void VesselDrivenResliceView::_setupRendererSlices()
               << " worldGeo=" << (worldGeo ? "valid" : "NULL")
               << " visible=" << d->renderWindow->isVisible();
 
-    d->renderWindow->GetRenderer()->ForceImmediateUpdate();
-    d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
+    int* szCheck = d->renderWindow->GetVtkRenderWindow()->GetSize();
+    if (szCheck[0] > 0 && szCheck[1] > 0) {
+        d->renderWindow->GetRenderer()->ForceImmediateUpdate();
+        d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
+    }
 
     d->renderWindow->update();
     d->renderWindowGradMag->update();
@@ -501,56 +508,25 @@ void VesselDrivenResliceView::_setupRendererSlices()
     QTimer::singleShot(0, [this]() {
         if (_isCurrentVesselPathValid()) {
             int* s = d->renderWindow->GetVtkRenderWindow()->GetSize();
-            MITK_INFO << "[VDRV] deferred(0ms) ForceImmediateUpdate size=" << s[0] << "x" << s[1]
-                      << " visible=" << d->renderWindow->isVisible();
-            d->renderWindow->GetRenderer()->ForceImmediateUpdate();
-            d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
+            MITK_INFO << "[VDRV] deferred(0ms) Fit+Render size=" << s[0] << "x" << s[1];
+            if (s[0] > 0 && s[1] > 0) {
+                d->renderWindow->GetRenderer()->GetCameraController()->Fit();
+                d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
+                d->renderWindow->GetRenderer()->ForceImmediateUpdate();
+                d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
+            }
         }
     });
     QTimer::singleShot(100, [this]() {
         if (_isCurrentVesselPathValid()) {
             int* s = d->renderWindow->GetVtkRenderWindow()->GetSize();
-            MITK_INFO << "[VDRV] deferred(100ms) size=" << s[0] << "x" << s[1]
-                      << " visible=" << d->renderWindow->isVisible();
-
-            auto* renderer = d->renderWindow->GetRenderer();
-            auto* planeGeo = renderer->GetCurrentWorldPlaneGeometry();
-            auto* worldGeo = renderer->GetCurrentWorldGeometry();
-            MITK_INFO << "[VDRV] renderer state: planeGeo=" << (planeGeo ? "valid" : "NULL")
-                      << " worldGeo=" << (worldGeo ? "valid" : "NULL")
-                      << " mapperID=" << renderer->GetMapperID()
-                      << " slice=" << renderer->GetSlice();
-
-            if (planeGeo) {
-                auto origin = planeGeo->GetOrigin();
-                auto normal = planeGeo->GetNormal();
-                MITK_INFO << "[VDRV] planeGeo origin=(" << origin[0] << "," << origin[1] << "," << origin[2] << ")"
-                          << " normal=(" << normal[0] << "," << normal[1] << "," << normal[2] << ")";
+            MITK_INFO << "[VDRV] deferred(100ms) Fit+Render size=" << s[0] << "x" << s[1];
+            if (s[0] > 0 && s[1] > 0) {
+                d->renderWindow->GetRenderer()->GetCameraController()->Fit();
+                d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
+                d->renderWindow->GetRenderer()->ForceImmediateUpdate();
+                d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
             }
-
-            mitk::DataStorage::Pointer ds = GetDataStorage();
-            if (ds.IsNotNull()) {
-                mitk::DataStorage::SetOfObjects::ConstPointer allNodes = ds->GetAll();
-                MITK_INFO << "[VDRV] DataStorage has " << allNodes->size() << " nodes";
-                for (auto it = allNodes->begin(); it != allNodes->end(); ++it) {
-                    mitk::DataNode::Pointer node = *it;
-                    bool vis = true;
-                    node->GetVisibility(vis, renderer, "visible");
-                    mitk::BaseData* data = node->GetData();
-                    MITK_INFO << "[VDRV]   node='" << node->GetName() << "'"
-                              << " type=" << (data ? data->GetNameOfClass() : "no-data")
-                              << " visible=" << vis;
-                }
-            }
-
-            MITK_INFO << "[VDRV] Attempting direct VTK render...";
-            renderer->PrepareRender();
-            d->renderWindow->GetVtkRenderWindow()->Render();
-
-            auto* renderer2 = d->renderWindowGradMag->GetRenderer();
-            renderer2->PrepareRender();
-            d->renderWindowGradMag->GetVtkRenderWindow()->Render();
-            MITK_INFO << "[VDRV] Direct VTK render completed";
         }
     });
 }
