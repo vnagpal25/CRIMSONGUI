@@ -359,6 +359,7 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
 
 
     auto renderWindowsLayout = new QHBoxLayout;
+    renderWindowsLayout->setDirection(QBoxLayout::RightToLeft);
 
     d->renderWindowGradMag = new QmitkRenderWindow(parent, QStringLiteral("reslicer grad mag"));
     d->renderWindowGradMag->GetRenderer()->SetDataStorage(GetDataStorage());
@@ -369,8 +370,8 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
     d->renderWindow->GetRenderer()->SetDataStorage(GetDataStorage());
     d->renderWindow->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->renderWindow->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    renderWindowsLayout->addWidget(d->renderWindow);
     renderWindowsLayout->addWidget(d->renderWindowGradMag);
+    renderWindowsLayout->addWidget(d->renderWindow);
 
     d->mainLayout->addLayout(renderWindowsLayout, 1);
     d->mainLayout->addStretch(0);
