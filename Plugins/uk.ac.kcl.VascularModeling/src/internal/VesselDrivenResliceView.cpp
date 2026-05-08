@@ -473,8 +473,8 @@ void VesselDrivenResliceView::_setupRendererSlices()
               << " visible=" << d->renderWindow->isVisible();
 
     if (sz[0] > 0 && sz[1] > 0) {
-        d->renderWindow->GetRenderer()->GetDisplayGeometry()->Fit();
-        d->renderWindowGradMag->GetRenderer()->GetDisplayGeometry()->Fit();
+        d->renderWindow->GetRenderer()->GetCameraController()->Fit();
+        d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
 
         d->renderWindow->GetRenderer()->ForceImmediateUpdate();
         d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
