@@ -15,7 +15,11 @@
 #include <mitkLogMacros.h>
 #include <mitkProportionalTimeGeometry.h>
 #include <mitkRenderingManager.h>
+#include <mitkVtkMapper.h>
 #include <mitkVtkPropRenderer.h>
+#include <vtkProp.h>
+#include <vtkPropCollection.h>
+#include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
 
 // Qt
@@ -74,6 +78,10 @@ void logResliceRendererState(const char* label, QmitkRenderWindow* renderWindow)
     const auto* currentVesselGeometry = dynamic_cast<const crimson::VesselDrivenSlicedGeometry*>(renderer->GetCurrentWorldGeometry());
     const auto* currentPlaneGeometry = renderer->GetCurrentWorldPlaneGeometry();
 
+    int propCount = renderer->GetVtkRenderer() && renderer->GetVtkRenderer()->GetViewProps()
+        ? renderer->GetVtkRenderer()->GetViewProps()->GetNumberOfItems()
+        : -1;
+
     MITK_INFO << "VesselDrivenResliceView " << label
               << ": vtkSize=" << (size ? size[0] : -1) << "x" << (size ? size[1] : -1)
               << ", sncInput=" << (inputGeometry ? "yes" : "no")
@@ -83,7 +91,48 @@ void logResliceRendererState(const char* label, QmitkRenderWindow* renderWindow)
               << ", sncSteps=" << (snc ? snc->GetStepper()->GetSteps() : 0)
               << ", sncPos=" << (snc ? snc->GetStepper()->GetPos() : 0)
               << ", rendererWorldIsVessel=" << (currentVesselGeometry ? "yes" : "no")
-              << ", currentPlane=" << (currentPlaneGeometry ? "yes" : "no");
+              << ", currentPlane=" << (currentPlaneGeometry ? "yes" : "no")
+              << ", vtkProps=" << propCount;
+}
+
+void logImageNodeState(const char* label, mitk::DataNode* imageNode, QmitkRenderWindow* renderWindow)
+{
+    if (!imageNode || !renderWindow || !renderWindow->GetRenderer()) {
+        MITK_INFO << "VesselDrivenResliceView " << label << ": missing image node or renderer";
+        return;
+    }
+
+    auto renderer = renderWindow->GetRenderer();
+    bool visible = false;
+    imageNode->GetVisibility(visible, renderer, "visible");
+    bool inPlane = false;
+    imageNode->GetBoolProperty("in plane resample extent by geometry", inPlane, renderer);
+    bool showGradient = false;
+    imageNode->GetBoolProperty("show gradient magnitude", showGradient, renderer);
+    int layer = -1;
+    imageNode->GetIntProperty("layer", layer, renderer);
+
+    vtkProp* prop = nullptr;
+    auto vtkMapper = dynamic_cast<mitk::VtkMapper*>(imageNode->GetMapper(mitk::BaseRenderer::Standard2D));
+    if (vtkMapper) {
+        prop = vtkMapper->GetVtkProp(renderer);
+    }
+
+    double bounds[6] = { 0, 0, 0, 0, 0, 0 };
+    if (prop) {
+        prop->GetBounds(bounds);
+    }
+
+    MITK_INFO << "VesselDrivenResliceView " << label
+              << ": imageVisible=" << (visible ? "yes" : "no")
+              << ", inPlaneByGeometry=" << (inPlane ? "yes" : "no")
+              << ", showGradient=" << (showGradient ? "yes" : "no")
+              << ", layer=" << layer
+              << ", prop=" << (prop ? prop->GetClassName() : "<none>")
+              << ", propVisible=" << (prop && prop->GetVisibility() ? "yes" : "no")
+              << ", propBounds=[" << bounds[0] << "," << bounds[1] << ","
+              << bounds[2] << "," << bounds[3] << ","
+              << bounds[4] << "," << bounds[5] << "]";
 }
 
 void configureImageNodeForReslice(mitk::DataNode* imageNode, QmitkRenderWindow* renderWindow, bool showGradientMagnitude)
@@ -509,16 +558,13 @@ void VesselDrivenResliceView::_setupRendererSlices()
         configureImageNodeForReslice(imageNode, d->renderWindowGradMag, true);
     }
 
-    bool contoursVisible = true;
-    currentNode()->GetBoolProperty("lofting.contoursVisible", contoursVisible);
-
     configureOverlayNodeForReslice(currentNode(), d->renderWindow, true);
     configureOverlayNodeForReslice(currentNode(), d->renderWindowGradMag, true);
 
     mitk::DataStorage::SetOfObjects::ConstPointer contourNodes = crimson::VascularModelingUtils::getVesselContourNodes(currentNode());
     for (const mitk::DataNode::Pointer& contourNode : *contourNodes) {
-        configureOverlayNodeForReslice(contourNode, d->renderWindow, contoursVisible);
-        configureOverlayNodeForReslice(contourNode, d->renderWindowGradMag, contoursVisible);
+        configureOverlayNodeForReslice(contourNode, d->renderWindow, true);
+        configureOverlayNodeForReslice(contourNode, d->renderWindowGradMag, true);
     }
 
     mitk::DataNode* solidNode = crimson::VascularModelingUtils::getVesselSolidModelNode(currentNode());
@@ -529,7 +575,7 @@ void VesselDrivenResliceView::_setupRendererSlices()
     }
 
     MITK_INFO << "VesselDrivenResliceView overlays: contours=" << contourNodes->size()
-              << ", contoursVisible=" << (contoursVisible ? "yes" : "no")
+              << ", contoursVisibleInReslice=yes"
               << ", solid=" << (solidNode ? solidNode->GetName() : std::string("<none>"));
 
     auto vesselDrivenGeometry = crimson::VesselDrivenSlicedGeometry::New();
@@ -565,6 +611,10 @@ void VesselDrivenResliceView::_setupRendererSlices()
 
     logResliceRendererState("primary setup", d->renderWindow);
     logResliceRendererState("gradient setup", d->renderWindowGradMag);
+    if (imageNode.IsNotNull()) {
+        logImageNodeState("primary image", imageNode, d->renderWindow);
+        logImageNodeState("gradient image", imageNode, d->renderWindowGradMag);
+    }
 
     forceImmediateMitkRender(d->renderWindow);
     forceImmediateMitkRender(d->renderWindowGradMag);
