@@ -10,11 +10,15 @@
 
 #include <mitkSlicedGeometry3D.h>
 #include <mitkImage.h>
+#include <mitkMapper.h>
 #include <mitkAnatomicalPlanes.h>
 #include <mitkProportionalTimeGeometry.h>
 #include <mitkRenderingManager.h>
 #include <mitkVtkPropRenderer.h>
+#include <mitkLogMacros.h>
 #include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkPropCollection.h>
 
 // Qt
 #include "QmitkRenderWindow.h"
@@ -63,7 +67,9 @@ void configureImageNodeForReslice(mitk::DataNode* imageNode, QmitkRenderWindow* 
     auto renderer = renderWindow->GetRenderer();
     imageNode->SetBoolProperty("in plane resample extent by geometry", true, renderer);
     imageNode->AddProperty("reslice interpolation", mitk::VtkResliceInterpolationProperty::New(VTK_RESLICE_CUBIC), renderer, true);
-    imageNode->SetBoolProperty("show gradient magnitude", showGradientMagnitude, renderer);
+    if (showGradientMagnitude) {
+        imageNode->SetBoolProperty("show gradient magnitude", true, renderer);
+    }
     imageNode->SetVisibility(true, renderer);
 }
 
@@ -74,6 +80,67 @@ void configureOverlayNodeForReslice(mitk::DataNode* node, QmitkRenderWindow* ren
     }
 
     node->SetVisibility(visible, renderWindow->GetRenderer());
+}
+
+const char* mapperName(mitk::DataNode* node)
+{
+    if (!node) {
+        return "none";
+    }
+
+    auto mapper = node->GetMapper(mitk::BaseRenderer::Standard2D);
+    return mapper ? mapper->GetNameOfClass() : "none";
+}
+
+void logResliceRendererState(const char* label,
+                             QmitkRenderWindow* renderWindow,
+                             mitk::DataNode* imageNode,
+                             mitk::DataNode* vesselNode,
+                             const mitk::DataStorage::SetOfObjects* contourNodes,
+                             mitk::DataNode* solidNode)
+{
+    if (!renderWindow || !renderWindow->GetRenderer() || !renderWindow->GetVtkRenderWindow()) {
+        return;
+    }
+
+    auto renderer = renderWindow->GetRenderer();
+    auto stepper = renderer->GetSliceNavigationController()->GetStepper();
+    bool imageVisible = false;
+    bool vesselVisible = false;
+    bool solidVisible = false;
+    imageNode && imageNode->GetVisibility(imageVisible, renderer);
+    vesselNode && vesselNode->GetVisibility(vesselVisible, renderer);
+    solidNode && solidNode->GetVisibility(solidVisible, renderer);
+
+    int visibleContours = 0;
+    mitk::DataNode* firstContourNode = nullptr;
+    if (contourNodes) {
+        for (const mitk::DataNode::Pointer& contourNode : *contourNodes) {
+            if (!firstContourNode) {
+                firstContourNode = contourNode.GetPointer();
+            }
+            bool contourVisible = false;
+            contourNode->GetVisibility(contourVisible, renderer);
+            visibleContours += contourVisible ? 1 : 0;
+        }
+    }
+
+    int* vtkSize = renderWindow->GetVtkRenderWindow()->GetSize();
+    MITK_INFO << "VesselDrivenResliceView " << label
+              << ": qtSize=" << renderWindow->width() << "x" << renderWindow->height()
+              << ", vtkSize=" << (vtkSize ? vtkSize[0] : 0) << "x" << (vtkSize ? vtkSize[1] : 0)
+              << ", mapperId=" << renderer->GetMapperID()
+              << ", slice=" << (stepper ? stepper->GetPos() : 0)
+              << ", steps=" << (stepper ? stepper->GetSteps() : 0)
+              << ", vtkProps=" << renderer->GetVtkRenderer()->GetViewProps()->GetNumberOfItems()
+              << ", imageVisible=" << (imageVisible ? "yes" : "no")
+              << ", imageMapper=" << mapperName(imageNode)
+              << ", vesselVisible=" << (vesselVisible ? "yes" : "no")
+              << ", vesselMapper=" << mapperName(vesselNode)
+              << ", contoursVisible=" << visibleContours << "/" << (contourNodes ? contourNodes->size() : 0)
+              << ", firstContourMapper=" << mapperName(firstContourNode)
+              << ", solidVisible=" << (solidVisible ? "yes" : "no")
+              << ", solidMapper=" << mapperName(solidNode);
 }
 
 } // namespace
@@ -511,11 +578,16 @@ void VesselDrivenResliceView::_setupRendererSlices()
     d->renderWindow->GetRenderer()->SetSlice(d->renderWindow->GetRenderer()->GetSliceNavigationController()->GetStepper()->GetPos());
     d->renderWindowGradMag->GetRenderer()->SetSlice(d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetStepper()->GetPos());
 
+    emit geometryChanged();
+
     d->renderWindow->GetRenderer()->GetCameraController()->Fit();
     d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
 
     forceImmediateMitkRender(d->renderWindow);
     forceImmediateMitkRender(d->renderWindowGradMag);
+
+    logResliceRendererState("primary", d->renderWindow, imageNode.GetPointer(), currentNode(), contourNodes.GetPointer(), solidNode);
+    logResliceRendererState("gradient", d->renderWindowGradMag, imageNode.GetPointer(), currentNode(), contourNodes.GetPointer(), solidNode);
 }
 
 void VesselDrivenResliceView::_setSliceNumber(double slice)
@@ -534,7 +606,6 @@ void VesselDrivenResliceView::_setResliceWindowSize()
     if (currentNode()) {
         currentNode()->SetFloatProperty("reslice.windowSize", d->resliceWindowSizeSpinBox->value());
         _setupRendererSlices();
-        emit geometryChanged();
     }
 }
 
