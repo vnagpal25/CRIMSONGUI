@@ -10,13 +10,8 @@
 
 #include <mitkSlicedGeometry3D.h>
 #include <mitkImage.h>
-#include <mitkTimeNavigationController.h>
 #include <mitkAnatomicalPlanes.h>
 #include <mitkRenderingManager.h>
-#include <mitkLog.h>
-#include <vtkRenderer.h>
-#include <vtkCamera.h>
-#include <vtkRenderWindow.h>
 
 // Qt
 #include "QmitkRenderWindow.h"
@@ -114,6 +109,7 @@ public:
     QTimer reinitVesselDrivenGeometryTimer;
     QLabel* positionInMM;
     QScopedPointer<ResliceViewWidgetListener> resliceViewWidgetListener;
+    mitk::RenderingManager::Pointer privateRenderingManager;
 
     QHash<const mitk::DataNode*, mitk::Point3D> savedSlicePositions;
 
@@ -160,8 +156,7 @@ VesselDrivenResliceView::~VesselDrivenResliceView()
 
 void VesselDrivenResliceView::SetFocus()
 {
-	mitk::RenderingManager::GetInstance()->SetRenderWindowFocus(d->renderWindow->GetVtkRenderWindow());
-    //d->renderWindow->GetRenderer()->SetFocused(true);
+	d->privateRenderingManager->SetRenderWindowFocus(d->renderWindow->GetVtkRenderWindow());
 }
 
 void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
@@ -236,20 +231,19 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
 
     auto renderWindowsLayout = new QHBoxLayout;
 
-    d->renderWindow = new QmitkRenderWindow(parent, QStringLiteral("reslicer"));
+    d->privateRenderingManager = mitk::RenderingManager::New();
+
+    d->renderWindow = new QmitkRenderWindow(parent, QStringLiteral("reslicer"), nullptr, d->privateRenderingManager.GetPointer());
     d->renderWindow->GetRenderer()->SetDataStorage(GetDataStorage());
     d->renderWindow->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->renderWindow->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     renderWindowsLayout->addWidget(d->renderWindow);
 
-    d->renderWindowGradMag = new QmitkRenderWindow(parent, QStringLiteral("reslicer grad mag"));
+    d->renderWindowGradMag = new QmitkRenderWindow(parent, QStringLiteral("reslicer grad mag"), nullptr, d->privateRenderingManager.GetPointer());
     d->renderWindowGradMag->GetRenderer()->SetDataStorage(GetDataStorage());
     d->renderWindowGradMag->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->renderWindowGradMag->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     renderWindowsLayout->addWidget(d->renderWindowGradMag);
-
-    // TimeNavigationController::ConnectTimeEvent requires a receiver with SetGeometryTime (e.g. BaseRenderer).
-    // Each render window's BaseRenderer is already connected in MITK's ctor; do not pass SliceNavigationController*.
 
     d->mainLayout->addLayout(renderWindowsLayout, 1);
     d->mainLayout->addStretch(0);
@@ -268,10 +262,6 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
     modifiedCommand->SetCallbackFunction(this, &VesselDrivenResliceView::_syncSliderWithStepperC);
     d->_addObserver(ooSNC_GradMag, d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetStepper(), itk::ModifiedEvent(), modifiedCommand);
 
-
-    auto reinitCommand = itk::SimpleMemberCommand<VesselDrivenResliceView>::New();
-    reinitCommand->SetCallbackFunction(this, &VesselDrivenResliceView::_setupRendererSlices);
-    d->_addObserver(ooRenderingManager, mitk::RenderingManager::GetInstance(), mitk::RenderingManagerViewsInitializedEvent(), reinitCommand);
 
     connect(&d->reinitVesselDrivenGeometryTimer, &QTimer::timeout, this, &VesselDrivenResliceView::_setupRendererSlices);
 
@@ -333,7 +323,6 @@ mitk::PlaneGeometry* VesselDrivenResliceView::getPlaneGeometry(float t) const
 
 void VesselDrivenResliceView::_setResliceViewEnabled(bool enabled)
 {
-    MITK_INFO << "[VDRV] _setResliceViewEnabled(" << enabled << ")";
     d->sliceNumberSlider->setEnabled(enabled);
     d->renderWindow->setEnabled(enabled);
     d->renderWindow->setVisible(enabled);
@@ -343,10 +332,6 @@ void VesselDrivenResliceView::_setResliceViewEnabled(bool enabled)
 
 void VesselDrivenResliceView::currentNodeChanged(mitk::DataNode*)
 {
-    MITK_INFO << "[VDRV] currentNodeChanged node=" << (currentNode() ? currentNode()->GetName() : "NULL")
-              << " valid=" << _isCurrentVesselPathValid();
-
-    // Make windows visible FIRST so they acquire a non-zero size before geometry setup
     _setResliceViewEnabled(_isCurrentVesselPathValid());
 
     if (currentNode()) {
@@ -404,7 +389,6 @@ void VesselDrivenResliceView::forceReinitGeometry()
 
 void VesselDrivenResliceView::_setupRendererSlices()
 {
-    MITK_INFO << "[VDRV] _setupRendererSlices() called, valid=" << _isCurrentVesselPathValid();
     if (!_isCurrentVesselPathValid()) {
         return;
     }
@@ -412,7 +396,6 @@ void VesselDrivenResliceView::_setupRendererSlices()
     auto vesselPath = static_cast<crimson::VesselPathAbstractData*>(currentNode()->GetData());
 
     if (!vesselPath || vesselPath->controlPointsCount() == 0) {
-        MITK_INFO << "[VDRV] _setupRendererSlices() early return: no vessel path or 0 control points";
         return;
     }
 
@@ -424,36 +407,27 @@ void VesselDrivenResliceView::_setupRendererSlices()
     unsigned int timeSteps;
 
     std::tie(paramDelta, referenceImageSpacing, timeSteps) = crimson::VascularModelingUtils::getResliceGeometryParameters(currentNode());
-//    mitk::TimeBounds timeBounds;
-//    timeBounds[0] = 0;
-//    timeBounds[1] = 0;
 
     mitk::DataNode::Pointer imageNode = crimson::HierarchyManager::getInstance()->getAncestor(currentNode(), crimson::VascularModelingNodeTypes::Image());
 
     if (imageNode.IsNotNull()) {
         imageNode->SetBoolProperty("in plane resample extent by geometry", true, d->renderWindow->GetRenderer());
         imageNode->AddProperty("reslice interpolation", mitk::VtkResliceInterpolationProperty::New(VTK_RESLICE_CUBIC), d->renderWindow->GetRenderer(), true);
+        imageNode->SetVisibility(true, d->renderWindow->GetRenderer());
+
+        imageNode->SetBoolProperty("in plane resample extent by geometry", true, d->renderWindowGradMag->GetRenderer());
+        imageNode->AddProperty("reslice interpolation", mitk::VtkResliceInterpolationProperty::New(VTK_RESLICE_CUBIC), d->renderWindowGradMag->GetRenderer(), true);
         imageNode->SetBoolProperty("show gradient magnitude", true, d->renderWindowGradMag->GetRenderer());
+        imageNode->SetVisibility(true, d->renderWindowGradMag->GetRenderer());
     }
 
     auto vesselDrivenGeometry = crimson::VesselDrivenSlicedGeometry::New();
     vesselDrivenGeometry->InitializedVesselDrivenSlicedGeometry(vesselPath, paramDelta, referenceImageSpacing, resliceWindowSize);
-    
-    // TODO: check on time-resolved image data
-    // vesselDrivenGeometry->SetTimeBounds(timeBounds);
 
     mitk::ProportionalTimeGeometry::Pointer timeGeometry = mitk::ProportionalTimeGeometry::New();
     timeGeometry->Initialize(vesselDrivenGeometry, timeSteps);
 
-    // Access the saved Id here because the geometry setup will trigger Stepper's modify function to be called
     mitk::Point3D savedSlicePos = d->savedSlicePositions.value(currentNode(), vesselPath->getPosition(0));
-
-    mitk::TimeNavigationController* tnc = mitk::RenderingManager::GetInstance()->GetTimeNavigationController();
-    unsigned int currentGeometryTime = tnc->GetStepper()->GetPos();
-
-    MITK_INFO << "[VDRV] geometry: slices=" << vesselDrivenGeometry->GetSlices()
-              << " timeSteps=" << timeSteps
-              << " ctrlPts=" << vesselPath->controlPointsCount();
 
     mitk::SliceNavigationController* snc = d->renderWindow->GetRenderer()->GetSliceNavigationController();
     snc->SetInputWorldTimeGeometry(timeGeometry);
@@ -467,60 +441,13 @@ void VesselDrivenResliceView::_setupRendererSlices()
     snc->SetDefaultViewDirection(mitk::AnatomicalPlane::Original);
     snc->Update();
 
-    tnc->GetStepper()->SetPos(currentGeometryTime);
-
     navigateTo(savedSlicePos);
 
-    int* sz = d->renderWindow->GetVtkRenderWindow()->GetSize();
-    MITK_INFO << "[VDRV] after snc->Update: rwSize=" << sz[0] << "x" << sz[1]
-              << " visible=" << d->renderWindow->isVisible();
+    d->renderWindow->GetRenderer()->GetCameraController()->Fit();
+    d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
 
-    if (sz[0] > 0 && sz[1] > 0) {
-        d->renderWindow->GetRenderer()->GetCameraController()->Fit();
-        d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
-
-        // DIAGNOSTIC: set background to red to test if VTK rendering works
-        d->renderWindow->GetRenderer()->GetVtkRenderer()->SetBackground(1.0, 0.0, 0.0);
-        d->renderWindowGradMag->GetRenderer()->GetVtkRenderer()->SetBackground(0.0, 0.0, 1.0);
-
-        d->renderWindow->GetRenderer()->ForceImmediateUpdate();
-        d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
-
-        // DIAGNOSTIC: log VTK state after render
-        vtkRenderer* vr = d->renderWindow->GetRenderer()->GetVtkRenderer();
-        int nProps = vr->GetViewProps() ? vr->GetViewProps()->GetNumberOfItems() : 0;
-        double* camPos = vr->GetActiveCamera()->GetPosition();
-        double* camFoc = vr->GetActiveCamera()->GetFocalPoint();
-        double pScale = vr->GetActiveCamera()->GetParallelScale();
-        MITK_INFO << "[VDRV] VTK state: props=" << nProps
-                  << " camPos=(" << camPos[0] << "," << camPos[1] << "," << camPos[2] << ")"
-                  << " camFocal=(" << camFoc[0] << "," << camFoc[1] << "," << camFoc[2] << ")"
-                  << " parallelScale=" << pScale
-                  << " parallelProj=" << vr->GetActiveCamera()->GetParallelProjection();
-
-        auto planeGeo = d->renderWindow->GetRenderer()->GetCurrentWorldPlaneGeometry();
-        if (planeGeo) {
-            auto origin = planeGeo->GetOrigin();
-            MITK_INFO << "[VDRV] planeGeo origin=(" << origin[0] << "," << origin[1] << "," << origin[2] << ")"
-                      << " extentMM=(" << planeGeo->GetExtentInMM(0) << "," << planeGeo->GetExtentInMM(1) << ")";
-        } else {
-            MITK_INFO << "[VDRV] planeGeo is NULL!";
-        }
-
-        // DIAGNOSTIC: check visibility of ALL data nodes for our renderer
-        mitk::DataStorage::Pointer ds = GetDataStorage();
-        if (ds.IsNotNull()) {
-            mitk::DataStorage::SetOfObjects::ConstPointer allNodes = ds->GetAll();
-            for (auto it = allNodes->Begin(); it != allNodes->End(); ++it) {
-                mitk::DataNode::Pointer node = it->Value();
-                bool vis = false;
-                node->GetVisibility(vis, d->renderWindow->GetRenderer());
-                std::string className = node->GetData() ? node->GetData()->GetNameOfClass() : "no-data";
-                MITK_INFO << "[VDRV] node='" << node->GetName() << "' class=" << className
-                          << " visible=" << vis;
-            }
-        }
-    }
+    d->renderWindow->GetRenderer()->ForceImmediateUpdate();
+    d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
 }
 
 void VesselDrivenResliceView::_setSliceNumber(double slice)
