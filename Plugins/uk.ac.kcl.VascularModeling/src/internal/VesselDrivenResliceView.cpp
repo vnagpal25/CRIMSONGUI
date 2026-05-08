@@ -13,6 +13,7 @@
 #include <mitkTimeNavigationController.h>
 #include <mitkAnatomicalPlanes.h>
 #include <mitkRenderingManager.h>
+#include <mitkLog.h>
 
 // Qt
 #include "QmitkRenderWindow.h"
@@ -330,6 +331,9 @@ mitk::PlaneGeometry* VesselDrivenResliceView::getPlaneGeometry(float t) const
 void VesselDrivenResliceView::_setResliceViewEnabled(bool enabled)
 {
     bool wasHidden = !d->renderWindow->isVisible();
+    int* sz1 = d->renderWindow->GetVtkRenderWindow()->GetSize();
+    MITK_INFO << "[VDRV] _setResliceViewEnabled(" << enabled << ") wasHidden=" << wasHidden
+              << " rwSize=" << sz1[0] << "x" << sz1[1];
     d->sliceNumberSlider->setEnabled(enabled);
     d->renderWindow->setEnabled(enabled);
     d->renderWindow->setVisible(enabled);
@@ -339,6 +343,8 @@ void VesselDrivenResliceView::_setResliceViewEnabled(bool enabled)
     if (enabled && wasHidden) {
         QTimer::singleShot(50, [this]() {
             if (_isCurrentVesselPathValid()) {
+                int* s = d->renderWindow->GetVtkRenderWindow()->GetSize();
+                MITK_INFO << "[VDRV] deferred(50ms) ForceImmediateUpdate size=" << s[0] << "x" << s[1];
                 d->renderWindow->GetRenderer()->ForceImmediateUpdate();
                 d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
             }
@@ -348,6 +354,8 @@ void VesselDrivenResliceView::_setResliceViewEnabled(bool enabled)
 
 void VesselDrivenResliceView::currentNodeChanged(mitk::DataNode*)
 {
+    MITK_INFO << "[VDRV] currentNodeChanged node=" << (currentNode() ? currentNode()->GetName() : "NULL")
+              << " valid=" << _isCurrentVesselPathValid();
     if (currentNode()) {
         currentNode()->SetIntProperty("vesselpath.line_width", 4, d->renderWindow->GetRenderer());
         currentNode()->SetIntProperty("vesselpath.selected_line_width", 4, d->renderWindow->GetRenderer());
@@ -404,6 +412,7 @@ void VesselDrivenResliceView::forceReinitGeometry()
 
 void VesselDrivenResliceView::_setupRendererSlices()
 {
+    MITK_INFO << "[VDRV] _setupRendererSlices() called, valid=" << _isCurrentVesselPathValid();
     if (!_isCurrentVesselPathValid()) {
         return;
     }
@@ -411,6 +420,7 @@ void VesselDrivenResliceView::_setupRendererSlices()
     auto vesselPath = static_cast<crimson::VesselPathAbstractData*>(currentNode()->GetData());
 
     if (!vesselPath || vesselPath->controlPointsCount() == 0) {
+        MITK_INFO << "[VDRV] _setupRendererSlices() early return: no vessel path or 0 control points";
         return;
     }
 
@@ -449,6 +459,10 @@ void VesselDrivenResliceView::_setupRendererSlices()
     mitk::TimeNavigationController* tnc = mitk::RenderingManager::GetInstance()->GetTimeNavigationController();
     unsigned int currentGeometryTime = tnc->GetStepper()->GetPos();
 
+    MITK_INFO << "[VDRV] geometry: slices=" << vesselDrivenGeometry->GetSlices()
+              << " timeSteps=" << timeSteps
+              << " ctrlPts=" << vesselPath->controlPointsCount();
+
     mitk::SliceNavigationController* snc = d->renderWindow->GetRenderer()->GetSliceNavigationController();
     snc->SetInputWorldTimeGeometry(timeGeometry);
     snc->SetViewDirection(mitk::AnatomicalPlane::Original);
@@ -468,6 +482,16 @@ void VesselDrivenResliceView::_setupRendererSlices()
     d->renderWindow->GetRenderer()->GetCameraController()->Fit();
     d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
 
+    int* sz1 = d->renderWindow->GetVtkRenderWindow()->GetSize();
+    int* sz2 = d->renderWindowGradMag->GetVtkRenderWindow()->GetSize();
+    auto* planeGeo = d->renderWindow->GetRenderer()->GetCurrentWorldPlaneGeometry();
+    auto* worldGeo = d->renderWindow->GetRenderer()->GetCurrentWorldGeometry();
+    MITK_INFO << "[VDRV] before ForceImmediateUpdate: rw1=" << sz1[0] << "x" << sz1[1]
+              << " rw2=" << sz2[0] << "x" << sz2[1]
+              << " planeGeo=" << (planeGeo ? "valid" : "NULL")
+              << " worldGeo=" << (worldGeo ? "valid" : "NULL")
+              << " visible=" << d->renderWindow->isVisible();
+
     d->renderWindow->GetRenderer()->ForceImmediateUpdate();
     d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
 
@@ -476,12 +500,18 @@ void VesselDrivenResliceView::_setupRendererSlices()
 
     QTimer::singleShot(0, [this]() {
         if (_isCurrentVesselPathValid()) {
+            int* s = d->renderWindow->GetVtkRenderWindow()->GetSize();
+            MITK_INFO << "[VDRV] deferred(0ms) ForceImmediateUpdate size=" << s[0] << "x" << s[1]
+                      << " visible=" << d->renderWindow->isVisible();
             d->renderWindow->GetRenderer()->ForceImmediateUpdate();
             d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
         }
     });
     QTimer::singleShot(100, [this]() {
         if (_isCurrentVesselPathValid()) {
+            int* s = d->renderWindow->GetVtkRenderWindow()->GetSize();
+            MITK_INFO << "[VDRV] deferred(100ms) ForceImmediateUpdate size=" << s[0] << "x" << s[1]
+                      << " visible=" << d->renderWindow->isVisible();
             d->renderWindow->GetRenderer()->ForceImmediateUpdate();
             d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
         }
