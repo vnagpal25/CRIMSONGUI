@@ -5,6 +5,7 @@
 #include "VascularModelingNodeTypes.h"
 
 #include <vtkParametricSplineVesselPathData.h>
+#include <vtkParametricSplineVesselPathVtkMapper3D.h>
 #include <mitkVtkResliceInterpolationProperty.h>
 #include <mitkNodePredicateDataType.h>
 
@@ -80,6 +81,21 @@ void configureOverlayNodeForReslice(mitk::DataNode* node, QmitkRenderWindow* ren
     }
 
     node->SetVisibility(visible, renderWindow->GetRenderer());
+}
+
+void ensureVesselPathMapper(mitk::DataNode* node)
+{
+    if (!node || !dynamic_cast<vtkParametricSplineVesselPathData*>(node->GetData())) {
+        return;
+    }
+
+    if (dynamic_cast<crimson::vtkParametricSplineVesselPathVtkMapper3D*>(node->GetMapper(mitk::BaseRenderer::Standard2D))) {
+        return;
+    }
+
+    auto mapper = crimson::vtkParametricSplineVesselPathVtkMapper3D::New();
+    mapper->SetDataNode(node);
+    node->SetMapper(mitk::BaseRenderer::Standard2D, mapper.GetPointer());
 }
 
 const char* mapperName(mitk::DataNode* node)
@@ -535,6 +551,7 @@ void VesselDrivenResliceView::_setupRendererSlices()
 
     configureOverlayNodeForReslice(currentNode(), d->renderWindow, true);
     configureOverlayNodeForReslice(currentNode(), d->renderWindowGradMag, true);
+    ensureVesselPathMapper(currentNode());
 
     mitk::DataStorage::SetOfObjects::ConstPointer contourNodes = crimson::VascularModelingUtils::getVesselContourNodes(currentNode());
     for (const mitk::DataNode::Pointer& contourNode : *contourNodes) {
