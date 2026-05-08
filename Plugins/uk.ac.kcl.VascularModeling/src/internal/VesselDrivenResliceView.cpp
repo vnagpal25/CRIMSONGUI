@@ -329,18 +329,26 @@ mitk::PlaneGeometry* VesselDrivenResliceView::getPlaneGeometry(float t) const
 
 void VesselDrivenResliceView::_setResliceViewEnabled(bool enabled)
 {
+    bool wasHidden = !d->renderWindow->isVisible();
     d->sliceNumberSlider->setEnabled(enabled);
     d->renderWindow->setEnabled(enabled);
     d->renderWindow->setVisible(enabled);
     d->renderWindowGradMag->setEnabled(enabled);
     d->renderWindowGradMag->setVisible(enabled);
+
+    if (enabled && wasHidden) {
+        QTimer::singleShot(50, [this]() {
+            if (_isCurrentVesselPathValid()) {
+                d->renderWindow->GetRenderer()->ForceImmediateUpdate();
+                d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
+            }
+        });
+    }
 }
 
 void VesselDrivenResliceView::currentNodeChanged(mitk::DataNode*)
 {
-    _setResliceViewEnabled(_isCurrentVesselPathValid());
     if (currentNode()) {
-        // As the current vessel path is always perpendicular to the view, increase the line width for better visibility
         currentNode()->SetIntProperty("vesselpath.line_width", 4, d->renderWindow->GetRenderer());
         currentNode()->SetIntProperty("vesselpath.selected_line_width", 4, d->renderWindow->GetRenderer());
         currentNode()->SetIntProperty("vesselpath.editing_line_width", 6, d->renderWindow->GetRenderer());
@@ -361,6 +369,7 @@ void VesselDrivenResliceView::currentNodeChanged(mitk::DataNode*)
     else {
         d->positionInMM->setText("0.00 mm");
     }
+    _setResliceViewEnabled(_isCurrentVesselPathValid());
     _updateGeometryNodeInDataStorage();
 }
 
@@ -443,11 +452,13 @@ void VesselDrivenResliceView::_setupRendererSlices()
     mitk::SliceNavigationController* snc = d->renderWindow->GetRenderer()->GetSliceNavigationController();
     snc->SetInputWorldTimeGeometry(timeGeometry);
     snc->SetViewDirection(mitk::AnatomicalPlane::Original);
+    snc->SetDefaultViewDirection(mitk::AnatomicalPlane::Original);
     snc->Update();
 
     snc = d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController();
     snc->SetInputWorldTimeGeometry(timeGeometry);
     snc->SetViewDirection(mitk::AnatomicalPlane::Original);
+    snc->SetDefaultViewDirection(mitk::AnatomicalPlane::Original);
     snc->Update();
 
     tnc->GetStepper()->SetPos(currentGeometryTime);
@@ -455,15 +466,21 @@ void VesselDrivenResliceView::_setupRendererSlices()
     navigateTo(savedSlicePos);
 
     d->renderWindow->GetRenderer()->GetCameraController()->Fit();
-	d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
+    d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
 
     d->renderWindow->GetRenderer()->ForceImmediateUpdate();
     d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
 
-    // VTK resize events (fired when the widget transitions from hidden to visible)
-    // bypass MITK PrepareRender() and can overwrite the frame we just rendered.
-    // Re-render once more after Qt has finished processing layout/resize events.
+    d->renderWindow->update();
+    d->renderWindowGradMag->update();
+
     QTimer::singleShot(0, [this]() {
+        if (_isCurrentVesselPathValid()) {
+            d->renderWindow->GetRenderer()->ForceImmediateUpdate();
+            d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
+        }
+    });
+    QTimer::singleShot(100, [this]() {
         if (_isCurrentVesselPathValid()) {
             d->renderWindow->GetRenderer()->ForceImmediateUpdate();
             d->renderWindowGradMag->GetRenderer()->ForceImmediateUpdate();
