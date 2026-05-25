@@ -781,6 +781,8 @@ void VesselDrivenResliceView::_setupRendererSlices()
         MITK_INFO << "VesselDrivenResliceView setup abort: vesselPath="
                   << (vesselPath ? "yes" : "no")
                   << ", controlPoints=" << (vesselPath ? vesselPath->controlPointsCount() : 0);
+        d->sliceNumberSlider->blockSignals(false);
+        d->settingUpRendererSlices = false;
         return;
     }
 
@@ -817,6 +819,9 @@ void VesselDrivenResliceView::_setupRendererSlices()
               << ", data=" << nodeDataClassName(imageNode.GetPointer());
 
     if (imageNode.IsNotNull()) {
+        logSetupCheckpoint("before configure sacrificial image node");
+        configureImageNodeForReslice(imageNode, d->sacrificialRenderWindow, false);
+        logSetupCheckpoint("after configure sacrificial image node");
         logSetupCheckpoint("before configure primary image node");
         configureImageNodeForReslice(imageNode, d->renderWindow, false);
         logSetupCheckpoint("after configure primary image node");
@@ -826,6 +831,7 @@ void VesselDrivenResliceView::_setupRendererSlices()
     }
 
     logSetupCheckpoint("before configure vessel overlays");
+    configureOverlayNodeForReslice(currentNode(), d->sacrificialRenderWindow, true);
     configureOverlayNodeForReslice(currentNode(), d->renderWindow, true);
     configureOverlayNodeForReslice(currentNode(), d->renderWindowGradMag, true);
     logSetupCheckpoint("after configure vessel overlays");
@@ -845,6 +851,7 @@ void VesselDrivenResliceView::_setupRendererSlices()
                       << "]: name=" << (contourNode.IsNotNull() ? contourNode->GetName() : std::string("null"))
                       << ", data=" << nodeDataClassName(contourNode.GetPointer())
                       << ", mapper=" << mapperName(contourNode.GetPointer());
+            configureOverlayNodeForReslice(contourNode, d->sacrificialRenderWindow, true);
             configureOverlayNodeForReslice(contourNode, d->renderWindow, true);
             configureOverlayNodeForReslice(contourNode, d->renderWindowGradMag, true);
             ++contourIndex;
@@ -863,6 +870,7 @@ void VesselDrivenResliceView::_setupRendererSlices()
         ensureSolidDataMapper(solidNode);
         MITK_INFO << "VesselDrivenResliceView setup solid: mapperAfterEnsure=" << mapperName(solidNode);
         logSetupCheckpoint("after ensureSolidDataMapper");
+        configureOverlayNodeForReslice(solidNode, d->sacrificialRenderWindow, true);
         configureOverlayNodeForReslice(solidNode, d->renderWindow, true);
         configureOverlayNodeForReslice(solidNode, d->renderWindowGradMag, true);
         logSetupCheckpoint("after solid visibility setup");
@@ -894,8 +902,24 @@ void VesselDrivenResliceView::_setupRendererSlices()
     MITK_INFO << "VesselDrivenResliceView setup saved slice pos: ["
               << savedSlicePos[0] << "," << savedSlicePos[1] << "," << savedSlicePos[2] << "]";
 
+    logSetupCheckpoint("before sacrificial SNC setup");
+    mitk::SliceNavigationController* snc = d->sacrificialRenderWindow->GetRenderer()->GetSliceNavigationController();
+    logSetupCheckpoint("sacrificial SNC before SetInputWorldTimeGeometry");
+    snc->SetInputWorldTimeGeometry(timeGeometry);
+    logSetupCheckpoint("sacrificial SNC after SetInputWorldTimeGeometry");
+    logSetupCheckpoint("sacrificial SNC before SetViewDirection");
+    snc->SetViewDirection(mitk::AnatomicalPlane::Original);
+    logSetupCheckpoint("sacrificial SNC after SetViewDirection");
+    logSetupCheckpoint("sacrificial SNC before SetDefaultViewDirection");
+    snc->SetDefaultViewDirection(mitk::AnatomicalPlane::Original);
+    logSetupCheckpoint("sacrificial SNC after SetDefaultViewDirection");
+    logSetupCheckpoint("sacrificial SNC before Update");
+    snc->Update();
+    logSetupCheckpoint("sacrificial SNC after Update");
+    logSetupCheckpoint("after sacrificial SNC setup");
+
     logSetupCheckpoint("before primary SNC setup");
-    mitk::SliceNavigationController* snc = d->renderWindow->GetRenderer()->GetSliceNavigationController();
+    snc = d->renderWindow->GetRenderer()->GetSliceNavigationController();
     logSetupCheckpoint("primary SNC before SetInputWorldTimeGeometry");
     snc->SetInputWorldTimeGeometry(timeGeometry);
     logSetupCheckpoint("primary SNC after SetInputWorldTimeGeometry");
@@ -931,19 +955,26 @@ void VesselDrivenResliceView::_setupRendererSlices()
     logSetupCheckpoint("after navigateTo saved position");
 
     logSetupCheckpoint("before SetWorldTimeGeometry/SetSlice");
+    d->sacrificialRenderWindow->GetRenderer()->SetWorldTimeGeometry(timeGeometry);
     d->renderWindow->GetRenderer()->SetWorldTimeGeometry(timeGeometry);
     d->renderWindowGradMag->GetRenderer()->SetWorldTimeGeometry(timeGeometry);
+    d->sacrificialRenderWindow->GetRenderer()->SetSlice(d->sacrificialRenderWindow->GetRenderer()->GetSliceNavigationController()->GetStepper()->GetPos());
     d->renderWindow->GetRenderer()->SetSlice(d->renderWindow->GetRenderer()->GetSliceNavigationController()->GetStepper()->GetPos());
     d->renderWindowGradMag->GetRenderer()->SetSlice(d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetStepper()->GetPos());
     logSetupCheckpoint("after SetWorldTimeGeometry/SetSlice");
 
     logSetupCheckpoint("before camera fit");
+    d->sacrificialRenderWindow->GetRenderer()->GetCameraController()->Fit();
     d->renderWindow->GetRenderer()->GetCameraController()->Fit();
     d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
+    d->sacrificialRenderWindow->GetRenderer()->GetVtkRenderer()->ResetCameraClippingRange();
     d->renderWindow->GetRenderer()->GetVtkRenderer()->ResetCameraClippingRange();
     d->renderWindowGradMag->GetRenderer()->GetVtkRenderer()->ResetCameraClippingRange();
     logSetupCheckpoint("after camera fit");
 
+    logSetupCheckpoint("before ForceImmediateUpdate sacrificial");
+    forceImmediateMitkRender(d->sacrificialRenderWindow);
+    logSetupCheckpoint("after ForceImmediateUpdate sacrificial");
     logSetupCheckpoint("before ForceImmediateUpdate primary");
     forceImmediateMitkRender(d->renderWindow);
     logSetupCheckpoint("after ForceImmediateUpdate primary");
@@ -952,14 +983,17 @@ void VesselDrivenResliceView::_setupRendererSlices()
     logSetupCheckpoint("after ForceImmediateUpdate gradient");
 
     logSetupCheckpoint("before final diagnostic logs");
+    logResliceRendererState("sacrificial", d->sacrificialRenderWindow, imageNode.GetPointer(), currentNode(), contourNodes.GetPointer(), solidNode);
     logResliceRendererState("primary", d->renderWindow, imageNode.GetPointer(), currentNode(), contourNodes.GetPointer(), solidNode);
     logResliceRendererState("gradient", d->renderWindowGradMag, imageNode.GetPointer(), currentNode(), contourNodes.GetPointer(), solidNode);
     logResliceWindowLayout("sacrificial", d->sacrificialRenderWindow);
     logResliceWindowLayout("primary", d->renderWindow);
     logResliceWindowLayout("gradient", d->renderWindowGradMag);
+    logResliceGeometryState("sacrificial", d->sacrificialRenderWindow);
     logResliceGeometryState("primary", d->renderWindow);
     logResliceGeometryState("gradient", d->renderWindowGradMag);
     logFirstContourState("first", contourNodes.GetPointer());
+    logFramebufferState("sacrificial", d->sacrificialRenderWindow);
     logFramebufferState("primary", d->renderWindow);
     logFramebufferState("gradient", d->renderWindowGradMag);
     d->sliceNumberSlider->blockSignals(false);
