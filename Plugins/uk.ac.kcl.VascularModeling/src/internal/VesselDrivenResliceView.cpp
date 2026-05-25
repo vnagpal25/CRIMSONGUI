@@ -488,6 +488,7 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
     d->sacrificialRenderWindow->GetRenderer()->SetDataStorage(GetDataStorage());
     d->sacrificialRenderWindow->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->sacrificialRenderWindow->setFixedWidth(1);
+    d->sacrificialRenderWindow->setFocusPolicy(Qt::NoFocus);
     renderWindowsLayout->addWidget(d->sacrificialRenderWindow);
 
     d->renderWindow = new QmitkRenderWindow(parent, QStringLiteral("reslicer grad mag"));
@@ -588,7 +589,7 @@ mitk::PlaneGeometry* VesselDrivenResliceView::getPlaneGeometry(float t) const
 void VesselDrivenResliceView::_setResliceViewEnabled(bool enabled)
 {
     d->sliceNumberSlider->setEnabled(enabled);
-    d->sacrificialRenderWindow->setEnabled(false);
+    d->sacrificialRenderWindow->setEnabled(enabled);
     d->sacrificialRenderWindow->setVisible(enabled);
     d->renderWindow->setEnabled(enabled);
     d->renderWindow->setVisible(enabled);
@@ -612,6 +613,12 @@ void VesselDrivenResliceView::currentNodeChanged(mitk::DataNode*)
 
         float resliceWindowSize = 50;
         currentNode()->GetFloatProperty("reslice.windowSize", resliceWindowSize);
+        if (resliceWindowSize < 25.0f) {
+            MITK_INFO << "VesselDrivenResliceView reslice.windowSize too small on node; raw="
+                      << resliceWindowSize << ", using=50";
+            resliceWindowSize = 50.0f;
+            currentNode()->SetFloatProperty("reslice.windowSize", resliceWindowSize);
+        }
         d->resliceWindowSizeSpinBox->blockSignals(true);
         d->resliceWindowSizeSpinBox->setValue(resliceWindowSize);
         d->resliceWindowSizeSpinBox->blockSignals(false);
@@ -665,8 +672,15 @@ void VesselDrivenResliceView::_setupRendererSlices()
         return;
     }
 
-    float resliceWindowSize = 50;
-    currentNode()->GetFloatProperty("reslice.windowSize", resliceWindowSize);
+    float rawResliceWindowSize = 50;
+    currentNode()->GetFloatProperty("reslice.windowSize", rawResliceWindowSize);
+    float resliceWindowSize = rawResliceWindowSize;
+    if (resliceWindowSize < 25.0f) {
+        resliceWindowSize = 50.0f;
+        currentNode()->SetFloatProperty("reslice.windowSize", resliceWindowSize);
+    }
+    MITK_INFO << "VesselDrivenResliceView reslice size: raw=" << rawResliceWindowSize
+              << ", effective=" << resliceWindowSize;
 
     mitk::ScalarType paramDelta;
     mitk::Vector3D referenceImageSpacing;
