@@ -6,6 +6,8 @@
 
 #include <vtkParametricSplineVesselPathData.h>
 #include <vtkParametricSplineVesselPathVtkMapper3D.h>
+#include <SolidData.h>
+#include <SolidDataMapper.h>
 #include <mitkVtkResliceInterpolationProperty.h>
 #include <mitkNodePredicateDataType.h>
 
@@ -40,6 +42,9 @@
 #include <berryIPartListener.h>
 #include <berryIWorkbenchWindow.h>
 #include <berryIWorkbenchPage.h>
+
+#include <algorithm>
+#include <vector>
 
 namespace {
 
@@ -96,6 +101,21 @@ void ensureVesselPathMapper(mitk::DataNode* node)
     }
 
     auto mapper = crimson::vtkParametricSplineVesselPathVtkMapper3D::New();
+    mapper->SetDataNode(node);
+    node->SetMapper(mitk::BaseRenderer::Standard2D, mapper.GetPointer());
+}
+
+void ensureSolidDataMapper(mitk::DataNode* node)
+{
+    if (!node || !dynamic_cast<crimson::SolidData*>(node->GetData())) {
+        return;
+    }
+
+    if (dynamic_cast<crimson::SolidDataMapper2D*>(node->GetMapper(mitk::BaseRenderer::Standard2D))) {
+        return;
+    }
+
+    auto mapper = crimson::SolidDataMapper2D::New();
     mapper->SetDataNode(node);
     node->SetMapper(mitk::BaseRenderer::Standard2D, mapper.GetPointer());
 }
@@ -278,6 +298,53 @@ void logResliceGeometryState(const char* label, QmitkRenderWindow* renderWindow)
               << ", spacing=[" << spacing[0] << "," << spacing[1] << "," << spacing[2] << "]"
               << ", origin=[" << origin[0] << "," << origin[1] << "," << origin[2] << "]"
               << ", normal=[" << normal[0] << "," << normal[1] << "," << normal[2] << "]";
+}
+
+void logFramebufferState(const char* label, QmitkRenderWindow* renderWindow)
+{
+    if (!renderWindow || !renderWindow->GetVtkRenderWindow()) {
+        return;
+    }
+
+    vtkRenderWindow* vtkWindow = renderWindow->GetVtkRenderWindow();
+    int* size = vtkWindow->GetSize();
+    if (!size || size[0] <= 0 || size[1] <= 0) {
+        MITK_INFO << "VesselDrivenResliceView framebuffer " << label << ": empty window";
+        return;
+    }
+
+    const int width = size[0];
+    const int height = size[1];
+    std::vector<unsigned char> pixels(static_cast<size_t>(width) * height * 4);
+    vtkWindow->GetRGBACharPixelData(0, 0, width - 1, height - 1, 0, pixels.data());
+
+    int nonBlack = 0;
+    int minX = width;
+    int minY = height;
+    int maxX = -1;
+    int maxY = -1;
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            const size_t offset = (static_cast<size_t>(y) * width + x) * 4;
+            const int r = pixels[offset];
+            const int g = pixels[offset + 1];
+            const int b = pixels[offset + 2];
+            if (r + g + b > 12) {
+                ++nonBlack;
+                minX = std::min(minX, x);
+                minY = std::min(minY, y);
+                maxX = std::max(maxX, x);
+                maxY = std::max(maxY, y);
+            }
+        }
+    }
+
+    const double percent = 100.0 * nonBlack / static_cast<double>(width * height);
+    MITK_INFO << "VesselDrivenResliceView framebuffer " << label
+              << ": size=" << width << "x" << height
+              << ", nonBlackPixels=" << nonBlack
+              << ", nonBlackPercent=" << percent
+              << ", bbox=[" << minX << "," << minY << "," << maxX << "," << maxY << "]";
 }
 
 } // namespace
@@ -491,13 +558,13 @@ void VesselDrivenResliceView::CreateQtPartControl(QWidget *parent)
     d->sacrificialRenderWindow->setFocusPolicy(Qt::NoFocus);
     renderWindowsLayout->addWidget(d->sacrificialRenderWindow);
 
-    d->renderWindow = new QmitkRenderWindow(parent, QStringLiteral("reslicer grad mag"));
+    d->renderWindow = new QmitkRenderWindow(parent, QStringLiteral("reslicer"));
     d->renderWindow->GetRenderer()->SetDataStorage(GetDataStorage());
     d->renderWindow->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->renderWindow->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     renderWindowsLayout->addWidget(d->renderWindow);
 
-    d->renderWindowGradMag = new QmitkRenderWindow(parent, QStringLiteral("reslicer"));
+    d->renderWindowGradMag = new QmitkRenderWindow(parent, QStringLiteral("reslicer grad mag"));
     d->renderWindowGradMag->GetRenderer()->SetDataStorage(GetDataStorage());
     d->renderWindowGradMag->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
     d->renderWindowGradMag->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -707,6 +774,7 @@ void VesselDrivenResliceView::_setupRendererSlices()
 
     mitk::DataNode* solidNode = crimson::VascularModelingUtils::getVesselSolidModelNode(currentNode());
     if (solidNode) {
+        ensureSolidDataMapper(solidNode);
         configureOverlayNodeForReslice(solidNode, d->renderWindow, true);
         configureOverlayNodeForReslice(solidNode, d->renderWindowGradMag, true);
     }
@@ -757,6 +825,8 @@ void VesselDrivenResliceView::_setupRendererSlices()
     logResliceGeometryState("primary", d->renderWindow);
     logResliceGeometryState("gradient", d->renderWindowGradMag);
     logFirstContourState("first", contourNodes.GetPointer());
+    logFramebufferState("primary", d->renderWindow);
+    logFramebufferState("gradient", d->renderWindowGradMag);
 }
 
 void VesselDrivenResliceView::_setSliceNumber(double slice)
