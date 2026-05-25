@@ -50,6 +50,25 @@
 
 namespace {
 
+const char* yesNo(bool value)
+{
+    return value ? "yes" : "no";
+}
+
+const char* nodeDataClassName(mitk::DataNode* node)
+{
+    if (!node || !node->GetData()) {
+        return "none";
+    }
+
+    return node->GetData()->GetNameOfClass();
+}
+
+void logSetupCheckpoint(const char* step)
+{
+    MITK_INFO << "VesselDrivenResliceView setup checkpoint: " << step;
+}
+
 void forceImmediateMitkRender(QmitkRenderWindow* renderWindow)
 {
     if (!renderWindow || !renderWindow->GetVtkRenderWindow()) {
@@ -205,15 +224,15 @@ void logResliceRendererState(const char* label,
               << ", slice=" << (stepper ? stepper->GetPos() : 0)
               << ", steps=" << (stepper ? stepper->GetSteps() : 0)
               << ", vtkProps=" << renderer->GetVtkRenderer()->GetViewProps()->GetNumberOfItems()
-              << ", imageVisible=" << (imageVisible ? "yes" : "no")
+              << ", imageVisible=" << yesNo(imageVisible)
               << ", imageMapper=" << mapperName(imageNode)
               << ", showGradient=" << boolPropertyState(imageNode, "show gradient magnitude", renderer)
               << ", showGradientDirect=" << directBoolPropertyState(imageNode, "show gradient magnitude", renderer)
-              << ", vesselVisible=" << (vesselVisible ? "yes" : "no")
+              << ", vesselVisible=" << yesNo(vesselVisible)
               << ", vesselMapper=" << mapperName(vesselNode)
               << ", contoursVisible=" << visibleContours << "/" << (contourNodes ? contourNodes->size() : 0)
               << ", firstContourMapper=" << mapperName(firstContourNode)
-              << ", solidVisible=" << (solidVisible ? "yes" : "no")
+              << ", solidVisible=" << yesNo(solidVisible)
               << ", solidMapper=" << mapperName(solidNode);
 }
 
@@ -676,6 +695,10 @@ void VesselDrivenResliceView::currentNodeChanged(mitk::DataNode*)
     _setResliceViewEnabled(_isCurrentVesselPathValid());
 
     if (currentNode()) {
+        MITK_INFO << "VesselDrivenResliceView currentNodeChanged: node=" << currentNode()->GetName()
+                  << ", data=" << nodeDataClassName(currentNode())
+                  << ", valid=" << yesNo(_isCurrentVesselPathValid());
+
         currentNode()->SetIntProperty("vesselpath.line_width", 4, d->renderWindow->GetRenderer());
         currentNode()->SetIntProperty("vesselpath.selected_line_width", 4, d->renderWindow->GetRenderer());
         currentNode()->SetIntProperty("vesselpath.editing_line_width", 6, d->renderWindow->GetRenderer());
@@ -736,15 +759,26 @@ void VesselDrivenResliceView::forceReinitGeometry()
 
 void VesselDrivenResliceView::_setupRendererSlices()
 {
+    logSetupCheckpoint("enter");
+
     if (!_isCurrentVesselPathValid()) {
+        logSetupCheckpoint("abort invalid current vessel path");
         return;
     }
 
     auto vesselPath = static_cast<crimson::VesselPathAbstractData*>(currentNode()->GetData());
 
     if (!vesselPath || vesselPath->controlPointsCount() == 0) {
+        MITK_INFO << "VesselDrivenResliceView setup abort: vesselPath="
+                  << (vesselPath ? "yes" : "no")
+                  << ", controlPoints=" << (vesselPath ? vesselPath->controlPointsCount() : 0);
         return;
     }
+
+    MITK_INFO << "VesselDrivenResliceView setup vessel: node=" << currentNode()->GetName()
+              << ", data=" << nodeDataClassName(currentNode())
+              << ", controlPoints=" << vesselPath->controlPointsCount()
+              << ", parametricLength=" << vesselPath->getParametricLength();
 
     float rawResliceWindowSize = 50;
     currentNode()->GetFloatProperty("reslice.windowSize", rawResliceWindowSize);
@@ -760,70 +794,139 @@ void VesselDrivenResliceView::_setupRendererSlices()
     mitk::Vector3D referenceImageSpacing;
     unsigned int timeSteps;
 
+    logSetupCheckpoint("before getResliceGeometryParameters");
     std::tie(paramDelta, referenceImageSpacing, timeSteps) = crimson::VascularModelingUtils::getResliceGeometryParameters(currentNode());
+    MITK_INFO << "VesselDrivenResliceView setup geometry parameters: paramDelta=" << paramDelta
+              << ", referenceImageSpacing=[" << referenceImageSpacing[0] << ","
+              << referenceImageSpacing[1] << "," << referenceImageSpacing[2] << "]"
+              << ", timeSteps=" << timeSteps;
 
+    logSetupCheckpoint("before image ancestor lookup");
     mitk::DataNode::Pointer imageNode = crimson::HierarchyManager::getInstance()->getAncestor(currentNode(), crimson::VascularModelingNodeTypes::Image());
+    MITK_INFO << "VesselDrivenResliceView setup image ancestor: exists=" << yesNo(imageNode.IsNotNull())
+              << ", name=" << (imageNode.IsNotNull() ? imageNode->GetName() : std::string("none"))
+              << ", data=" << nodeDataClassName(imageNode.GetPointer());
 
     if (imageNode.IsNotNull()) {
+        logSetupCheckpoint("before configure primary image node");
         configureImageNodeForReslice(imageNode, d->renderWindow, false);
+        logSetupCheckpoint("after configure primary image node");
+        logSetupCheckpoint("before configure gradient image node");
         configureImageNodeForReslice(imageNode, d->renderWindowGradMag, true);
+        logSetupCheckpoint("after configure gradient image node");
     }
 
+    logSetupCheckpoint("before configure vessel overlays");
     configureOverlayNodeForReslice(currentNode(), d->renderWindow, true);
     configureOverlayNodeForReslice(currentNode(), d->renderWindowGradMag, true);
+    logSetupCheckpoint("after configure vessel overlays");
+
+    logSetupCheckpoint("before ensureVesselPathMapper");
     ensureVesselPathMapper(currentNode());
+    logSetupCheckpoint("after ensureVesselPathMapper");
 
+    logSetupCheckpoint("before contour lookup");
     mitk::DataStorage::SetOfObjects::ConstPointer contourNodes = crimson::VascularModelingUtils::getVesselContourNodes(currentNode());
-    for (const mitk::DataNode::Pointer& contourNode : *contourNodes) {
-        configureOverlayNodeForReslice(contourNode, d->renderWindow, true);
-        configureOverlayNodeForReslice(contourNode, d->renderWindowGradMag, true);
+    MITK_INFO << "VesselDrivenResliceView setup contours: exists=" << yesNo(contourNodes.IsNotNull())
+              << ", count=" << (contourNodes.IsNotNull() ? contourNodes->size() : 0);
+    if (contourNodes.IsNotNull()) {
+        unsigned int contourIndex = 0;
+        for (const mitk::DataNode::Pointer& contourNode : *contourNodes) {
+            MITK_INFO << "VesselDrivenResliceView setup contour[" << contourIndex
+                      << "]: name=" << (contourNode.IsNotNull() ? contourNode->GetName() : std::string("null"))
+                      << ", data=" << nodeDataClassName(contourNode.GetPointer())
+                      << ", mapper=" << mapperName(contourNode.GetPointer());
+            configureOverlayNodeForReslice(contourNode, d->renderWindow, true);
+            configureOverlayNodeForReslice(contourNode, d->renderWindowGradMag, true);
+            ++contourIndex;
+        }
     }
+    logSetupCheckpoint("after contour visibility setup");
 
+    logSetupCheckpoint("before solid lookup");
     mitk::DataNode* solidNode = crimson::VascularModelingUtils::getVesselSolidModelNode(currentNode());
+    MITK_INFO << "VesselDrivenResliceView setup solid: exists=" << yesNo(solidNode != nullptr)
+              << ", name=" << (solidNode ? solidNode->GetName() : std::string("none"))
+              << ", data=" << nodeDataClassName(solidNode)
+              << ", mapperBefore=" << mapperName(solidNode);
     if (solidNode) {
+        logSetupCheckpoint("before ensureSolidDataMapper");
         ensureSolidDataMapper(solidNode);
+        MITK_INFO << "VesselDrivenResliceView setup solid: mapperAfterEnsure=" << mapperName(solidNode);
+        logSetupCheckpoint("after ensureSolidDataMapper");
         configureOverlayNodeForReslice(solidNode, d->renderWindow, true);
         configureOverlayNodeForReslice(solidNode, d->renderWindowGradMag, true);
+        logSetupCheckpoint("after solid visibility setup");
     }
 
+    logSetupCheckpoint("before VesselDrivenSlicedGeometry::New");
     auto vesselDrivenGeometry = crimson::VesselDrivenSlicedGeometry::New();
+    logSetupCheckpoint("after VesselDrivenSlicedGeometry::New");
+    logSetupCheckpoint("before InitializedVesselDrivenSlicedGeometry");
     vesselDrivenGeometry->InitializedVesselDrivenSlicedGeometry(vesselPath, paramDelta, referenceImageSpacing, resliceWindowSize);
-    for (unsigned int slice = 0; slice < vesselDrivenGeometry->GetSlices(); ++slice) {
-        vesselDrivenGeometry->GetPlaneGeometry(slice);
-    }
+    MITK_INFO << "VesselDrivenResliceView setup vessel geometry: slices=" << vesselDrivenGeometry->GetSlices();
+    logSetupCheckpoint("after InitializedVesselDrivenSlicedGeometry");
 
+    logSetupCheckpoint("before prebuild plane geometries");
+    for (unsigned int slice = 0; slice < vesselDrivenGeometry->GetSlices(); ++slice) {
+        auto plane = vesselDrivenGeometry->GetPlaneGeometry(slice);
+        if (!plane && (slice == 0 || slice + 1 == vesselDrivenGeometry->GetSlices())) {
+            MITK_INFO << "VesselDrivenResliceView setup plane prebuild failed: slice=" << slice;
+        }
+    }
+    logSetupCheckpoint("after prebuild plane geometries");
+
+    logSetupCheckpoint("before proportional time geometry");
     mitk::ProportionalTimeGeometry::Pointer timeGeometry = mitk::ProportionalTimeGeometry::New();
     timeGeometry->Initialize(vesselDrivenGeometry, timeSteps);
+    logSetupCheckpoint("after proportional time geometry");
 
     mitk::Point3D savedSlicePos = d->savedSlicePositions.value(currentNode(), vesselPath->getPosition(0));
+    MITK_INFO << "VesselDrivenResliceView setup saved slice pos: ["
+              << savedSlicePos[0] << "," << savedSlicePos[1] << "," << savedSlicePos[2] << "]";
 
+    logSetupCheckpoint("before primary SNC setup");
     mitk::SliceNavigationController* snc = d->renderWindow->GetRenderer()->GetSliceNavigationController();
     snc->SetInputWorldTimeGeometry(timeGeometry);
     snc->SetViewDirection(mitk::AnatomicalPlane::Original);
     snc->SetDefaultViewDirection(mitk::AnatomicalPlane::Original);
     snc->Update();
+    logSetupCheckpoint("after primary SNC setup");
 
+    logSetupCheckpoint("before gradient SNC setup");
     snc = d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController();
     snc->SetInputWorldTimeGeometry(timeGeometry);
     snc->SetViewDirection(mitk::AnatomicalPlane::Original);
     snc->SetDefaultViewDirection(mitk::AnatomicalPlane::Original);
     snc->Update();
+    logSetupCheckpoint("after gradient SNC setup");
 
+    logSetupCheckpoint("before navigateTo saved position");
     navigateTo(savedSlicePos);
+    logSetupCheckpoint("after navigateTo saved position");
 
+    logSetupCheckpoint("before SetWorldTimeGeometry/SetSlice");
     d->renderWindow->GetRenderer()->SetWorldTimeGeometry(timeGeometry);
     d->renderWindowGradMag->GetRenderer()->SetWorldTimeGeometry(timeGeometry);
     d->renderWindow->GetRenderer()->SetSlice(d->renderWindow->GetRenderer()->GetSliceNavigationController()->GetStepper()->GetPos());
     d->renderWindowGradMag->GetRenderer()->SetSlice(d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetStepper()->GetPos());
+    logSetupCheckpoint("after SetWorldTimeGeometry/SetSlice");
 
+    logSetupCheckpoint("before camera fit");
     d->renderWindow->GetRenderer()->GetCameraController()->Fit();
     d->renderWindowGradMag->GetRenderer()->GetCameraController()->Fit();
     d->renderWindow->GetRenderer()->GetVtkRenderer()->ResetCameraClippingRange();
     d->renderWindowGradMag->GetRenderer()->GetVtkRenderer()->ResetCameraClippingRange();
+    logSetupCheckpoint("after camera fit");
 
+    logSetupCheckpoint("before ForceImmediateUpdate primary");
     forceImmediateMitkRender(d->renderWindow);
+    logSetupCheckpoint("after ForceImmediateUpdate primary");
+    logSetupCheckpoint("before ForceImmediateUpdate gradient");
     forceImmediateMitkRender(d->renderWindowGradMag);
+    logSetupCheckpoint("after ForceImmediateUpdate gradient");
 
+    logSetupCheckpoint("before final diagnostic logs");
     logResliceRendererState("primary", d->renderWindow, imageNode.GetPointer(), currentNode(), contourNodes.GetPointer(), solidNode);
     logResliceRendererState("gradient", d->renderWindowGradMag, imageNode.GetPointer(), currentNode(), contourNodes.GetPointer(), solidNode);
     logResliceWindowLayout("sacrificial", d->sacrificialRenderWindow);
@@ -834,6 +937,7 @@ void VesselDrivenResliceView::_setupRendererSlices()
     logFirstContourState("first", contourNodes.GetPointer());
     logFramebufferState("primary", d->renderWindow);
     logFramebufferState("gradient", d->renderWindowGradMag);
+    logSetupCheckpoint("exit");
 }
 
 void VesselDrivenResliceView::_setSliceNumber(double slice)
