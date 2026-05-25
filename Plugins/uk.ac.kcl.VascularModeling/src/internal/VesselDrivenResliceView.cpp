@@ -438,6 +438,7 @@ public:
         : sacrificialRenderWindow(nullptr)
         , renderWindow(nullptr)
         , renderWindowGradMag(nullptr)
+        , settingUpRendererSlices(false)
     {
         reinitVesselDrivenGeometryTimer.setSingleShot(true);
     }
@@ -455,6 +456,7 @@ public:
     QDoubleSpinBox* resliceWindowSizeSpinBox;   
     QToolButton* resliceWidgetVisibilityButton;
     QTimer reinitVesselDrivenGeometryTimer;
+    bool settingUpRendererSlices;
     QLabel* positionInMM;
     QScopedPointer<ResliceViewWidgetListener> resliceViewWidgetListener;
 
@@ -760,11 +762,18 @@ void VesselDrivenResliceView::forceReinitGeometry()
 void VesselDrivenResliceView::_setupRendererSlices()
 {
     logSetupCheckpoint("enter");
+    if (d->settingUpRendererSlices) {
+        logSetupCheckpoint("abort recursive setup");
+        return;
+    }
 
     if (!_isCurrentVesselPathValid()) {
         logSetupCheckpoint("abort invalid current vessel path");
         return;
     }
+
+    d->settingUpRendererSlices = true;
+    d->sliceNumberSlider->blockSignals(true);
 
     auto vesselPath = static_cast<crimson::VesselPathAbstractData*>(currentNode()->GetData());
 
@@ -887,18 +896,34 @@ void VesselDrivenResliceView::_setupRendererSlices()
 
     logSetupCheckpoint("before primary SNC setup");
     mitk::SliceNavigationController* snc = d->renderWindow->GetRenderer()->GetSliceNavigationController();
+    logSetupCheckpoint("primary SNC before SetInputWorldTimeGeometry");
     snc->SetInputWorldTimeGeometry(timeGeometry);
+    logSetupCheckpoint("primary SNC after SetInputWorldTimeGeometry");
+    logSetupCheckpoint("primary SNC before SetViewDirection");
     snc->SetViewDirection(mitk::AnatomicalPlane::Original);
+    logSetupCheckpoint("primary SNC after SetViewDirection");
+    logSetupCheckpoint("primary SNC before SetDefaultViewDirection");
     snc->SetDefaultViewDirection(mitk::AnatomicalPlane::Original);
+    logSetupCheckpoint("primary SNC after SetDefaultViewDirection");
+    logSetupCheckpoint("primary SNC before Update");
     snc->Update();
+    logSetupCheckpoint("primary SNC after Update");
     logSetupCheckpoint("after primary SNC setup");
 
     logSetupCheckpoint("before gradient SNC setup");
     snc = d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController();
+    logSetupCheckpoint("gradient SNC before SetInputWorldTimeGeometry");
     snc->SetInputWorldTimeGeometry(timeGeometry);
+    logSetupCheckpoint("gradient SNC after SetInputWorldTimeGeometry");
+    logSetupCheckpoint("gradient SNC before SetViewDirection");
     snc->SetViewDirection(mitk::AnatomicalPlane::Original);
+    logSetupCheckpoint("gradient SNC after SetViewDirection");
+    logSetupCheckpoint("gradient SNC before SetDefaultViewDirection");
     snc->SetDefaultViewDirection(mitk::AnatomicalPlane::Original);
+    logSetupCheckpoint("gradient SNC after SetDefaultViewDirection");
+    logSetupCheckpoint("gradient SNC before Update");
     snc->Update();
+    logSetupCheckpoint("gradient SNC after Update");
     logSetupCheckpoint("after gradient SNC setup");
 
     logSetupCheckpoint("before navigateTo saved position");
@@ -937,11 +962,18 @@ void VesselDrivenResliceView::_setupRendererSlices()
     logFirstContourState("first", contourNodes.GetPointer());
     logFramebufferState("primary", d->renderWindow);
     logFramebufferState("gradient", d->renderWindowGradMag);
+    d->sliceNumberSlider->blockSignals(false);
+    d->settingUpRendererSlices = false;
     logSetupCheckpoint("exit");
 }
 
 void VesselDrivenResliceView::_setSliceNumber(double slice)
 {
+    if (d->settingUpRendererSlices) {
+        MITK_WARN << "VesselDrivenResliceView RESLICE_TRACE_V3 ignoring _setSliceNumber during setup: slice=" << slice;
+        return;
+    }
+
     unsigned int sliceNumber = static_cast<unsigned int>(slice);
     d->renderWindow->GetRenderer()->GetSliceNavigationController()->GetStepper()->SetPos(sliceNumber);
     d->renderWindowGradMag->GetRenderer()->GetSliceNavigationController()->GetStepper()->SetPos(sliceNumber);
@@ -962,6 +994,11 @@ void VesselDrivenResliceView::_setResliceWindowSize()
 
 void VesselDrivenResliceView::_syncSliderWithStepperC(const itk::Object* o, const itk::EventObject&)
 {
+    if (d->settingUpRendererSlices) {
+        MITK_WARN << "VesselDrivenResliceView RESLICE_TRACE_V3 ignoring stepper sync during setup";
+        return;
+    }
+
     static bool updating;
     if (updating) {
         return;
