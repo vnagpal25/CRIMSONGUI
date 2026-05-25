@@ -6,8 +6,6 @@
 
 #include <vtkParametricSplineVesselPathData.h>
 #include <vtkParametricSplineVesselPathVtkMapper3D.h>
-#include <SolidData.h>
-#include <SolidDataMapper.h>
 #include <mitkVtkResliceInterpolationProperty.h>
 #include <mitkNodePredicateDataType.h>
 
@@ -46,6 +44,7 @@
 #include <berryIWorkbenchPage.h>
 
 #include <algorithm>
+#include <cstdlib>
 #include <vector>
 
 namespace {
@@ -122,21 +121,6 @@ void ensureVesselPathMapper(mitk::DataNode* node)
     }
 
     auto mapper = crimson::vtkParametricSplineVesselPathVtkMapper3D::New();
-    mapper->SetDataNode(node);
-    node->SetMapper(mitk::BaseRenderer::Standard2D, mapper.GetPointer());
-}
-
-void ensureSolidDataMapper(mitk::DataNode* node)
-{
-    if (!node || !dynamic_cast<crimson::SolidData*>(node->GetData())) {
-        return;
-    }
-
-    if (dynamic_cast<crimson::SolidDataMapper2D*>(node->GetMapper(mitk::BaseRenderer::Standard2D))) {
-        return;
-    }
-
-    auto mapper = crimson::SolidDataMapper2D::New();
     mapper->SetDataNode(node);
     node->SetMapper(mitk::BaseRenderer::Standard2D, mapper.GetPointer());
 }
@@ -371,6 +355,59 @@ void logFramebufferState(const char* label, QmitkRenderWindow* renderWindow)
               << ", nonBlackPixels=" << nonBlack
               << ", nonBlackPercent=" << percent
               << ", bbox=[" << minX << "," << minY << "," << maxX << "," << maxY << "]";
+}
+
+void logFramebufferDifference(QmitkRenderWindow* leftRenderWindow, QmitkRenderWindow* rightRenderWindow)
+{
+    if (!leftRenderWindow || !rightRenderWindow ||
+        !leftRenderWindow->GetVtkRenderWindow() || !rightRenderWindow->GetVtkRenderWindow()) {
+        return;
+    }
+
+    vtkRenderWindow* leftVtkWindow = leftRenderWindow->GetVtkRenderWindow();
+    vtkRenderWindow* rightVtkWindow = rightRenderWindow->GetVtkRenderWindow();
+    int* leftSize = leftVtkWindow->GetSize();
+    int* rightSize = rightVtkWindow->GetSize();
+    if (!leftSize || !rightSize || leftSize[0] <= 0 || leftSize[1] <= 0 || rightSize[0] <= 0 || rightSize[1] <= 0) {
+        MITK_INFO << "VesselDrivenResliceView framebuffer diff primary-gradient: empty window";
+        return;
+    }
+
+    const int width = std::min(leftSize[0], rightSize[0]);
+    const int height = std::min(leftSize[1], rightSize[1]);
+    auto leftPixels = vtkSmartPointer<vtkUnsignedCharArray>::New();
+    auto rightPixels = vtkSmartPointer<vtkUnsignedCharArray>::New();
+    leftVtkWindow->GetRGBACharPixelData(0, 0, width - 1, height - 1, 0, leftPixels, 0);
+    rightVtkWindow->GetRGBACharPixelData(0, 0, width - 1, height - 1, 0, rightPixels, 0);
+
+    unsigned char* leftData = leftPixels->GetPointer(0);
+    unsigned char* rightData = rightPixels->GetPointer(0);
+    if (!leftData || !rightData) {
+        MITK_INFO << "VesselDrivenResliceView framebuffer diff primary-gradient: missing pixel data";
+        return;
+    }
+
+    int differentPixels = 0;
+    unsigned long long totalAbsDiff = 0;
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            const size_t offset = (static_cast<size_t>(y) * width + x) * 4;
+            const int dr = std::abs(static_cast<int>(leftData[offset]) - static_cast<int>(rightData[offset]));
+            const int dg = std::abs(static_cast<int>(leftData[offset + 1]) - static_cast<int>(rightData[offset + 1]));
+            const int db = std::abs(static_cast<int>(leftData[offset + 2]) - static_cast<int>(rightData[offset + 2]));
+            const int pixelDiff = dr + dg + db;
+            totalAbsDiff += pixelDiff;
+            differentPixels += pixelDiff > 6 ? 1 : 0;
+        }
+    }
+
+    const double percent = 100.0 * differentPixels / static_cast<double>(width * height);
+    const double meanAbsDiff = totalAbsDiff / static_cast<double>(width * height * 3);
+    MITK_INFO << "VesselDrivenResliceView framebuffer diff primary-gradient"
+              << ": comparedSize=" << width << "x" << height
+              << ", differentPixels=" << differentPixels
+              << ", differentPercent=" << percent
+              << ", meanAbsDiff=" << meanAbsDiff;
 }
 
 } // namespace
@@ -866,13 +903,11 @@ void VesselDrivenResliceView::_setupRendererSlices()
               << ", data=" << nodeDataClassName(solidNode)
               << ", mapperBefore=" << mapperName(solidNode);
     if (solidNode) {
-        logSetupCheckpoint("before ensureSolidDataMapper");
-        ensureSolidDataMapper(solidNode);
-        MITK_INFO << "VesselDrivenResliceView setup solid: mapperAfterEnsure=" << mapperName(solidNode);
-        logSetupCheckpoint("after ensureSolidDataMapper");
-        configureOverlayNodeForReslice(solidNode, d->sacrificialRenderWindow, true);
-        configureOverlayNodeForReslice(solidNode, d->renderWindow, true);
-        configureOverlayNodeForReslice(solidNode, d->renderWindowGradMag, true);
+        MITK_WARN << "VesselDrivenResliceView RESLICE_TRACE_V3 solid overlay disabled in reslice panes; "
+                  << "manual SolidDataMapper2D caused async repaint crashes";
+        configureOverlayNodeForReslice(solidNode, d->sacrificialRenderWindow, false);
+        configureOverlayNodeForReslice(solidNode, d->renderWindow, false);
+        configureOverlayNodeForReslice(solidNode, d->renderWindowGradMag, false);
         logSetupCheckpoint("after solid visibility setup");
     }
 
@@ -996,6 +1031,7 @@ void VesselDrivenResliceView::_setupRendererSlices()
     logFramebufferState("sacrificial", d->sacrificialRenderWindow);
     logFramebufferState("primary", d->renderWindow);
     logFramebufferState("gradient", d->renderWindowGradMag);
+    logFramebufferDifference(d->renderWindow, d->renderWindowGradMag);
     d->sliceNumberSlider->blockSignals(false);
     d->settingUpRendererSlices = false;
     logSetupCheckpoint("exit");
