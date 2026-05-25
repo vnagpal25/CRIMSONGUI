@@ -25,6 +25,8 @@
 #include <vtkRenderer.h>
 #include <vtkCamera.h>
 #include <vtkPropCollection.h>
+#include <vtkSmartPointer.h>
+#include <vtkUnsignedCharArray.h>
 
 // Qt
 #include "QmitkRenderWindow.h"
@@ -315,8 +317,13 @@ void logFramebufferState(const char* label, QmitkRenderWindow* renderWindow)
 
     const int width = size[0];
     const int height = size[1];
-    std::vector<unsigned char> pixels(static_cast<size_t>(width) * height * 4);
-    vtkWindow->GetRGBACharPixelData(0, 0, width - 1, height - 1, 0, pixels.data());
+    auto pixels = vtkSmartPointer<vtkUnsignedCharArray>::New();
+    vtkWindow->GetRGBACharPixelData(0, 0, width - 1, height - 1, 0, pixels, 0);
+    unsigned char* pixelData = pixels->GetPointer(0);
+    if (!pixelData) {
+        MITK_INFO << "VesselDrivenResliceView framebuffer " << label << ": no pixel data";
+        return;
+    }
 
     int nonBlack = 0;
     int minX = width;
@@ -326,9 +333,9 @@ void logFramebufferState(const char* label, QmitkRenderWindow* renderWindow)
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             const size_t offset = (static_cast<size_t>(y) * width + x) * 4;
-            const int r = pixels[offset];
-            const int g = pixels[offset + 1];
-            const int b = pixels[offset + 2];
+            const int r = pixelData[offset];
+            const int g = pixelData[offset + 1];
+            const int b = pixelData[offset + 2];
             if (r + g + b > 12) {
                 ++nonBlack;
                 minX = std::min(minX, x);
