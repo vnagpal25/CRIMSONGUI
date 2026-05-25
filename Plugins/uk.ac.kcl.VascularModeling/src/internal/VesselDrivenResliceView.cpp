@@ -66,7 +66,7 @@ const char* nodeDataClassName(mitk::DataNode* node)
 
 void logSetupCheckpoint(const char* step)
 {
-    MITK_INFO << "VesselDrivenResliceView setup checkpoint: " << step;
+    MITK_WARN << "VesselDrivenResliceView RESLICE_TRACE_V3 setup checkpoint: " << step;
 }
 
 void forceImmediateMitkRender(QmitkRenderWindow* renderWindow)
@@ -695,7 +695,7 @@ void VesselDrivenResliceView::currentNodeChanged(mitk::DataNode*)
     _setResliceViewEnabled(_isCurrentVesselPathValid());
 
     if (currentNode()) {
-        MITK_INFO << "VesselDrivenResliceView currentNodeChanged: node=" << currentNode()->GetName()
+        MITK_WARN << "VesselDrivenResliceView RESLICE_TRACE_V3 currentNodeChanged: node=" << currentNode()->GetName()
                   << ", data=" << nodeDataClassName(currentNode())
                   << ", valid=" << yesNo(_isCurrentVesselPathValid());
 
@@ -711,7 +711,7 @@ void VesselDrivenResliceView::currentNodeChanged(mitk::DataNode*)
         float resliceWindowSize = 50;
         currentNode()->GetFloatProperty("reslice.windowSize", resliceWindowSize);
         if (resliceWindowSize < 25.0f) {
-            MITK_INFO << "VesselDrivenResliceView reslice.windowSize too small on node; raw="
+            MITK_WARN << "VesselDrivenResliceView RESLICE_TRACE_V3 reslice.windowSize too small on node; raw="
                       << resliceWindowSize << ", using=50";
             resliceWindowSize = 50.0f;
             currentNode()->SetFloatProperty("reslice.windowSize", resliceWindowSize);
@@ -787,7 +787,7 @@ void VesselDrivenResliceView::_setupRendererSlices()
         resliceWindowSize = 50.0f;
         currentNode()->SetFloatProperty("reslice.windowSize", resliceWindowSize);
     }
-    MITK_INFO << "VesselDrivenResliceView reslice size: raw=" << rawResliceWindowSize
+    MITK_WARN << "VesselDrivenResliceView RESLICE_TRACE_V3 reslice size: raw=" << rawResliceWindowSize
               << ", effective=" << resliceWindowSize;
 
     mitk::ScalarType paramDelta;
