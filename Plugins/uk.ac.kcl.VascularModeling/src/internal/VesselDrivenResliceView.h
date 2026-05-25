@@ -51,6 +51,7 @@ protected:
 
     void _setResliceViewEnabled(bool enabled);
     bool _isCurrentVesselPathValid();
+    mitk::DataNode* _ensureGradientMagnitudeImageNode(mitk::DataNode* imageNode);
 
     void _syncSliderWithStepper(itk::Object* o, const itk::EventObject& e) { _syncSliderWithStepperC(o, e); }
     void _syncSliderWithStepperC(const itk::Object*, const itk::EventObject&);

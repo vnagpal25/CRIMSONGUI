@@ -11,6 +11,9 @@
 
 #include <mitkSlicedGeometry3D.h>
 #include <mitkImage.h>
+#include <mitkImageAccessByItk.h>
+#include <mitkITKImageImport.h>
+#include <mitkLevelWindow.h>
 #include <mitkProperties.h>
 #include <mitkMapper.h>
 #include <mitkPlanarFigure.h>
@@ -25,6 +28,9 @@
 #include <vtkPropCollection.h>
 #include <vtkSmartPointer.h>
 #include <vtkUnsignedCharArray.h>
+
+#include <itkGradientMagnitudeImageFilter.h>
+#include <itkExceptionObject.h>
 
 // Qt
 #include "QmitkRenderWindow.h"
@@ -45,6 +51,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <exception>
 #include <vector>
 
 namespace {
@@ -66,6 +73,20 @@ const char* nodeDataClassName(mitk::DataNode* node)
 void logSetupCheckpoint(const char* step)
 {
     MITK_WARN << "VesselDrivenResliceView RESLICE_TRACE_V3 setup checkpoint: " << step;
+}
+
+template <typename TPixel, unsigned int VImageDimension>
+void computeGradientMagnitudeImage(itk::Image<TPixel, VImageDimension>* inputImage, mitk::Image::Pointer& outputImage)
+{
+    using InputImageType = itk::Image<TPixel, VImageDimension>;
+    using OutputImageType = itk::Image<float, VImageDimension>;
+    using GradientFilterType = itk::GradientMagnitudeImageFilter<InputImageType, OutputImageType>;
+
+    typename GradientFilterType::Pointer gradientFilter = GradientFilterType::New();
+    gradientFilter->SetInput(inputImage);
+    gradientFilter->Update();
+
+    outputImage = mitk::ImportItkImage(gradientFilter->GetOutput())->Clone();
 }
 
 void forceImmediateMitkRender(QmitkRenderWindow* renderWindow)
@@ -476,6 +497,7 @@ public:
         , renderWindow(nullptr)
         , renderWindowGradMag(nullptr)
         , settingUpRendererSlices(false)
+        , gradientMagnitudeSourceMTime(0)
     {
         reinitVesselDrivenGeometryTimer.setSingleShot(true);
     }
@@ -496,6 +518,9 @@ public:
     bool settingUpRendererSlices;
     QLabel* positionInMM;
     QScopedPointer<ResliceViewWidgetListener> resliceViewWidgetListener;
+    mitk::DataNode::Pointer gradientMagnitudeImageNode;
+    mitk::DataNode::Pointer gradientMagnitudeSourceImageNode;
+    unsigned long gradientMagnitudeSourceMTime;
 
     QHash<const mitk::DataNode*, mitk::Point3D> savedSlicePositions;
 
@@ -538,6 +563,9 @@ VesselDrivenResliceView::~VesselDrivenResliceView()
     }
 
     _removeGeometryNodeFromDataStorage();
+    if (d->gradientMagnitudeImageNode.IsNotNull() && GetDataStorage()->Exists(d->gradientMagnitudeImageNode)) {
+        GetDataStorage()->Remove(d->gradientMagnitudeImageNode);
+    }
 }
 
 void VesselDrivenResliceView::SetFocus()
@@ -855,16 +883,36 @@ void VesselDrivenResliceView::_setupRendererSlices()
               << ", name=" << (imageNode.IsNotNull() ? imageNode->GetName() : std::string("none"))
               << ", data=" << nodeDataClassName(imageNode.GetPointer());
 
+    mitk::DataNode* gradientMagnitudeImageNode = nullptr;
     if (imageNode.IsNotNull()) {
+        logSetupCheckpoint("before ensure gradient magnitude image");
+        gradientMagnitudeImageNode = _ensureGradientMagnitudeImageNode(imageNode.GetPointer());
+        MITK_INFO << "VesselDrivenResliceView gradient image node: exists=" << yesNo(gradientMagnitudeImageNode != nullptr)
+                  << ", name=" << (gradientMagnitudeImageNode ? gradientMagnitudeImageNode->GetName() : std::string("none"))
+                  << ", data=" << nodeDataClassName(gradientMagnitudeImageNode);
+        logSetupCheckpoint("after ensure gradient magnitude image");
+
         logSetupCheckpoint("before configure sacrificial image node");
         configureImageNodeForReslice(imageNode, d->sacrificialRenderWindow, false);
         logSetupCheckpoint("after configure sacrificial image node");
         logSetupCheckpoint("before configure primary image node");
         configureImageNodeForReslice(imageNode, d->renderWindow, false);
         logSetupCheckpoint("after configure primary image node");
-        logSetupCheckpoint("before configure gradient image node");
-        configureImageNodeForReslice(imageNode, d->renderWindowGradMag, true);
-        logSetupCheckpoint("after configure gradient image node");
+        logSetupCheckpoint("before hide source image on gradient renderer");
+        configureImageNodeForReslice(imageNode, d->renderWindowGradMag, false);
+        imageNode->SetVisibility(false, d->renderWindowGradMag->GetRenderer());
+        logSetupCheckpoint("after hide source image on gradient renderer");
+
+        if (gradientMagnitudeImageNode) {
+            logSetupCheckpoint("before configure gradient magnitude image node");
+            configureImageNodeForReslice(gradientMagnitudeImageNode, d->sacrificialRenderWindow, false);
+            gradientMagnitudeImageNode->SetVisibility(false, d->sacrificialRenderWindow->GetRenderer());
+            configureImageNodeForReslice(gradientMagnitudeImageNode, d->renderWindow, false);
+            gradientMagnitudeImageNode->SetVisibility(false, d->renderWindow->GetRenderer());
+            configureImageNodeForReslice(gradientMagnitudeImageNode, d->renderWindowGradMag, false);
+            gradientMagnitudeImageNode->SetVisibility(true, d->renderWindowGradMag->GetRenderer());
+            logSetupCheckpoint("after configure gradient magnitude image node");
+        }
     }
 
     logSetupCheckpoint("before configure vessel overlays");
@@ -1020,7 +1068,9 @@ void VesselDrivenResliceView::_setupRendererSlices()
     logSetupCheckpoint("before final diagnostic logs");
     logResliceRendererState("sacrificial", d->sacrificialRenderWindow, imageNode.GetPointer(), currentNode(), contourNodes.GetPointer(), solidNode);
     logResliceRendererState("primary", d->renderWindow, imageNode.GetPointer(), currentNode(), contourNodes.GetPointer(), solidNode);
-    logResliceRendererState("gradient", d->renderWindowGradMag, imageNode.GetPointer(), currentNode(), contourNodes.GetPointer(), solidNode);
+    logResliceRendererState("gradient", d->renderWindowGradMag,
+                            gradientMagnitudeImageNode ? gradientMagnitudeImageNode : imageNode.GetPointer(),
+                            currentNode(), contourNodes.GetPointer(), solidNode);
     logResliceWindowLayout("sacrificial", d->sacrificialRenderWindow);
     logResliceWindowLayout("primary", d->renderWindow);
     logResliceWindowLayout("gradient", d->renderWindowGradMag);
@@ -1051,6 +1101,72 @@ void VesselDrivenResliceView::_setSliceNumber(double slice)
 
     forceImmediateMitkRender(d->renderWindow);
     forceImmediateMitkRender(d->renderWindowGradMag);
+}
+
+mitk::DataNode* VesselDrivenResliceView::_ensureGradientMagnitudeImageNode(mitk::DataNode* imageNode)
+{
+    if (!imageNode) {
+        return nullptr;
+    }
+
+    mitk::Image::Pointer image = dynamic_cast<mitk::Image*>(imageNode->GetData());
+    if (image.IsNull()) {
+        MITK_WARN << "VesselDrivenResliceView gradient image: source node is not an image";
+        return nullptr;
+    }
+
+    const unsigned long sourceMTime = image->GetMTime();
+    if (d->gradientMagnitudeImageNode.IsNotNull() &&
+        d->gradientMagnitudeSourceImageNode.GetPointer() == imageNode &&
+        d->gradientMagnitudeSourceMTime == sourceMTime) {
+        return d->gradientMagnitudeImageNode.GetPointer();
+    }
+
+    MITK_INFO << "VesselDrivenResliceView gradient image: computing gradient magnitude for "
+              << imageNode->GetName()
+              << ", dimension=" << image->GetDimension()
+              << ", mtime=" << sourceMTime;
+
+    mitk::Image::Pointer gradientImage;
+    try {
+        AccessByItk_1(image.GetPointer(), computeGradientMagnitudeImage, gradientImage);
+    }
+    catch (const itk::ExceptionObject& e) {
+        MITK_ERROR << "VesselDrivenResliceView gradient image: ITK failure: " << e.GetDescription();
+        return nullptr;
+    }
+    catch (const std::exception& e) {
+        MITK_ERROR << "VesselDrivenResliceView gradient image: failure: " << e.what();
+        return nullptr;
+    }
+
+    if (gradientImage.IsNull()) {
+        MITK_WARN << "VesselDrivenResliceView gradient image: computation produced no image";
+        return nullptr;
+    }
+
+    if (d->gradientMagnitudeImageNode.IsNull()) {
+        d->gradientMagnitudeImageNode = mitk::DataNode::New();
+        d->gradientMagnitudeImageNode->SetName(imageNode->GetName() + " Gradient Magnitude");
+        d->gradientMagnitudeImageNode->SetBoolProperty("helper object", true);
+        d->gradientMagnitudeImageNode->SetBoolProperty("visible", false);
+        GetDataStorage()->Add(d->gradientMagnitudeImageNode, imageNode);
+    }
+
+    d->gradientMagnitudeImageNode->SetData(gradientImage);
+    d->gradientMagnitudeSourceImageNode = imageNode;
+    d->gradientMagnitudeSourceMTime = sourceMTime;
+
+    mitk::LevelWindow levelWindow;
+    levelWindow.SetAuto(gradientImage);
+    d->gradientMagnitudeImageNode->SetLevelWindow(levelWindow);
+    d->gradientMagnitudeImageNode->Modified();
+
+    MITK_INFO << "VesselDrivenResliceView gradient image: ready, node="
+              << d->gradientMagnitudeImageNode->GetName()
+              << ", dimension=" << gradientImage->GetDimension();
+
+    return d->gradientMagnitudeImageNode.GetPointer();
 }
 
 void VesselDrivenResliceView::_setResliceWindowSize()
